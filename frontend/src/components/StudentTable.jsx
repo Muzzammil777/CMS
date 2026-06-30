@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 
-export default function StudentTable({ students, onEdit, onDelete }) {
+export default function StudentTable({ students, onEdit, onDelete, hideActions }) {
   const navigate = useNavigate()
 
   const statusStyles = {
@@ -27,13 +27,13 @@ export default function StudentTable({ students, onEdit, onDelete }) {
             <th className="px-6 py-4">Semester</th>
             <th className="px-6 py-4">Status</th>
             <th className="px-6 py-4">Fee Status</th>
-            <th className="px-6 py-4 text-right">Actions</th>
+            {!hideActions && <th className="px-6 py-4 text-right">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-50">
           {students.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-10 py-24 text-center text-slate-400 bg-slate-50/30">
+              <td colSpan={hideActions ? 5 : 6} className="px-10 py-24 text-center text-slate-400 bg-slate-50/30">
                 <div className="flex flex-col items-center">
                   <span className="material-symbols-outlined text-6xl mb-4 opacity-10 text-slate-900">group_off</span>
                   <p className="text-base font-bold text-slate-500">No students found matching your search</p>
@@ -81,24 +81,26 @@ export default function StudentTable({ students, onEdit, onDelete }) {
                     {s.feeStatus || 'PENDING'}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-end gap-2">
-                    <button 
-                      onClick={() => onEdit && onEdit(s)}
-                      className="p-1.5 text-slate-400 hover:text-[#276221] hover:bg-[#276221]/10 rounded-lg transition-colors"
-                      title="Edit Student"
-                    >
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                    </button>
-                    <button 
-                      onClick={() => onDelete && onDelete(s)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete Student"
-                    >
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                    </button>
-                  </div>
-                </td>
+                {!hideActions && (
+                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => onEdit && onEdit(s)}
+                        className="p-1.5 text-slate-400 hover:text-[#276221] hover:bg-[#276221]/10 rounded-lg transition-colors"
+                        title="Edit Student"
+                      >
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                      </button>
+                      <button 
+                        onClick={() => onDelete && onDelete(s)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete Student"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
               );
             })

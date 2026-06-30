@@ -7,6 +7,7 @@ import { PageContainer, StatsSection, Pagination, TableSkeleton } from '../compo
 import { buildApiUrl } from '../api/apiBase'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { getUserSession } from '../auth/sessionController'
 
 export default function StudentsPage() {
   const navigate = useNavigate()
@@ -18,24 +19,59 @@ export default function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [newAdmissionsCount, setNewAdmissionsCount] = useState(0)
+  const [assignedSubjects, setAssignedSubjects] = useState([])
   const itemsPerPage = 3
+
+  const session = getUserSession()
+  const role = session?.role || 'admin'
+  const userId = session?.userId
+
+  const slugify = (text) => {
+    return (text || '')
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-');
+  }
+
+  const getStudentClassId = (student) => {
+    const dept = slugify(student.departmentId || student.department);
+    const sem = String(student.semester || '1');
+    const sec = (student.section || 'A').toLowerCase();
+    return `${dept}-${sem}-${sec}`;
+  }
 
   const fetchStudents = async () =>{
     try {
       setLoading(true)
-      const [studentsRes, admissionsRes] = await Promise.all([
-        fetch(buildApiUrl('/students')),
-        fetch(buildApiUrl('/admissions/students'))
-      ])
+      const promises = [
+        fetch(buildApiUrl('/students'))
+      ];
+      if (role === 'faculty' && userId) {
+        promises.push(fetch(buildApiUrl(`/academics/attendance/faculty/${encodeURIComponent(userId)}/subjects`)));
+      } else {
+        promises.push(fetch(buildApiUrl('/admissions/students')));
+      }
+
+      const [studentsRes, secondRes] = await Promise.all(promises);
       
       if (!studentsRes.ok) throw new Error('Failed to fetch students')
       const studentsData = await studentsRes.json()
       setStudentsList(studentsData)
 
-      if (admissionsRes.ok) {
-        const admissionsData = await admissionsRes.json()
-        const pendingCount = admissionsData.filter(a => (a.status || '').toLowerCase() === 'pending').length
-        setNewAdmissionsCount(pendingCount)
+      if (role === 'faculty') {
+        if (secondRes && secondRes.ok) {
+          const subjectsData = await secondRes.json()
+          setAssignedSubjects(subjectsData.success ? subjectsData.data : [])
+        }
+      } else {
+        if (secondRes && secondRes.ok) {
+          const admissionsData = await secondRes.json()
+          const pendingCount = admissionsData.filter(a => (a.status || '').toLowerCase() === 'pending').length
+          setNewAdmissionsCount(pendingCount)
+        }
       }
       
       setError(null)
@@ -95,6 +131,25 @@ export default function StudentsPage() {
   const stats = getStats()
 
   const filtered = studentsList.filter(s =>{
+    // Faculty-specific filtering:
+    if (role === 'faculty') {
+      const studentClassId = getStudentClassId(s);
+      const isMyStudent = assignedSubjects.some(sub => {
+        const subClassId = slugify(sub.classId || '');
+        const isClassMatch = subClassId === studentClassId || subClassId.includes(studentClassId) || studentClassId.includes(subClassId);
+        
+        const isDeptMatch = slugify(sub.department) === slugify(s.departmentId || s.department);
+        const subSemStr = String(sub.semester || '').replace(/[^\d]/g, '');
+        const studSemStr = String(s.semester || '').replace(/[^\d]/g, '');
+        const isSemMatch = subSemStr === studSemStr;
+        
+        const isSecMatch = (sub.section || '').toLowerCase().trim() === (s.section || '').toLowerCase().trim();
+        
+        return isClassMatch || (isDeptMatch && isSemMatch && isSecMatch);
+      });
+      if (!isMyStudent) return false;
+    }
+
     // Apply department/status filters if set
     if (departmentFilter) {
       const dep = (s.department || '').toLowerCase()
@@ -177,7 +232,12 @@ export default function StudentsPage() {
 
   const handleSearch = (val) =>{ setSearchQuery(val); setCurrentPage(1) }
 
-  const statsData = [
+  const statsData = role === 'faculty' ? [
+    { value: loading ? '...' : filtered.length, label: 'My Students', icon: 'group' },
+    { value: loading ? '...' : filtered.filter(s => s.status === 'active' || s.status === 'Active').length, label: 'Active Today', icon: 'bolt' },
+    { value: loading ? '...' : new Set(assignedSubjects.map(sub => sub.classId)).size, label: 'Classes Taught', icon: 'menu_book' },
+    { value: filtered.length, label: 'Filtered Results', icon: 'search' },
+  ] : [
     { value: loading ? '...' : stats.total, label: 'Total Students', icon: 'group' },
     { value: loading ? '...' : stats.active, label: 'Active Today', icon: 'bolt' },
     { value: loading ? '...' : newAdmissionsCount, label: 'New Admissions', icon: 'person_add' },
@@ -192,9 +252,9 @@ export default function StudentsPage() {
             onSearchChange={handleSearch}
             onFilterClick={handleFilterClick}
             onExportClick={handleExportClick}
-            onAddClick={() => navigate('/add-student')}
+            onAddClick={role === 'faculty' ? null : () => navigate('/add-student')}
             addButtonLabel="Add Student"
-            onBulkClick={() => navigate('/bulk-upload-students')}
+            onBulkClick={role === 'faculty' ? null : () => navigate('/bulk-upload-students')}
           /></div>{/* Student Table / State Displays */}
         {error ? (
           <div className="bg-red-50 border border-red-100 rounded-lg p-8 text-center"><span className="material-symbols-outlined text-red-400 text-5xl mb-4">cloud_off</span><h3 className="text-lg font-bold text-red-900">Connection Error</h3><p className="text-red-700 mt-1 max-w-sm mx-auto">{error}</p><button 
@@ -207,8 +267,9 @@ export default function StudentsPage() {
           <>
             <StudentTable 
               students={paginatedStudents} 
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              onEdit={role === 'faculty' ? null : handleEdit}
+              onDelete={role === 'faculty' ? null : handleDelete}
+              hideActions={role === 'faculty'}
             />
             <Pagination 
               currentPage={currentPage}

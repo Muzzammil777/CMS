@@ -92,7 +92,7 @@ export const roleMenuGroups = {
     },
     {
       title: 'Intelligence',
-      items: ['Analytics', 'Settings'],
+      items: ['Settings'],
     },
   ],
   finance: [

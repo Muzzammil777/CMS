@@ -119,7 +119,7 @@ export default function App() {
             <Route path="/placement" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'student']}><PlacementPage /></ProtectedRoute>} />
             <Route path="/facility" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><FacilityPage /></ProtectedRoute>} />
             <Route path="/payroll" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><PayrollPage /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'faculty']}><AnalyticsPage /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><AnalyticsPage /></ProtectedRoute>} />
             <Route
               path="/settings"
               element={

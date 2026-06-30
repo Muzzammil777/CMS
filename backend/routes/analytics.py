@@ -498,6 +498,10 @@ async def _compute_full_analytics_data(
     endYear: int = None,
 ):
     """Build the full analytics payload from real DB aggregates with safety fallbacks."""
+    # If database is unavailable, return fallback mock data
+    if db is None:
+        return get_fallback_analytics()["data"]
+
     # Determine active months
     start_m = startMonth if startMonth is not None else 1
     start_y = startYear if startYear is not None else 2026
@@ -514,7 +518,30 @@ async def _compute_full_analytics_data(
         month_idx = k % 12
         active_months.append(MONTHS_ALL[month_idx])
         
-    # Build student filter
+    # Helper to parse month
+    def parse_month_name(date_val) -> str:
+        if not date_val:
+            return None
+        if isinstance(date_val, datetime):
+            return MONTHS_ALL[date_val.month - 1]
+        date_str = str(date_val).strip()
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f"):
+            try:
+                dt = datetime.strptime(date_str.split("T")[0], fmt)
+                return MONTHS_ALL[dt.month - 1]
+            except Exception:
+                pass
+        try:
+            parts = date_str.split("-")
+            if len(parts) >= 2 and parts[1].isdigit():
+                m = int(parts[1])
+                if 1 <= m <= 12:
+                    return MONTHS_ALL[m - 1]
+        except Exception:
+            pass
+        return None
+
+    # Build filters
     student_match = {}
     if department:
         aliases = DEPT_MAP.get(department, [department])
@@ -528,7 +555,7 @@ async def _compute_full_analytics_data(
         
     total_students = await db["students"].count_documents(student_match)
     
-    # Build faculty filter
+    # Faculty filter
     faculty_match = {}
     if department:
         aliases = DEPT_MAP.get(department, [department])
@@ -545,15 +572,30 @@ async def _compute_full_analytics_data(
     if total_faculty == 0:
         total_faculty = 4  # safe default
 
-    # 1. Department data
+    # 1. Department data (dynamic list from system_departments or defaults)
+    db_depts = []
+    try:
+        async for d in db["system_departments"].find({}):
+            name = d.get("name")
+            code = d.get("code") or name
+            if name:
+                db_depts.append({"name": name, "code": code})
+    except Exception:
+        pass
+
+    if not db_depts:
+        db_depts = [{"name": DEPT_FULL[c], "code": c} for c in DEPTS]
+
     department_data = []
-    for code in DEPTS:
-        names = DEPT_MAP[code]
+    for d in db_depts:
+        dname = d["name"]
+        dcode = d["code"]
+        
         dept_filter = {
             "$or": [
-                {"department": {"$in": names}},
-                {"department_id": {"$in": names}},
-                {"departmentId": {"$in": names}}
+                {"department": {"$regex": f"^{dname}$|^{dcode}$", "$options": "i"}},
+                {"departmentId": {"$regex": f"^{dname}$|^{dcode}$", "$options": "i"}},
+                {"course": {"$regex": f"^{dname}$|^{dcode}$", "$options": "i"}}
             ]
         }
         
@@ -582,11 +624,11 @@ async def _compute_full_analytics_data(
                 except ValueError:
                     pass
                     
-        avg_cgpa = round(sum(cgpas) / len(cgpas), 2) if cgpas else round(7.5 + _seed(code) * 1.5, 2)
-        avg_att = round(sum(atts) / len(atts), 1) if atts else round(80.0 + _seed(code + "att") * 10, 1)
+        avg_cgpa = round(sum(cgpas) / len(cgpas), 2) if cgpas else round(7.5 + _seed(dcode) * 1.5, 2)
+        avg_att = round(sum(atts) / len(atts), 1) if atts else round(80.0 + _seed(dcode + "att") * 10, 1)
         
         department_data.append({
-            "name": code,
+            "name": dcode,
             "students": st_count,
             "faculty": max(1, fac_count),
             "avgAttendance": avg_att,
@@ -597,7 +639,6 @@ async def _compute_full_analytics_data(
     year_counts = {"Year 1": 0, "Year 2": 0, "Year 3": 0, "Year 4": 0}
     gender_counts = {"Male": 0, "Female": 0, "Other": 0}
     async for s in db["students"].find(student_match):
-        # Year mapping
         yr = s.get("year", "1st Year")
         if "1" in str(yr) or "first" in str(yr).lower():
             year_counts["Year 1"] += 1
@@ -610,45 +651,181 @@ async def _compute_full_analytics_data(
         else:
             year_counts["Year 1"] += 1
             
-        # Gender mapping
         gender = str(s.get("gender", "Male")).capitalize()
         if gender in gender_counts:
             gender_counts[gender] += 1
         else:
             gender_counts["Male"] += 1
 
-    # Format studentsByYear & genderData
     students_by_year = year_counts
     gender_data = [{"name": k, "value": v} for k, v in gender_counts.items() if v > 0]
     if not gender_data:
         gender_data = [{"name": "Male", "value": 60}, {"name": "Female", "value": 40}]
 
-    # 2. Finance data (Fees Structure and Payroll Invoices)
-    fee_filter = {}
-    if department:
-        aliases = DEPT_MAP.get(department, [department])
-        fee_filter["course"] = {"$in": aliases + [department]}
-    if semester:
-        fee_filter["semester"] = {"$regex": f"Semester {semester}", "$options": "i"}
-
-    # Aggregate real paid & pending fees
-    total_paid_fees = 0
-    total_pending_fees = 0
+    # 2. Finance data (Real aggregates from Invoices and student Fees)
+    real_income = {m: 0 for m in active_months}
+    real_expense = {m: 0 for m in active_months}
+    monthly_status = {m: {"paid": 0, "pending": 0, "overdue": 0} for m in active_months}
     payment_methods = {}
     scholarships_count = 0
     
-    async for fee in db["fees_structure"].find(fee_filter):
-        total_val = fee.get("total_fee") or fee.get("fee_breakdown", {}).get("total") or 0
-        status = str(fee.get("payment_status", "")).lower()
-        if status == "paid":
-            total_paid_fees += total_val
-            method = fee.get("payment_method", "Online")
-            payment_methods[method] = payment_methods.get(method, 0) + 1
-        else:
-            total_pending_fees += total_val
-            
-        if fee.get("first_graduate"):
+    # Check invoices
+    invoice_filter = {}
+    if department:
+        aliases = DEPT_MAP.get(department, [department])
+        invoice_filter["course"] = {"$in": aliases + [department]}
+    if semester:
+        invoice_filter["semester"] = {"$regex": f"Semester {semester}", "$options": "i"}
+
+    async for inv in db["invoices"].find(invoice_filter):
+        m_name = parse_month_name(inv.get("generated_date"))
+        if m_name in active_months:
+            total = inv.get("total") or 0
+            status = str(inv.get("payment_status", "")).lower()
+            if status == "paid":
+                real_income[m_name] += total
+                monthly_status[m_name]["paid"] += total
+                method = inv.get("payment_method") or "Online"
+                payment_methods[method] = payment_methods.get(method, 0) + 1
+            elif status in ("pending", "unpaid"):
+                monthly_status[m_name]["pending"] += total
+            elif status == "overdue":
+                monthly_status[m_name]["overdue"] += total
+
+    # Check students embedded fees
+    async for s in db["students"].find(student_match):
+        if s.get("first_graduate") or s.get("admissionType") == "Scholarship":
             scholarships_count += 1
+            
+        for fee in s.get("fees", []):
+            m_name = parse_month_name(fee.get("date"))
+            if m_name in active_months:
+                status = str(fee.get("status", "")).lower()
+                amt = fee.get("amount") or fee.get("paid") or 0
+                due = fee.get("due") or 0
+                if status == "paid":
+                    real_income[m_name] += amt
+                    monthly_status[m_name]["paid"] += amt
+                    method = fee.get("method") or "Online"
+                    payment_methods[method] = payment_methods.get(method, 0) + 1
+                elif status == "unpaid":
+                    monthly_status[m_name]["pending"] += due
+                elif status == "partial":
+                    real_income[m_name] += amt
+                    monthly_status[m_name]["paid"] += amt
+                    monthly_status[m_name]["pending"] += due
+
+    # Aggregate real paid payroll expenses
+    async for pay in db["faculty_payroll"].find({}):
+        m_name = parse_month_name(pay.get("created_date") or pay.get("updated_date"))
+        if m_name in active_months:
+            real_expense[m_name] += pay.get("net_salary") or pay.get("total_earnings") or 0
+
+    # Build weekly fee collection and monthly splits
+    finance_col_by_month = {}
+    finance_pie_by_month = {}
+    finance_dept_by_month = {}
+    finance_cards_by_month = {}
+    income_expense_by_month = {}
+
+    has_real_finance_data = any(real_income.values()) or any(real_expense.values())
+
+    for m in active_months:
+        month_seed = _seed(m)
+        if has_real_finance_data:
+            monthly_income = real_income[m]
+            monthly_expense = real_expense[m]
+        else:
+            monthly_income = int(350000 + month_seed * 150000)
+            monthly_expense = int(220000 + month_seed * 80000)
+            
+        income_expense_by_month[m] = {"income": monthly_income, "expense": monthly_expense}
+        
+        # Weekly collection
+        finance_col_by_month[m] = []
+        for w in range(1, 5):
+            pct = [0.25, 0.30, 0.20, 0.25][w-1]
+            target = round(monthly_income * 0.26)
+            collected = round(monthly_income * pct)
+            finance_col_by_month[m].append({
+                "week": f"Wk{w}",
+                "collected": collected,
+                "target": max(collected, target)
+            })
+            
+        # Finance Pie status
+        stats = monthly_status[m]
+        tot = stats["paid"] + stats["pending"] + stats["overdue"]
+        if tot > 0:
+            paid_pct = round(stats["paid"] / tot * 100)
+            pending_pct = round(stats["pending"] / tot * 100)
+            overdue_pct = 100 - paid_pct - pending_pct
+            finance_pie_by_month[m] = [
+                {"name": "Paid", "value": paid_pct},
+                {"name": "Pending", "value": max(0, pending_pct)},
+                {"name": "Overdue", "value": max(0, overdue_pct)}
+            ]
+        else:
+            paid_pct = int(70 + month_seed * 15)
+            overdue_pct = int(5 + month_seed * 8)
+            pending_pct = 100 - paid_pct - overdue_pct
+            finance_pie_by_month[m] = [
+                {"name": "Paid", "value": paid_pct},
+                {"name": "Pending", "value": max(0, pending_pct)},
+                {"name": "Overdue", "value": overdue_pct}
+            ]
+        
+        # Department paid stats
+        finance_dept_by_month[m] = []
+        for code in DEPTS:
+            dept_names = DEPT_MAP[code]
+            dept_st = next((d["students"] for d in department_data if d["name"] == code), 2)
+            
+            real_dept_paid = 0
+            real_dept_pending = 0
+            real_dept_overdue = 0
+            
+            if has_real_finance_data:
+                async for inv in db["invoices"].find(invoice_filter):
+                    inv_month = parse_month_name(inv.get("generated_date"))
+                    if inv_month == m:
+                        course = inv.get("course", "")
+                        if any(n.lower() in course.lower() for n in dept_names) or code.lower() in course.lower():
+                            status = str(inv.get("payment_status", "")).lower()
+                            total = inv.get("total") or 0
+                            if status == "paid":
+                                real_dept_paid += total
+                            elif status in ("pending", "unpaid"):
+                                real_dept_pending += total
+                            elif status == "overdue":
+                                real_dept_overdue += total
+                
+                finance_dept_by_month[m].append({
+                    "dept": code,
+                    "paid": real_dept_paid,
+                    "pending": real_dept_pending,
+                    "overdue": real_dept_overdue
+                })
+            else:
+                base_paid = max(5000, dept_st * 1000) + round(_seed(f"fp{code}{m}") * 5000)
+                finance_dept_by_month[m].append({
+                    "dept": code,
+                    "paid": base_paid,
+                    "pending": round(base_paid * (0.12 + _seed(f"fpd{code}{m}") * 0.12)),
+                    "overdue": round(base_paid * (0.05 + _seed(f"fov{code}{m}") * 0.08))
+                })
+            
+        # Cards
+        col_amt = income_expense_by_month[m]["income"]
+        pen_amt = sum(d["pending"] for d in finance_dept_by_month[m])
+        overdue_cnt = sum(1 for d in finance_dept_by_month[m] if d["overdue"] > 0)
+        
+        finance_cards_by_month[m] = {
+            "collected": f"₹{col_amt / 100000:.1f}L",
+            "pending": f"₹{pen_amt / 100000:.1f}L" if pen_amt > 0 else f"₹{round(col_amt * 0.18 / 100000, 1)}L",
+            "scholarships": str(max(2, scholarships_count)),
+            "late": str(overdue_cnt if overdue_cnt > 0 else round(10 + month_seed * 20))
+        }
 
     # Payment method data format
     payment_method_data = [{"name": k, "value": v} for k, v in payment_methods.items()]
@@ -658,84 +835,6 @@ async def _compute_full_analytics_data(
             {"name": "Bank Transfer", "value": 30},
             {"name": "Cash", "value": 18}
         ]
-
-    # Aggregate real paid payroll expenses
-    total_expenses = 0
-    async for inv in db["invoices"].find({}):
-        total_expenses += inv.get("total_amount") or 0
-
-    # Weekly fee collection
-    finance_col_by_month = {}
-    finance_pie_by_month = {}
-    finance_dept_by_month = {}
-    finance_cards_by_month = {}
-    income_expense_by_month = {}
-
-    for m in active_months:
-        month_seed = _seed(m)
-        monthly_income_baseline = int(350000 + month_seed * 150000)
-        monthly_expense_baseline = int(220000 + month_seed * 80000)
-        
-        income_expense_by_month[m] = {"income": monthly_income_baseline, "expense": monthly_expense_baseline}
-        
-        # Weekly collection
-        finance_col_by_month[m] = []
-        for w in range(1, 5):
-            target = round(monthly_income_baseline * 0.26)
-            collected = round(target * (0.85 + _seed(f"col{m}{w}") * 0.25))
-            finance_col_by_month[m].append({"week": f"Wk{w}", "collected": collected, "target": target})
-            
-        # Finance Pie status
-        paid_pct = int(70 + month_seed * 15)
-        overdue_pct = int(5 + month_seed * 8)
-        pending_pct = 100 - paid_pct - overdue_pct
-        finance_pie_by_month[m] = [
-            {"name": "Paid", "value": paid_pct},
-            {"name": "Pending", "value": max(0, pending_pct)},
-            {"name": "Overdue", "value": overdue_pct}
-        ]
-        
-        # Department paid stats
-        finance_dept_by_month[m] = []
-        for code in DEPTS:
-            dept_st = next((d["students"] for d in department_data if d["name"] == code), 2)
-            base_paid = max(5000, dept_st * 1000) + round(_seed(f"fp{code}{m}") * 5000)
-            finance_dept_by_month[m].append({
-                "dept": code,
-                "paid": base_paid,
-                "pending": round(base_paid * (0.12 + _seed(f"fpd{code}{m}") * 0.12)),
-                "overdue": round(base_paid * (0.05 + _seed(f"fov{code}{m}") * 0.08))
-            })
-            
-        # Cards
-        col_amt = income_expense_by_month[m]["income"]
-        finance_cards_by_month[m] = {
-            "collected": f"₹{col_amt / 100000:.1f}L",
-            "pending": f"₹{round(col_amt * 0.18 / 100000, 1)}L",
-            "scholarships": str(max(2, scholarships_count)),
-            "late": str(round(10 + month_seed * 20))
-        }
-
-    # Add database fees dynamically into active months
-    async for fee in db["fees_structure"].find(fee_filter):
-        status = str(fee.get("payment_status", "")).lower()
-        if status == "paid":
-            paid_date = fee.get("paid_date")
-            m_name = None
-            if paid_date:
-                try:
-                    if isinstance(paid_date, str):
-                        dt = datetime.strptime(paid_date.split("T")[0], "%Y-%m-%d")
-                    else:
-                        dt = paid_date
-                    m_name = MONTHS_ALL[dt.month - 1]
-                except Exception:
-                    pass
-            if not m_name:
-                m_name = active_months[0] if active_months else "Jan"
-                
-            if m_name in income_expense_by_month:
-                income_expense_by_month[m_name]["income"] += (fee.get("total_fee") or 0)
 
     # Scholarship splits
     scholarship_by_dept = []
@@ -748,54 +847,70 @@ async def _compute_full_analytics_data(
             "sports": max(0, round(st_count * 0.02))
         })
 
-    # Pending Students
+    # Pending Students list
     pending_students = []
-    async for fee in db["fees_structure"].find({"payment_status": {"$ne": "paid"}}):
-        student_id = fee.get("student_id")
-        student = await db["students"].find_one({"rollNumber": student_id}) or await db["students"].find_one({"student_id": student_id})
-        
-        due_amt = fee.get("total_fee") or 0
-        due_date = "Jun 30"
-        
+    async for inv in db["invoices"].find({"payment_status": {"$in": ["Pending", "unpaid", "Overdue"]}}):
         pending_students.append({
-            "name": fee.get("student_name") or (student.get("name") if student else "Unknown Student"),
-            "rollNo": student_id,
-            "dept": student.get("department") if student else fee.get("course", "CS"),
-            "amount": f"₹{due_amt:,}",
-            "due": due_date,
+            "name": inv.get("student_name", "Unknown Student"),
+            "rollNo": inv.get("student_id"),
+            "dept": inv.get("course", "CS"),
+            "amount": f"₹{inv.get('total', 0):,}",
+            "due": "Jun 30",
             "days": 5,
-            "sem": fee.get("semester", "Semester 4")
+            "sem": inv.get("semester", "Semester 1")
         })
 
-    # Fill pendingStudents to look premium/populated
+    async for s in db["students"].find({"feeStatus": {"$in": ["Pending", "Partial"]}}):
+        for fee in s.get("fees", []):
+            if fee.get("status") in ("Unpaid", "Partial", "unpaid"):
+                pending_students.append({
+                    "name": s.get("name"),
+                    "rollNo": s.get("rollNumber") or s.get("id"),
+                    "dept": s.get("department", "CS"),
+                    "amount": f"₹{fee.get('due') or fee.get('amount', 0):,}",
+                    "due": fee.get("date", "Jun 30"),
+                    "days": 4,
+                    "sem": f"Sem {s.get('semester', 1)}"
+                })
+
+    seen_rolls = set()
+    unique_pending = []
+    for p in pending_students:
+        if p["rollNo"] not in seen_rolls:
+            seen_rolls.add(p["rollNo"])
+            unique_pending.append(p)
+    pending_students = unique_pending[:10]
+
     if len(pending_students) < 5:
         fallback_names = ["Ravi Kumar", "Sneha Patel", "Arjun Sharma", "Priya Nair", "Vikram Singh"]
         for i, n in enumerate(fallback_names):
             if len(pending_students) >= 5:
                 break
             code = DEPTS[i % 5]
-            pending_students.append({
-                "name": n,
-                "rollNo": f"{code}21{40 + i:03d}",
-                "dept": code,
-                "amount": f"₹{38000 + round(_seed(f'amt{i}') * 10000):,}",
-                "due": f"Jun {15 + i * 3}",
-                "days": 4 - i,
-                "sem": f"Sem {3 + (i % 2)}"
-            })
+            roll = f"{code}21{40 + i:03d}"
+            if roll not in seen_rolls:
+                pending_students.append({
+                    "name": n,
+                    "rollNo": roll,
+                    "dept": code,
+                    "amount": f"₹{38000 + round(_seed(f'amt{i}') * 10000):,}",
+                    "due": f"Jun {15 + i * 3}",
+                    "days": 4 - i,
+                    "sem": f"Sem {3 + (i % 2)}"
+                })
 
     # Semester fee reports
     semester_fee_data = []
     for s in range(1, 5):
-        collected = total_paid_fees if s == 4 else int(300000 + _seed(f"semc{s}") * 200000)
-        target = collected + (total_pending_fees if s == 4 else int(_seed(f"semt{s}") * 50000))
+        collected = sum(real_income.values()) if s == 4 else int(300000 + _seed(f"semc{s}") * 200000)
+        target = collected + (sum(stats["pending"] for stats in monthly_status.values()) if s == 4 else int(_seed(f"semt{s}") * 50000))
         semester_fee_data.append({
             "sem": f"Sem {s}",
             "collected": collected,
             "target": target
         })
 
-    # 3. Faculty details (Attendance and Assignment Submission Rates)
+    # 3. Faculty & Academics details (Attendance and Assignment Submission Rates)
     faculty_att_by_month = {}
     faculty_sub_by_month = {}
     faculty_cards_by_month = {}
@@ -842,15 +957,17 @@ async def _compute_full_analytics_data(
 
     # Subject performance
     exam_results_by_subject = []
-    # Query student embedded subjects if available
     subject_grades = {}
     async for s in db["students"].find(student_match):
         for sub in s.get("subjects", []):
             name = sub.get("name", "General")
-            total = sub.get("total", 80)
+            total = sub.get("total") or sub.get("score") or 80
             if name not in subject_grades:
                 subject_grades[name] = []
-            subject_grades[name].append(total)
+            try:
+                subject_grades[name].append(float(total))
+            except ValueError:
+                pass
 
     for name, scores in subject_grades.items():
         avg_score = round(sum(scores) / len(scores))

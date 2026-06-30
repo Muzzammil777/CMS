@@ -47,6 +47,22 @@ export default function TopBar({
     const loadUserData = () => {
       const uData = getUserData()
       setUserData(uData)
+
+      if (session?.userId && role) {
+        fetch(buildApiUrl(`/settings/${role}/${encodeURIComponent(session.userId)}/profile`))
+          .then(res => res.json())
+          .then(profile => {
+            if (profile && profile.name) {
+              setUserData(prev => ({ ...prev, ...profile }))
+              const current = getUserData() || {}
+              if (current.name !== profile.name || current.email !== profile.email) {
+                updateUserData(profile)
+              }
+            }
+          })
+          .catch(err => console.error("Error fetching profile details in TopBar:", err))
+      }
+
       if (uData && uData.avatar) {
         setAvatarUrl(uData.avatar)
       } else if (session?.userId && role === 'student') {
@@ -144,24 +160,7 @@ export default function TopBar({
           </h2>
         </div>
       </div>
-      <div className="relative hidden md:flex items-center gap-2">
-        <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
-        <input
-          type="text"
-          placeholder="Global search..."
-          value={globalSearch}
-          onChange={(e) => setGlobalSearch(e.target.value)}
-          className="w-48 px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600-500 focus:border-transparent transition-all bg-slate-50 hover:bg-white"
-        />
-        {globalSearch && (
-          <button
-            onClick={() => setGlobalSearch('')}
-            className="text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[18px]">close</span>
-          </button>
-        )}
-      </div>
+
       <div className="flex items-center gap-2 md:gap-6">
         <div className="flex items-center gap-1 md:gap-2 relative">
           <NotificationBell 

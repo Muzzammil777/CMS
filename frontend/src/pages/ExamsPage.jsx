@@ -1082,11 +1082,11 @@ export default function ExamsPage({ noLayout = false }) {
 
             {/* Scrollable Results Grid */}
             <div className="overflow-x-auto overflow-y-hidden border-t border-slate-200">
-              <div className="min-w-[1400px] w-full">
+              <div style={{ minWidth: '1400px' }} className="w-full">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase border-b border-slate-200">
-                      <th className="px-6 py-4 sticky left-0 bg-slate-50 z-10 min-w-[280px]">Course Details</th>
+                      <th style={{ minWidth: '280px' }} className="px-6 py-4 sticky left-0 bg-slate-50 z-10">Course Details</th>
                       <th className="px-4 py-4 text-center">Credits</th>
                       <th className="px-6 py-4">Faculty</th>
                       <th className="px-6 py-4 text-center">Attendance</th>
@@ -1126,7 +1126,7 @@ export default function ExamsPage({ noLayout = false }) {
                         return (
                           <tr key={i} className="hover:bg-slate-50 transition-colors">
                             {/* Sticky Left: Course Details */}
-                            <td className="px-6 py-4 sticky left-0 bg-white hover:bg-slate-50 z-10 border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)] min-w-[280px]">
+                            <td style={{ minWidth: '280px' }} className="px-6 py-4 sticky left-0 bg-white hover:bg-slate-50 z-10 border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                               <p className="text-sm font-bold text-slate-800 uppercase tracking-wide leading-tight">{sub.name}</p>
                               <span className="inline-block bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded mt-1.5 uppercase">
                                 {sub.code} ({isPractical ? 'Practical' : 'Theory'})
@@ -1147,7 +1147,7 @@ export default function ExamsPage({ noLayout = false }) {
 
                             {/* Attendance Box */}
                             <td className="px-6 py-4 text-center">
-                              <div className="inline-block border border-emerald-300 bg-emerald-50 text-emerald-800 rounded-lg py-1 px-3 min-w-[90px]">
+                              <div style={{ minWidth: '90px' }} className="inline-block border border-emerald-300 bg-emerald-50 text-emerald-800 rounded-lg py-1 px-3">
                                 <p className="text-xs font-bold leading-none">{att.percentage}</p>
                                 <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">{att.present}/{att.total}</span>
                               </div>

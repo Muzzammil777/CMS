@@ -152,7 +152,7 @@ export default function AcademicSidebar({
 
   return (
     <aside 
-      style={{ background: 'linear-gradient(180deg, #1f4d1c 0%, #276221 100%)' }} 
+      style={{ background: '#00236f' }} 
       className={`border-r border-slate-700 flex flex-col fixed h-full overflow-y-auto z-50 transition-all duration-300 ${
         isSidebarVisible ? 'translate-x-0' : '-translate-x-full'
       } ${isCollapsed ? 'w-20' : 'w-64'}`}

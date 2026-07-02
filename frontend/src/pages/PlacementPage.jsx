@@ -134,7 +134,7 @@ export default function PlacementPage({ noLayout = false }) {
     }
   }
 
-  const inputClasses = "w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#276221]/10 focus:border-[#276221] outline-none transition-all text-sm text-slate-700 bg-white";
+  const inputClasses = "w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/10 focus:border-[#00236f] outline-none transition-all text-sm text-slate-700 bg-white";
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-0.5";
 
   function parsePackageLpa(value) {
@@ -187,7 +187,7 @@ export default function PlacementPage({ noLayout = false }) {
   const addButton = (
     <button
       onClick={() => setShowModal(true)}
-      className="flex items-center gap-2 px-4 py-2 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#276221]/90 transition-all shadow-sm active:scale-95 w-fit"
+      className="flex items-center gap-2 px-4 py-2 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#00236f]/90 transition-all shadow-sm active:scale-95 w-fit"
     >
       <span className="material-symbols-outlined text-lg">add</span>Add Placement
     </button>
@@ -264,7 +264,7 @@ export default function PlacementPage({ noLayout = false }) {
             placeholder={isAdmin ? "Search student or company..." : "Search company..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-2 w-full bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#276221]/30 focus:border-[#276221] transition-all duration-200"
+            className="pl-9 pr-4 py-2 w-full bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00236f]/30 focus:border-[#00236f] transition-all duration-200"
           />
         </div>
         <div className="relative" ref={filterRef}>
@@ -272,7 +272,7 @@ export default function PlacementPage({ noLayout = false }) {
             onClick={() => setFilterOpen(prev => !prev)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
               appliedFilterCount > 0
-                ? 'bg-[#276221] text-white border-[#276221] shadow-sm'
+                ? 'bg-[#00236f] text-white border-[#00236f] shadow-sm'
                 : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 shadow-sm'
             }`}
           >
@@ -288,7 +288,7 @@ export default function PlacementPage({ noLayout = false }) {
                     onClick={() => setActiveFilterTab(section)}
                     className={`${filterTabBaseClass} ${
                       activeFilterTab === section
-                        ? 'text-[#276221] border-b-2 border-[#276221] bg-[#276221]/5'
+                        ? 'text-[#00236f] border-b-2 border-[#00236f] bg-[#00236f]/5'
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
@@ -309,7 +309,7 @@ export default function PlacementPage({ noLayout = false }) {
                           key={company}
                           onClick={() => toggleFilterValue(company, setCompanyFilters)}
                           className={`${filterOptionBaseClass} ${
-                            active ? 'bg-[#276221]/10 text-[#276221] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                            active ? 'bg-[#00236f]/10 text-[#00236f] font-semibold' : 'text-slate-600 hover:bg-slate-50'
                           }`}
                         >
                           <span>{company}</span>
@@ -328,7 +328,7 @@ export default function PlacementPage({ noLayout = false }) {
                           key={option.id}
                           onClick={() => toggleFilterValue(option.id, setPackageFilters)}
                           className={`${filterOptionBaseClass} ${
-                            active ? 'bg-[#276221]/10 text-[#276221] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                            active ? 'bg-[#00236f]/10 text-[#00236f] font-semibold' : 'text-slate-600 hover:bg-slate-50'
                           }`}
                         >
                           <span>{option.label}</span>
@@ -347,7 +347,7 @@ export default function PlacementPage({ noLayout = false }) {
                           key={status}
                           onClick={() => toggleFilterValue(status, setStatusFilters)}
                           className={`${filterOptionBaseClass} ${
-                            active ? 'bg-[#276221]/10 text-[#276221] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                            active ? 'bg-[#00236f]/10 text-[#00236f] font-semibold' : 'text-slate-600 hover:bg-slate-50'
                           }`}
                         >
                           <span className="inline-flex items-center gap-2">
@@ -480,7 +480,7 @@ export default function PlacementPage({ noLayout = false }) {
             </button>
             <button
               onClick={handleSubmit}
-              className="px-6 py-2 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#276221]/90 transition-all shadow-sm active:scale-95"
+              className="px-6 py-2 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#00236f]/90 transition-all shadow-sm active:scale-95"
             >
               Add Entry
             </button>

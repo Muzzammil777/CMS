@@ -604,11 +604,11 @@ export default function AttendancePage({ noLayout = false }) {
         {isAdmin && (
           <div className="space-y-6">
             {/* Admin Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-px">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-px overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <button
                 type="button"
                 onClick={() => setAdminTab('students')}
-                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${
                   adminTab === 'students' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -617,7 +617,7 @@ export default function AttendancePage({ noLayout = false }) {
               <button
                 type="button"
                 onClick={() => setAdminTab('faculty')}
-                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${
                   adminTab === 'faculty' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -1150,11 +1150,11 @@ export default function AttendancePage({ noLayout = false }) {
         {isFaculty && (
           <div className="space-y-6">
             {/* Faculty Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-px">
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-px overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <button
                 type="button"
                 onClick={() => setFacultyTab('mark')}
-                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${
                   facultyTab === 'mark' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -1163,7 +1163,7 @@ export default function AttendancePage({ noLayout = false }) {
               <button
                 type="button"
                 onClick={() => setFacultyTab('history')}
-                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${
                   facultyTab === 'history' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -1172,7 +1172,7 @@ export default function AttendancePage({ noLayout = false }) {
               <button
                 type="button"
                 onClick={() => setFacultyTab('leaves')}
-                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${
                   facultyTab === 'leaves' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
               >

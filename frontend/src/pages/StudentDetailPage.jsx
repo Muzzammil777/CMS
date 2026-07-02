@@ -1024,10 +1024,66 @@ function FeesTab({ student }) {
   )
 }
 
-function DocumentsTab({ student }) {
-  const docs = student.documents || []
+function DocumentsTab({ student, refreshData }) {
+  const rawDocs = student.documents || [];
+  const [viewingDoc, setViewingDoc] = useState(null);
+
+  // Normalize documents: handle both array format (seed data) and object/dict format (from admissions)
+  const docs = Array.isArray(rawDocs)
+    ? rawDocs.map(d => {
+        const fileData = (d.data && d.data.data) || (typeof d.data === 'string' ? d.data : null) || d.file_url || d.fileUrl || null;
+        const fileName = (d.data && d.data.name) || d.name || 'Document';
+        const fileSize = (d.data && d.data.size) ? `${(d.data.size / 1024 / 1024).toFixed(2)} MB` : (d.size || 'N/A');
+        const uploadDateStr = d.uploadDate || d.uploadedAt || student.enrollDate || new Date().toISOString();
+        return { ...d, fileName, fileSize, fileData, uploadDateStr };
+      })
+    : Object.entries(rawDocs)
+        .map(([key, val]) => {
+          if (!val) return null;
+          // val can be a base64 string directly, or an object { name, size, data }
+          const fileData = (val && typeof val === 'object' && val.data) ? val.data : (typeof val === 'string' ? val : null);
+          const fileName = (val && val.name) || key
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/[-_]+/g, ' ')
+              .replace(/^\w/, (c) => c.toUpperCase())
+              .trim();
+          const fileSize = (val && val.size) ? `${(val.size / 1024 / 1024).toFixed(2)} MB` : 'N/A';
+          const uploadDateStr = student.enrollDate || new Date().toISOString();
+          const isPdf = typeof fileData === 'string' && fileData.includes('pdf');
+          return {
+            id: key,
+            name: fileName,
+            fileName,
+            fileSize,
+            fileData,
+            uploadDateStr,
+            type: isPdf ? 'pdf' : 'image',
+          };
+        })
+        .filter(Boolean);
+
+  const handleViewDoc = (doc) => {
+    if (!doc.fileData) return;
+    setViewingDoc(doc);
+  };
+
+  const isImage = (dataUri) => {
+    if (!dataUri || typeof dataUri !== 'string') return false;
+    return dataUri.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(dataUri);
+  };
+
+  const handleDownloadDoc = (doc) => {
+    if (!doc.fileData) return;
+    const link = document.createElement('a');
+    link.href = doc.fileData;
+    link.download = doc.fileName || doc.name || 'document';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* Left Column - Category Cards and Helper */}
       <div className="lg:col-span-4 space-y-8">
@@ -1035,12 +1091,12 @@ function DocumentsTab({ student }) {
            <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-6">File Categories</h3>
            <div className="grid grid-cols-2 gap-4">
               {[
-                { label: 'Academic', count: 12, color: 'bg-green-50 text-[#276221]', icon: 'school' },
-                { label: 'Identity', count: 4, color: 'bg-green-50 text-green-600', icon: 'badge' },
-                { label: 'Fees', count: 8, color: 'bg-purple-50 text-purple-600', icon: 'receipt_long' },
-                { label: 'Others', count: 2, color: 'bg-slate-50 text-slate-400', icon: 'folder_open' }
+                { label: 'Academic', count: docs.filter(d => d.type === 'pdf').length, color: 'bg-indigo-50 text-[#00236f]', icon: 'school' },
+                { label: 'Identity', count: docs.filter(d => d.type !== 'pdf').length, color: 'bg-indigo-50 text-indigo-600', icon: 'badge' },
+                { label: 'Fees', count: (student.fees || []).length, color: 'bg-purple-50 text-purple-600', icon: 'receipt_long' },
+                { label: 'Others', count: 0, color: 'bg-slate-50 text-slate-400', icon: 'folder_open' }
               ].map(cat => (
-                <div key={cat.label} className="p-4 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-white hover:border-[#276221]/20 transition-all cursor-pointer group">
+                <div key={cat.label} className="p-4 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-white hover:border-[#00236f]/20 transition-all cursor-pointer group">
                    <div className={`w-10 h-10 ${cat.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                       <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>
                    </div>
@@ -1052,12 +1108,12 @@ function DocumentsTab({ student }) {
         </div>
 
         {/* Upload Dropzone Preview */}
-        <div className="bg-[#276221]/5 border-2 border-dashed border-[#276221]/20 rounded-xl p-10 flex flex-col items-center text-center group cursor-pointer hover:bg-[#276221]/10 transition-all">
-           <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-[#276221] shadow-xl shadow-[#276221]/10 mb-6 group-hover:scale-110 transition-transform">
+        <div className="bg-[#00236f]/5 border-2 border-dashed border-[#00236f]/20 rounded-xl p-10 flex flex-col items-center text-center group cursor-pointer hover:bg-[#00236f]/10 transition-all">
+           <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-[#00236f] shadow-xl shadow-[#00236f]/10 mb-6 group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-[32px]">cloud_upload</span>
            </div>
-           <h4 className="text-sm font-semibold text-[#276221] uppercase tracking-wider mb-2">Upload New Media</h4>
-           <p className="text-[10px] font-medium text-[#276221]/60 uppercase tracking-tight">Drag & drop or browse files</p>
+           <h4 className="text-sm font-semibold text-[#00236f] uppercase tracking-wider mb-2">Upload New Media</h4>
+           <p className="text-[10px] font-medium text-[#00236f]/60 uppercase tracking-tight">Drag & drop or browse files</p>
         </div>
       </div>
 
@@ -1066,62 +1122,132 @@ function DocumentsTab({ student }) {
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Document Storage</h3>
-            <div className="flex bg-slate-50 border border-slate-200 p-1 rounded-lg">
-               <button className="px-3 py-1.5 bg-white text-[#276221] rounded-md text-[10px] font-semibold uppercase tracking-wider shadow-sm">Grid View</button>
-               <button className="px-3 py-1.5 text-slate-400 rounded-md text-[10px] font-semibold uppercase tracking-wider">List View</button>
-            </div>
+            <span className="text-xs font-medium text-slate-400">{docs.length} file{docs.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="overflow-x-auto">
              <table className="w-full text-left">
-               <thead>
-                 <tr className="bg-slate-50 text-slate-500 text-[10px] font-semibold uppercase tracking-wider border-b border-slate-200">
-                   <th className="px-8 py-4">Document Details</th>
-                   <th className="px-4 py-4">Status</th>
-                   <th className="px-4 py-4">Last Updated</th>
-                   <th className="px-8 py-4 text-center">Actions</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-slate-100">
-                 {docs.map(doc => (
-                   <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors group">
-                     <td className="px-8 py-5">
-                        <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-[#276221]/10 group-hover:text-[#276221] transition-all">
-                              <span className="material-symbols-outlined text-[20px]">{doc.type === 'pdf' ? 'picture_as_pdf' : 'description'}</span>
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 text-[10px] font-semibold uppercase tracking-wider border-b border-slate-200">
+                    <th className="px-8 py-4">Document Details</th>
+                    <th className="px-4 py-4">Status</th>
+                    <th className="px-4 py-4">Last Updated</th>
+                    <th className="px-8 py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {docs.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="text-center py-16">
+                        <span className="material-symbols-outlined text-5xl text-slate-200 mb-3 block">folder_open</span>
+                        <p className="text-sm font-semibold text-slate-400">No documents uploaded yet</p>
+                        <p className="text-xs text-slate-300 mt-1">Upload documents from the panel on the left</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    docs.map((doc, idx) => (
+                      <tr key={doc.id || idx} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-8 py-5">
+                           <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-[#00236f]/10 group-hover:text-[#00236f] transition-all">
+                                 <span className="material-symbols-outlined text-[20px]">{doc.type === 'pdf' ? 'picture_as_pdf' : 'image'}</span>
+                              </div>
+                              <div>
+                                 <p className="text-sm font-semibold text-slate-800">{doc.name || doc.fileName}</p>
+                                 <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{doc.fileSize || doc.size || 'N/A'}</p>
+                              </div>
                            </div>
-                           <div>
-                              <p className="text-sm font-semibold text-slate-800">{doc.name}</p>
-                              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{doc.size}</p>
+                        </td>
+                        <td className="px-4 py-5">
+                           <div className="flex items-center gap-2">
+                              <div className={`w-1.5 h-1.5 rounded-full ${doc.fileData ? 'bg-green-500' : 'bg-amber-400'}`} />
+                              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{doc.fileData ? 'Uploaded' : 'Pending'}</span>
                            </div>
-                        </div>
-                     </td>
-                     <td className="px-4 py-5">
-                        <div className="flex items-center gap-2">
-                           <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                           <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Verified</span>
-                        </div>
-                     </td>
-                     <td className="px-4 py-5 text-sm font-medium text-slate-500">
-                        {new Date(doc.uploadDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                     </td>
-                     <td className="px-8 py-5 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                           <button className="p-2 text-slate-400 hover:text-[#276221] hover:bg-green-50 rounded-lg transition-all">
-                              <span className="material-symbols-outlined text-[18px]">download</span>
-                           </button>
-                           <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
-                           </button>
-                        </div>
-                     </td>
-                   </tr>
-                 ))}
-               </tbody>
+                        </td>
+                        <td className="px-4 py-5 text-sm font-medium text-slate-500">
+                           {new Date(doc.uploadDateStr || doc.uploadDate || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-8 py-5 text-center">
+                           <div className="flex items-center justify-center gap-1">
+                              {doc.fileData && (
+                                <button onClick={() => handleViewDoc(doc)} className="p-2 text-slate-400 hover:text-[#00236f] hover:bg-blue-50 rounded-lg transition-all" title="View">
+                                   <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                </button>
+                              )}
+                              {doc.fileData && (
+                                <button onClick={() => handleDownloadDoc(doc)} className="p-2 text-slate-400 hover:text-[#00236f] hover:bg-blue-50 rounded-lg transition-all" title="Download">
+                                   <span className="material-symbols-outlined text-[18px]">download</span>
+                                </button>
+                              )}
+                              {!doc.fileData && (
+                                <span className="text-[10px] text-slate-300 italic">No file data</span>
+                              )}
+                           </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
              </table>
           </div>
         </div>
       </div>
     </div>
+
+      {/* ─── In-App Document Viewer Modal ─── */}
+      {viewingDoc && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-8" onClick={() => setViewingDoc(null)}>
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-[#00236f] flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">
+                    {isImage(viewingDoc.fileData) ? 'image' : 'picture_as_pdf'}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-slate-800 truncate">{viewingDoc.name || viewingDoc.fileName}</h3>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">{viewingDoc.fileSize || viewingDoc.size || ''}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => handleDownloadDoc(viewingDoc)}
+                  className="p-2 text-slate-400 hover:text-[#00236f] hover:bg-blue-50 rounded-lg transition-all"
+                  title="Download"
+                >
+                  <span className="material-symbols-outlined text-[20px]">download</span>
+                </button>
+                <button
+                  onClick={() => setViewingDoc(null)}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
+                  title="Close"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center min-h-[300px]">
+              {isImage(viewingDoc.fileData) ? (
+                <img
+                  src={viewingDoc.fileData}
+                  alt={viewingDoc.name || 'Document'}
+                  className="max-w-full max-h-[75vh] object-contain p-4"
+                />
+              ) : (
+                <iframe
+                  src={viewingDoc.fileData}
+                  title={viewingDoc.name || 'Document Viewer'}
+                  className="w-full h-[75vh] border-0"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -1372,7 +1498,7 @@ export default function StudentDetailPage() {
         {activeTab === 'overview' && <OverviewTab student={student} />}
         {activeTab === 'academics' && <AcademicsTab student={student} onRefresh={refreshData} />}
         {activeTab === 'fees' && <FeesTab student={student} />}
-        {activeTab === 'documents' && <DocumentsTab student={student} />}
+        {activeTab === 'documents' && <DocumentsTab student={student} refreshData={refreshData} />}
       </div>
     </Layout>
   )

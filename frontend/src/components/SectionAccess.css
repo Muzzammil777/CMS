@@ -64,7 +64,7 @@
 
 .section-access-item:hover {
   background-color: #f1f5f9;
-  color: #276221;
+  color: #00236f;
   border-color: #cbd5e1;
 }
 
@@ -82,7 +82,7 @@
 }
 
 .section-access-item:hover .section-access-icon {
-  color: #276221;
+  color: #00236f;
 }
 
 .section-access-label {

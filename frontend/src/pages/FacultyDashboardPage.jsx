@@ -122,7 +122,7 @@ function AttendanceModal({ isOpen, onClose, onSubmit }) {
             onClick={handleSubmit}
             style={{
               padding: '8px 16px',
-              background: '#276221',
+              background: '#00236f',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -131,8 +131,8 @@ function AttendanceModal({ isOpen, onClose, onSubmit }) {
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#1e4618'}
-            onMouseLeave={(e) => e.target.style.background = '#276221'}
+            onMouseEnter={(e) => e.target.style.background = '#001a54'}
+            onMouseLeave={(e) => e.target.style.background = '#00236f'}
           >
             Submit
           </button>
@@ -271,7 +271,7 @@ function PublishMarksModal({ isOpen, onClose, onSubmit }) {
             onClick={handleSubmit}
             style={{
               padding: '8px 16px',
-              background: '#276221',
+              background: '#00236f',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -280,8 +280,8 @@ function PublishMarksModal({ isOpen, onClose, onSubmit }) {
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#1e4618'}
-            onMouseLeave={(e) => e.target.style.background = '#276221'}
+            onMouseEnter={(e) => e.target.style.background = '#001a54'}
+            onMouseLeave={(e) => e.target.style.background = '#00236f'}
           >
             Publish
           </button>
@@ -410,12 +410,12 @@ export default function FacultyDashboardPage() {
 
         {/* ── Hero Profile Card ───────────────────────────────────── */}
         <div className="hero-profile-card" style={{
-          background: 'linear-gradient(135deg, #14532d 0%, #166534 45%, #276221 80%, #15803d 100%)',
+          background: '#00236f',
           borderRadius: '20px',
           padding: '32px',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(39,98,33,0.3)',
+          boxShadow: '0 20px 60px rgba(0, 35, 111,0.3)',
         }}>
           {/* Decorative circles */}
           <div style={{ position:'absolute', top:'-30px', right:'-30px', width:'160px', height:'160px', background:'rgba(255,255,255,0.05)', borderRadius:'50%' }}/>
@@ -434,8 +434,8 @@ export default function FacultyDashboardPage() {
               }}>
                 {dataLoading ? '…' : initials}
               </div>
-              <div>
-                <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'6px', flexWrap:'wrap' }}>
+              <div className="hero-info-container">
+                <div className="hero-name-status" style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'6px', flexWrap:'wrap' }}>
                   <h2 style={{ fontSize:'22px', fontWeight:'800', color:'white', margin:0 }}>
                     {dataLoading ? 'Loading…' : facultyName}
                   </h2>
@@ -494,7 +494,7 @@ export default function FacultyDashboardPage() {
               icon:'menu_book', label:'Assigned Courses',
               value: dataLoading ? '…' : rawCourses.length || '0',
               sub: dataLoading ? '' : rawCourses.map(c=>c.courseCode||c.course_code||c.courseName||c).join(', ') || 'No courses assigned',
-              bg:'linear-gradient(135deg,#f0fdf4,#dcfce7)', border:'#bbf7d0', iconBg:'#276221', valColor:'#15803d'
+              bg:'linear-gradient(135deg,#f0fdf4,#dcfce7)', border:'#bbf7d0', iconBg:'#00236f', valColor:'#15803d'
             },
             {
               icon:'group', label:'Total Students',
@@ -549,12 +549,12 @@ export default function FacultyDashboardPage() {
             <div style={{ background:'white', borderRadius:'16px', padding:'24px', boxShadow:'0 4px 20px rgba(0,0,0,0.06)', border:'1px solid #f1f5f9' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                  <div style={{ width:'36px', height:'36px', background:'#276221', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <div style={{ width:'36px', height:'36px', background:'#00236f', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'white' }}>book</span>
                   </div>
                   <h4 style={{ fontSize:'15px', fontWeight:'700', color:'#1f2937', margin:0 }}>Assigned Courses</h4>
                 </div>
-                <span style={{ fontSize:'11px', fontWeight:'700', background:'#f0fdf4', color:'#276221', border:'1px solid #bbf7d0', borderRadius:'100px', padding:'3px 10px' }}>
+                <span style={{ fontSize:'11px', fontWeight:'700', background:'#f0fdf4', color:'#00236f', border:'1px solid #bbf7d0', borderRadius:'100px', padding:'3px 10px' }}>
                   {rawCourses.length} Course{rawCourses.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -575,7 +575,7 @@ export default function FacultyDashboardPage() {
                     const name = course.courseName || course.course_name || course.name || (typeof course === 'string' ? course : 'Course');
                     const count = course.studentCount || course.student_count || 0;
                     const colors = [
-                      { bg:'#f0fdf4', border:'#bbf7d0', code:'#276221' },
+                      { bg:'#f0fdf4', border:'#bbf7d0', code:'#00236f' },
                       { bg:'#fdf4ff', border:'#e9d5ff', code:'#9333ea' },
                       { bg:'#eff6ff', border:'#bfdbfe', code:'#2563eb' },
                       { bg:'#fff7ed', border:'#fed7aa', code:'#ea580c' },
@@ -628,13 +628,13 @@ export default function FacultyDashboardPage() {
                     return (
                       <div key={idx} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 16px', background:'#f9fafb', borderRadius:'10px', border:'1px solid #f1f5f9' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-                          <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#276221', flexShrink:0 }}/>
+                          <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#00236f', flexShrink:0 }}/>
                           <div>
                             <div style={{ fontSize:'13px', fontWeight:'700', color:'#1f2937' }}>{label}</div>
                             <div style={{ fontSize:'11px', color:'#6b7280', marginTop:'2px' }}>Section {String.fromCharCode(65+idx)}</div>
                           </div>
                         </div>
-                        <span style={{ fontSize:'11px', fontWeight:'600', color:'#276221', background:'#f0fdf4', border:'1px solid #bbf7d0', padding:'3px 10px', borderRadius:'100px', whiteSpace:'nowrap' }}>
+                        <span style={{ fontSize:'11px', fontWeight:'600', color:'#00236f', background:'#f0fdf4', border:'1px solid #bbf7d0', padding:'3px 10px', borderRadius:'100px', whiteSpace:'nowrap' }}>
                           {times[idx % times.length]}
                         </span>
                       </div>
@@ -708,12 +708,12 @@ export default function FacultyDashboardPage() {
                 ].map(item => (
                   <div key={item.label} style={{ display:'flex', alignItems:'center', gap:'12px' }}>
                     <div style={{ width:'32px', height:'32px', background:'#f0fdf4', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      <span className="material-symbols-outlined" style={{ fontSize:'16px', color:'#276221' }}>{item.icon}</span>
+                      <span className="material-symbols-outlined" style={{ fontSize:'16px', color:'#00236f' }}>{item.icon}</span>
                     </div>
                     <div style={{ minWidth:0 }}>
                       <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:'600', marginBottom:'1px' }}>{item.label}</div>
                       {item.href && item.value !== '—'
-                        ? <a href={item.href} style={{ fontSize:'13px', color:'#276221', fontWeight:'500', textDecoration:'none', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.value}</a>
+                        ? <a href={item.href} style={{ fontSize:'13px', color:'#00236f', fontWeight:'500', textDecoration:'none', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.value}</a>
                         : <div style={{ fontSize:'13px', color: item.value !== '—' ? '#1f2937' : '#d1d5db', fontWeight:'500' }}>{item.value}</div>
                       }
                     </div>
@@ -791,6 +791,17 @@ export default function FacultyDashboardPage() {
           }
           .hero-profile-left h2 {
             justify-content: center !important;
+          }
+          .hero-info-container {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+          }
+          .hero-name-status {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin-bottom: 8px !important;
           }
           .hero-profile-actions {
             width: 100% !important;

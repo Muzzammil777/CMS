@@ -378,7 +378,7 @@ export default function AdminInvoicePage() {
               <div className="bg-green-50 border border-green-300 rounded p-4 mb-6"><h4 className="font-bold text-green-900 mb-3">Payment Confirmation</h4><div className="space-y-2 text-sm"><p><span className="text-green-700">Payment Date:</span><span className="font-semibold">{selectedInvoice.paidDate || 'N/A'}</span></p><p><span className="text-green-700">Method:</span><span className="font-semibold">{selectedInvoice.paymentMethod || 'N/A'}</span></p><p><span className="text-green-700">Transaction ID:</span><span className="font-semibold">{selectedInvoice.transactionId || 'N/A'}</span></p></div></div>)}
 
             {/* Action Buttons */}
-            <div className="flex gap-3"><button
+            <div className="grid grid-cols-2 md:flex gap-3"><button
                 onClick={() =>handleDownloadPDF(selectedInvoice)}
                 className="flex-1 bg-green-700 text-white py-2 rounded-lg hover:bg-green-800 transition flex items-center justify-center gap-2"
               ><span className="material-symbols-outlined">download</span>Download PDF

@@ -245,7 +245,7 @@ export default function AttendanceModal({ exam, onClose, onSave }) {
           <button
             onClick={handleSave}
             disabled={saving || loading || students.length === 0}
-            className="px-4 py-2 bg-[#276221] text-white rounded-lg hover:bg-[#1e4618] transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-[#00236f] text-white rounded-lg hover:bg-[#001a54] transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Attendance'}
           </button>

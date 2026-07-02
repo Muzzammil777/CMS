@@ -55,7 +55,7 @@ export default function StudentTable({ students, onEdit, onDelete, hideActions }
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0">
                       <img
-                        src={s.avatar || `https://ui-avatars.com/api/?name=${s.name}&background=1162d4&color=fff`}
+                        src={s.avatar || `https://ui-avatars.com/api/?name=${s.name}&background=00236f&color=fff`}
                         alt={s.name}
                         className="w-full h-full object-cover"
                       />
@@ -86,7 +86,7 @@ export default function StudentTable({ students, onEdit, onDelete, hideActions }
                     <div className="flex items-center justify-end gap-2">
                       <button 
                         onClick={() => onEdit && onEdit(s)}
-                        className="p-1.5 text-slate-400 hover:text-[#276221] hover:bg-[#276221]/10 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-[#00236f] hover:bg-[#00236f]/10 rounded-lg transition-colors"
                         title="Edit Student"
                       >
                         <span className="material-symbols-outlined text-lg">edit</span>

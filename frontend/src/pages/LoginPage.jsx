@@ -264,9 +264,9 @@ export default function LoginPage() {
                       alignItems: 'center',
                       gap: '6px',
                       padding: '8px 12px',
-                      background: role === demoRole ? '#276221' : '#f8fafc',
+                      background: role === demoRole ? '#00236f' : '#f8fafc',
                       color: role === demoRole ? '#ffffff' : '#475569',
-                      border: role === demoRole ? '1.5px solid #276221' : '1.5px solid #e2e8f0',
+                      border: role === demoRole ? '1.5px solid #00236f' : '1.5px solid #e2e8f0',
                       borderRadius: '8px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -285,7 +285,7 @@ export default function LoginPage() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#276221',
+                  color: '#00236f',
                   fontSize: '13px',
                   fontWeight: '600',
                   textDecoration: 'underline',
@@ -333,7 +333,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={trackLoading}
-                    className="w-full py-2 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#1e4618] transition disabled:opacity-50"
+                    className="w-full py-2 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#001a54] transition disabled:opacity-50"
                   >
                     {trackLoading ? 'Searching...' : 'Track Application'}
                   </button>

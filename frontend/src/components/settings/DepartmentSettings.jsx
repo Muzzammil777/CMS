@@ -76,7 +76,7 @@ export default function DepartmentSettings() {
     setToast({ type: 'success', message: 'Department settings reset to last saved state.' });
   }
 
-  const inputClasses = "w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#276221]/10 focus:border-[#276221] outline-none transition-all text-sm text-slate-700";
+  const inputClasses = "w-full px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/10 focus:border-[#00236f] outline-none transition-all text-sm text-slate-700";
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-0.5";
 
   return (
@@ -150,7 +150,7 @@ export default function DepartmentSettings() {
             </button>
             <button
               onClick={saveDepartmentLocally}
-              className="px-6 py-2 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#276221]/90 transition-all shadow-sm active:scale-95"
+              className="px-6 py-2 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#00236f]/90 transition-all shadow-sm active:scale-95"
             >
               Save Department
             </button>
@@ -183,7 +183,7 @@ export default function DepartmentSettings() {
           </div>
 
           <div className="space-y-1.5">
-            <label className={labelClasses}>Head Of Department</label>
+            <label className={labelClasses}>HOD</label>
             <input
               type="text"
               value={activeDepartment.hod}

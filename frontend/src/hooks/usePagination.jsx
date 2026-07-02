@@ -57,7 +57,7 @@ export function usePagination(items = [], defaultPageSize = 10) {
           <select
             value={pageSize}
             onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-            className="ml-2 border border-slate-200 rounded-lg px-2 py-1 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#276221]/20"
+            className="ml-2 border border-slate-200 rounded-lg px-2 py-1 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#00236f]/20"
           >
             {[5, 10, 20, 50].map(n => (
               <option key={n} value={n}>{n} / page</option>
@@ -85,7 +85,7 @@ export function usePagination(items = [], defaultPageSize = 10) {
                   onClick={() => goTo(p)}
                   className={`min-w-[30px] h-[30px] rounded-lg text-xs font-semibold transition-colors ${
                     p === safePage
-                      ? 'bg-[#276221] text-white shadow-sm'
+                      ? 'bg-[#00236f] text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >

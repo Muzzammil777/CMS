@@ -153,7 +153,7 @@ export default function NewsletterWidget({ role, userId }) {
           <div style={{
             width: '36px',
             height: '36px',
-            background: 'linear-gradient(135deg, #276221 0%, #166534 100%)',
+            background: 'linear-gradient(135deg, #00236f 0%, #00236f 100%)',
             borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
@@ -170,7 +170,7 @@ export default function NewsletterWidget({ role, userId }) {
             onClick={() => setIsPubModalOpen(true)}
             style={{
               padding: '6px 12px',
-              background: '#276221',
+              background: '#00236f',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -182,8 +182,8 @@ export default function NewsletterWidget({ role, userId }) {
               gap: '4px',
               transition: 'background 0.2s'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = '#1e4618'}
-            onMouseLeave={e => e.currentTarget.style.background = '#276221'}
+            onMouseEnter={e => e.currentTarget.style.background = '#001a54'}
+            onMouseLeave={e => e.currentTarget.style.background = '#00236f'}
           >
             <Plus size={12} />
             Publish
@@ -253,7 +253,7 @@ export default function NewsletterWidget({ role, userId }) {
                   <User size={10} />
                   {latestNews.author}
                 </span>
-                <span style={{ color: '#276221', fontWeight: '700' }}>Read Article &rarr;</span>
+                <span style={{ color: '#00236f', fontWeight: '700' }}>Read Article &rarr;</span>
               </div>
             </div>
           )}
@@ -418,7 +418,7 @@ export default function NewsletterWidget({ role, userId }) {
                 onClick={() => setActiveNews(null)}
                 style={{
                   padding: '8px 20px',
-                  background: '#276221',
+                  background: '#00236f',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -617,9 +617,9 @@ export default function NewsletterWidget({ role, userId }) {
                       borderRadius: '20px',
                       fontSize: '11px',
                       fontWeight: '700',
-                      border: pubTargets.ALL ? '1px solid #276221' : '1px solid #cbd5e1',
+                      border: pubTargets.ALL ? '1px solid #00236f' : '1px solid #cbd5e1',
                       background: pubTargets.ALL ? '#f0fdf4' : 'white',
-                      color: pubTargets.ALL ? '#276221' : '#64748b',
+                      color: pubTargets.ALL ? '#00236f' : '#64748b',
                       cursor: 'pointer'
                     }}
                   >
@@ -643,9 +643,9 @@ export default function NewsletterWidget({ role, userId }) {
                         borderRadius: '20px',
                         fontSize: '11px',
                         fontWeight: '700',
-                        border: pubTargets[r] ? '1px solid #276221' : '1px solid #cbd5e1',
+                        border: pubTargets[r] ? '1px solid #00236f' : '1px solid #cbd5e1',
                         background: pubTargets[r] ? '#f0fdf4' : 'white',
-                        color: pubTargets[r] ? '#276221' : '#64748b',
+                        color: pubTargets[r] ? '#00236f' : '#64748b',
                         cursor: 'pointer',
                         textTransform: 'capitalize'
                       }}
@@ -687,7 +687,7 @@ export default function NewsletterWidget({ role, userId }) {
                 disabled={publishing}
                 style={{
                   padding: '8px 20px',
-                  background: '#276221',
+                  background: '#00236f',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',

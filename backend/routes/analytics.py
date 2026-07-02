@@ -541,10 +541,39 @@ async def _compute_full_analytics_data(
             pass
         return None
 
+    # Resolve department aliases dynamically matching code & name
+    aliases = []
+    if department:
+        aliases = [department]
+        if department in DEPT_MAP:
+            aliases.extend(DEPT_MAP[department])
+        else:
+            for k, v in DEPT_MAP.items():
+                if department in v:
+                    aliases.append(k)
+                    aliases.extend(v)
+                    break
+            if db is not None:
+                try:
+                    d = await db["system_departments"].find_one({
+                        "$or": [
+                            {"name": {"$regex": f"^{department}$", "$options": "i"}},
+                            {"code": {"$regex": f"^{department}$", "$options": "i"}}
+                        ]
+                    })
+                    if d:
+                        name = d.get("name")
+                        code = d.get("code")
+                        if name and name not in aliases:
+                            aliases.append(name)
+                        if code and code not in aliases:
+                            aliases.append(code)
+                except Exception:
+                    pass
+
     # Build filters
     student_match = {}
     if department:
-        aliases = DEPT_MAP.get(department, [department])
         student_match["$or"] = [
             {"department": {"$in": aliases}},
             {"department_id": {"$in": aliases}},
@@ -558,7 +587,6 @@ async def _compute_full_analytics_data(
     # Faculty filter
     faculty_match = {}
     if department:
-        aliases = DEPT_MAP.get(department, [department])
         faculty_match["$or"] = [
             {"department": {"$in": aliases}},
             {"department_id": {"$in": aliases}},
@@ -672,8 +700,7 @@ async def _compute_full_analytics_data(
     # Check invoices
     invoice_filter = {}
     if department:
-        aliases = DEPT_MAP.get(department, [department])
-        invoice_filter["course"] = {"$in": aliases + [department]}
+        invoice_filter["course"] = {"$in": aliases}
     if semester:
         invoice_filter["semester"] = {"$regex": f"Semester {semester}", "$options": "i"}
 

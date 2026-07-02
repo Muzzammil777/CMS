@@ -10,22 +10,22 @@
 
 :root {
   /* Primary Green Theme */
-  --brand-primary: #276221;
-  --brand-primary-dark: #1e4618;
-  --brand-primary-light: #3d8b30;
-  --brand-primary-lighter: #e6f2e9;
-  --brand-primary-softer: #f0f5f1;
+  --brand-primary: #00236f;
+  --brand-primary-dark: #001a54;
+  --brand-primary-light: #1a3c85;
+  --brand-primary-lighter: #e6ecf7;
+  --brand-primary-softer: #f0f4fc;
   
   /* Legacy variable names for compatibility */
-  --brand-blue: #276221;
-  --brand-blue-dark: #1e4618;
-  --brand-navy: #276221;
-  --brand-cyan: #3d8b30;
-  --brand-cyan-soft: #e6f2e9;
+  --brand-blue: #00236f;
+  --brand-blue-dark: #001a54;
+  --brand-navy: #00236f;
+  --brand-cyan: #1a3c85;
+  --brand-cyan-soft: #e6ecf7;
   
   /* Modern gradient definitions */
-  --brand-gradient: linear-gradient(90deg, #276221, #3d8b30);
-  --brand-gradient-strong: linear-gradient(135deg, #1e4618, #276221);
+  --brand-gradient: linear-gradient(90deg, #00236f, #1a3c85);
+  --brand-gradient-strong: linear-gradient(135deg, #001a54, #00236f);
 }
 
 html,
@@ -66,7 +66,7 @@ a {
 
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #e6f2e9 0%, #f0f5f1 55%, #e8f1eb 100%);
+  background: linear-gradient(135deg, #e6ecf7 0%, #f0f4fc 55%, #e8f1eb 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,8 +81,8 @@ a {
   border-radius: 28px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(39, 98, 33, 0.3);
-  box-shadow: 0 24px 70px rgba(39, 98, 33, 0.12);
+  border: 1px solid rgba(0, 35, 111, 0.3);
+  box-shadow: 0 24px 70px rgba(0, 35, 111, 0.12);
 }
 
 .login-showcase {
@@ -93,7 +93,7 @@ a {
   justify-content: space-between;
   color: #ffffff;
   background:
-    linear-gradient(145deg, rgba(30, 70, 24, 0.88), rgba(39, 98, 33, 0.76)),
+    linear-gradient(145deg, rgba(0, 26, 84, 0.88), rgba(0, 35, 111, 0.76)),
     url('https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1600&q=80');
   background-size: cover;
   background-position: center;
@@ -104,8 +104,8 @@ a {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 20%, rgba(61, 139, 48, 0.32), transparent 30%),
-    radial-gradient(circle at 80% 75%, rgba(39, 98, 33, 0.22), transparent 26%);
+    radial-gradient(circle at 20% 20%, rgba(26, 60, 133, 0.32), transparent 30%),
+    radial-gradient(circle at 80% 75%, rgba(0, 35, 111, 0.22), transparent 26%);
   pointer-events: none;
 }
 
@@ -181,7 +181,7 @@ a {
 .showcase-card {
   padding: 22px;
   border-radius: 20px;
-  background: linear-gradient(135deg, rgba(39, 98, 33, 0.36), rgba(61, 139, 48, 0.26));
+  background: linear-gradient(135deg, rgba(0, 35, 111, 0.36), rgba(26, 60, 133, 0.26));
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
@@ -235,7 +235,7 @@ a {
 
 .login-brand-split .brand-icon {
   margin-bottom: 0;
-  box-shadow: 0 12px 24px rgba(39, 98, 33, 0.24);
+  box-shadow: 0 12px 24px rgba(0, 35, 111, 0.24);
 }
 
 .login-brand h1 {
@@ -276,7 +276,7 @@ a {
 .role-switch-btn.active {
   color: #ffffff;
   background: var(--brand-gradient);
-  box-shadow: 0 8px 16px rgba(39, 98, 33, 0.28);
+  box-shadow: 0 8px 16px rgba(0, 35, 111, 0.28);
 }
 
 .role-select-hidden {
@@ -333,7 +333,7 @@ a {
 .form-group input:focus,
 .form-group select:focus {
   border-color: var(--brand-blue);
-  box-shadow: 0 0 0 3px rgba(39, 98, 33, 0.08);
+  box-shadow: 0 0 0 3px rgba(0, 35, 111, 0.08);
   background: #fff;
 }
 
@@ -395,7 +395,7 @@ a {
 
 .btn-login:hover {
   background: var(--brand-gradient-strong);
-  box-shadow: 0 4px 12px rgba(39, 98, 33, 0.32);
+  box-shadow: 0 4px 12px rgba(0, 35, 111, 0.32);
 }
 
 .btn-login:active {
@@ -664,7 +664,7 @@ a {
 .sidebar-nav ul li a.active {
   background: var(--brand-gradient);
   color: #ffffff;
-  box-shadow: 0 8px 18px rgba(39, 98, 33, 0.2);
+  box-shadow: 0 8px 18px rgba(0, 35, 111, 0.2);
 }
 
 .sidebar-footer {
@@ -759,7 +759,7 @@ a {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #276221, #3d8b30);
+  background: linear-gradient(135deg, #00236f, #1a3c85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -918,7 +918,7 @@ a {
 }
 
 .stat-card-blue .stat-value {
-  color: #276221;
+  color: #00236f;
 }
 
 .stat-card-green .stat-value {
@@ -926,7 +926,7 @@ a {
 }
 
 .stat-card-purple .stat-value {
-  color: #6d28d9;
+  color: #00236f;
 }
 
 .stat-card-orange .stat-value {
@@ -954,7 +954,7 @@ a {
 }
 
 .stat-card-purple .stat-sub {
-  color: #8b5cf6;
+  color: #1a3c85;
 }
 
 .stat-card-orange .stat-sub {

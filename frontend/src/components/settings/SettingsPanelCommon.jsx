@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 /** Standard input class matching app design */
 export const inputCls =
-  'w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#276221]/20 focus:border-[#276221] outline-none transition-all text-sm text-slate-700 bg-white';
+  'w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/20 focus:border-[#00236f] outline-none transition-all text-sm text-slate-700 bg-white';
 
 /** Standard label class */
 export const labelCls = 'block text-sm font-semibold text-slate-700 mb-1.5';
@@ -37,7 +37,7 @@ export function SettingsActions({ onSave, onReset, saving = false, disableSave =
         type="button"
         onClick={onSave}
         disabled={saving || disableSave}
-        className="px-6 py-2 bg-[#276221] hover:bg-[#1e4618] text-white text-sm font-semibold rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="px-6 py-2 bg-[#00236f] hover:bg-[#001a54] text-white text-sm font-semibold rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {saving ? 'Saving…' : 'Save Changes'}
       </button>
@@ -76,7 +76,7 @@ export function SettingsToast({ message, onClear }) {
 export function SettingsLoader({ label = 'Loading…' }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex items-center justify-center gap-3 text-slate-400 text-sm">
-      <span className="inline-block w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#276221] animate-spin" />
+      <span className="inline-block w-4 h-4 rounded-full border-2 border-slate-200 border-t-[#00236f] animate-spin" />
       {label}
     </div>
   );
@@ -87,7 +87,7 @@ export function ToggleRow({ label, description, checked, onChange }) {
   return (
     <label className="flex items-center justify-between gap-4 py-3 border-b border-slate-50 last:border-0 cursor-pointer group">
       <div>
-        <p className="text-sm font-semibold text-slate-800 group-hover:text-[#276221] transition-colors">{label}</p>
+        <p className="text-sm font-semibold text-slate-800 group-hover:text-[#00236f] transition-colors">{label}</p>
         {description && <p className="text-xs text-slate-500 mt-0.5">{description}</p>}
       </div>
       <div className="relative flex-shrink-0">
@@ -97,7 +97,7 @@ export function ToggleRow({ label, description, checked, onChange }) {
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
         />
-        <div className="w-10 h-5 bg-slate-200 peer-checked:bg-[#276221] rounded-full transition-colors duration-200" />
+        <div className="w-10 h-5 bg-slate-200 peer-checked:bg-[#00236f] rounded-full transition-colors duration-200" />
         <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-5" />
       </div>
     </label>

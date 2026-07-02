@@ -206,7 +206,7 @@ export default function StudentProfilePage() {
             </button>
             <button
               onClick={() => navigate('/students')}
-              className="px-5 py-2.5 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#1e4618] transition-all"
+              className="px-5 py-2.5 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#001a54] transition-all"
             >
               Back to Students
             </button>
@@ -231,14 +231,14 @@ export default function StudentProfilePage() {
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate('/students')}
-            className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#276221] hover:border-[#276221] transition-all group uppercase tracking-wider"
+            className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#00236f] hover:border-[#00236f] transition-all group uppercase tracking-wider"
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
             <span>Back to Students</span>
           </button>
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="px-5 py-2.5 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#276221]/90 transition-all"
+            className="px-5 py-2.5 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#00236f]/90 transition-all"
           >
             Edit Profile
           </button>
@@ -251,17 +251,17 @@ export default function StudentProfilePage() {
           <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-10">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
               <div 
-                className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#276221] to-[#60a5fa] p-1 shadow-xl cursor-pointer relative group overflow-hidden"
+                className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#00236f] to-[#60a5fa] p-1 shadow-xl cursor-pointer relative group overflow-hidden"
               >
                 <img
-                  src={student.avatar || `https://ui-avatars.com/api/?name=${student.name}&background=1162d4&color=fff&size=128`}
+                  src={student.avatar || `https://ui-avatars.com/api/?name=${student.name}&background=00236f&color=fff&size=128`}
                   alt={student.name}
                   className="w-full h-full rounded-lg object-cover"
                   onClick={() => document.getElementById('student-profile-photo-upload').click()}
                 />
                 <div 
                   onClick={() => document.getElementById('student-profile-photo-upload').click()}
-                  className="absolute inset-0 bg-[#276221]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 rounded-lg"
+                  className="absolute inset-0 bg-[#00236f]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 rounded-lg"
                 >
                   <span className="text-white text-[10px] font-bold text-center tracking-wider px-1">UPLOAD PHOTO</span>
                 </div>
@@ -287,7 +287,7 @@ export default function StudentProfilePage() {
               <div className="text-center sm:text-left">
                 <div className="flex flex-col sm:flex-row items-center gap-3 mb-3">
                   <h1 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">{student.name}</h1>
-                  <span className="px-2.5 py-0.5 bg-green-50 text-[#276221] border border-green-100 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 sm:mt-0">
+                  <span className="px-2.5 py-0.5 bg-green-50 text-[#00236f] border border-green-100 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 sm:mt-0">
                     {student.rollNumber || student.id}
                   </span>
                 </div>
@@ -331,7 +331,7 @@ export default function StudentProfilePage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'text-[#276221]'
+                      ? 'text-[#00236f]'
                       : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
@@ -340,7 +340,7 @@ export default function StudentProfilePage() {
                     {tab.label}
                   </span>
                   {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#276221] rounded-t-full" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00236f] rounded-t-full" />
                   )}
                 </button>
               ))}
@@ -375,7 +375,7 @@ export default function StudentProfilePage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#276221] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#00236f] flex items-center justify-center">
                       <span className="material-symbols-outlined text-[20px]">military_tech</span>
                     </div>
                     <div>
@@ -384,7 +384,7 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#276221] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#00236f] flex items-center justify-center">
                       <span className="material-symbols-outlined text-[20px]">analytics</span>
                     </div>
                     <div>
@@ -393,7 +393,7 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#276221] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#00236f] flex items-center justify-center">
                       <span className="material-symbols-outlined text-[20px]">menu_book</span>
                     </div>
                     <div>
@@ -402,7 +402,7 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#276221] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#00236f] flex items-center justify-center">
                       <span className="material-symbols-outlined text-[20px]">verified</span>
                     </div>
                     <div>
@@ -557,7 +557,7 @@ export default function StudentProfilePage() {
               </div>
             </div>
           )}
-          {activeTab === 'documents' && <DocumentsTab student={student} />}
+          {activeTab === 'documents' && <DocumentsTab student={student} onRefresh={fetchStudentDetails} />}
         </div>
       </div>
 
@@ -576,95 +576,284 @@ export default function StudentProfilePage() {
   );
 }
 
-function DocumentsTab({ student }) {
-  const docs = student.documents || [];
+function DocumentsTab({ student, onRefresh }) {
+  const rawDocs = student.documents || [];
+  const [viewingDoc, setViewingDoc] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Normalize documents: handle both array format (seed data) and object/dict format (from admissions)
+  const docs = Array.isArray(rawDocs)
+    ? rawDocs.map((d, i) => {
+        const fileData = (d.data && d.data.data) || (typeof d.data === 'string' ? d.data : null) || d.file_url || d.fileUrl || null;
+        const fileName = (d.data && d.data.name) || d.name || 'Document';
+        const fileSize = (d.data && d.data.size) ? `${(d.data.size / 1024 / 1024).toFixed(2)} MB` : (d.size || 'N/A');
+        const uploadDateStr = d.uploadDate || d.uploadedAt || student.enrollDate || new Date().toISOString();
+        return { ...d, id: d.id || `doc-${i}`, fileName, fileSize, fileData, uploadDateStr };
+      })
+    : Object.entries(rawDocs)
+        .map(([key, val]) => {
+          if (!val) return null;
+          const fileData = (val && typeof val === 'object' && val.data) ? val.data : (typeof val === 'string' ? val : null);
+          const fileName = (val && val.name) || key
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/[-_]+/g, ' ')
+              .replace(/^\w/, (c) => c.toUpperCase())
+              .trim();
+          const fileSize = (val && val.size) ? `${(val.size / 1024 / 1024).toFixed(2)} MB` : 'N/A';
+          const uploadDateStr = student.enrollDate || new Date().toISOString();
+          const isPdf = typeof fileData === 'string' && fileData.includes('pdf');
+          return { id: key, name: fileName, fileName, fileSize, fileData, uploadDateStr, type: isPdf ? 'pdf' : 'image' };
+        })
+        .filter(Boolean);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const newDoc = {
+          id: `DOC-${Date.now()}`,
+          name: file.name.replace(/\.[^/.]+$/, '') || 'Uploaded Document',
+          type: file.type.includes('pdf') ? 'pdf' : 'image',
+          uploadDate: new Date().toISOString(),
+          size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+          data: { name: file.name, size: file.size, data: reader.result }
+        };
+
+        // Convert current docs to array format for storage
+        const currentDocsList = Array.isArray(rawDocs)
+          ? rawDocs
+          : Object.entries(rawDocs).map(([key, val]) => ({
+              id: key,
+              name: key.replace(/[-_]+/g, ' ').replace(/^\w/, c => c.toUpperCase()),
+              type: typeof val === 'string' && val.includes('pdf') ? 'pdf' : 'image',
+              data: val
+            })).filter(d => d.data);
+
+        const updatedDocs = [...currentDocsList, newDoc];
+        const res = await fetch(`${API_BASE_URL}/students/${student.id || student.rollNumber}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ documents: updatedDocs })
+        });
+        if (!res.ok) throw new Error('Failed to upload document');
+        if (onRefresh) onRefresh();
+        else window.location.reload();
+      } catch (err) {
+        console.error(err);
+        alert(err.message || 'Upload failed');
+      } finally {
+        setUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    // Reset input so re-uploading same file works
+    e.target.value = '';
+  };
+
+  const handleDelete = async (docId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    try {
+      const currentDocsList = Array.isArray(rawDocs)
+        ? rawDocs
+        : Object.entries(rawDocs).map(([key, val]) => ({
+            id: key,
+            name: key.replace(/[-_]+/g, ' ').replace(/^\w/, c => c.toUpperCase()),
+            type: typeof val === 'string' && val.includes('pdf') ? 'pdf' : 'image',
+            data: val
+          })).filter(d => d.data);
+
+      const updatedDocs = currentDocsList.filter(d => d.id !== docId);
+      const res = await fetch(`${API_BASE_URL}/students/${student.id || student.rollNumber}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documents: updatedDocs })
+      });
+      if (!res.ok) throw new Error('Failed to delete document');
+      if (onRefresh) onRefresh();
+      else window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Delete failed');
+    }
+  };
+
+  const isImage = (dataUri) => {
+    if (!dataUri || typeof dataUri !== 'string') return false;
+    return dataUri.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(dataUri);
+  };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-800 mb-6 uppercase tracking-wider flex items-center gap-2">
-        <FolderOpen size={18} className="text-[#276221]" />
-        Uploaded Documents
-      </h3>
-      {docs.length === 0 ? (
-        <div className="text-center py-12 text-slate-500">
-          <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">folder_open</span>
-          <p className="text-sm font-medium">No documents uploaded yet.</p>
+    <>
+      <div className="space-y-6">
+        {/* Upload Section */}
+        <label className={`block bg-[#00236f]/5 border-2 border-dashed border-[#00236f]/20 rounded-xl p-8 text-center cursor-pointer hover:bg-[#00236f]/10 transition-all group ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+          <input type="file" className="hidden" onChange={handleUpload} accept="image/*,.pdf,.doc,.docx" disabled={uploading} />
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-[#00236f] shadow-lg shadow-[#00236f]/10 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-[28px]">{uploading ? 'hourglass_top' : 'cloud_upload'}</span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#00236f]">{uploading ? 'Uploading...' : 'Upload Document'}</p>
+              <p className="text-[11px] text-[#00236f]/50 mt-1">PDF, Images, DOC • Click to browse</p>
+            </div>
+          </div>
+        </label>
+
+        {/* Documents List */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <FolderOpen size={18} className="text-[#00236f]" />
+              My Documents
+            </h3>
+            <span className="text-xs font-medium text-slate-400">{docs.length} file{docs.length !== 1 ? 's' : ''}</span>
+          </div>
+
+          {docs.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              <span className="material-symbols-outlined text-5xl text-slate-200 mb-3 block">folder_open</span>
+              <p className="text-sm font-semibold text-slate-400">No documents uploaded yet</p>
+              <p className="text-xs text-slate-300 mt-1">Use the upload area above to add your first document</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {docs.map((doc) => {
+                const hasData = !!doc.fileData;
+                return (
+                  <div key={doc.id} className="flex items-center justify-between p-4 sm:px-6 hover:bg-slate-50/50 transition-colors group">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      {/* Thumbnail preview */}
+                      <div
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-100 ${hasData ? 'cursor-pointer' : ''}`}
+                        onClick={() => hasData && setViewingDoc(doc)}
+                      >
+                        {hasData && isImage(doc.fileData) ? (
+                          <img src={doc.fileData} alt={doc.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-indigo-50 flex items-center justify-center text-[#00236f]">
+                            <span className="material-symbols-outlined text-[22px]">
+                              {doc.type === 'pdf' || (doc.fileName && doc.fileName.toLowerCase().endsWith('.pdf')) ? 'picture_as_pdf' : 'image'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-semibold text-slate-800 truncate">{doc.name || doc.fileName}</h4>
+                        <p className="text-[10px] font-medium text-slate-400 mt-0.5 uppercase tracking-wider">
+                          {doc.fileSize || doc.size || 'N/A'} • {new Date(doc.uploadDateStr || doc.uploadDate || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                      {hasData && (
+                        <button
+                          onClick={() => setViewingDoc(doc)}
+                          className="p-2 text-slate-400 hover:text-[#00236f] hover:bg-blue-50 rounded-lg transition-all"
+                          title="View"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">visibility</span>
+                        </button>
+                      )}
+                      {hasData && (
+                        <button
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = doc.fileData;
+                            link.download = doc.fileName || doc.name || 'document';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          className="p-2 text-slate-400 hover:text-[#00236f] hover:bg-blue-50 rounded-lg transition-all"
+                          title="Download"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">download</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(doc.id)}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {docs.map((doc, idx) => {
-            const hasData = !!(doc.data?.data || (typeof doc.data === 'string' ? doc.data : null) || doc.file_url || doc.fileUrl);
-            const fileName = doc.data?.name || doc.name || 'Document';
-            const fileSize = doc.data?.size ? `${(doc.data.size / 1024 / 1024).toFixed(2)} MB` : (doc.size || 'N/A');
-            return (
-              <div key={doc.id || idx} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-xl border border-slate-100 hover:border-[#276221]/30 transition-all hover:bg-white hover:shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-50 text-[#276221] rounded-lg flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[24px]">
-                      {doc.name?.toLowerCase().includes('photo') ? 'image' : 'picture_as_pdf'}
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-800 leading-tight">{doc.name || 'Uploaded Document'}</h4>
-                    <p className="text-[10px] font-medium text-slate-400 mt-1 uppercase tracking-tight">
-                      {fileName} • {fileSize}
-                    </p>
-                  </div>
+      </div>
+
+      {/* ─── In-App Document Viewer Modal ─── */}
+      {viewingDoc && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-8" onClick={() => setViewingDoc(null)}>
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-[#00236f] flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">
+                    {isImage(viewingDoc.fileData) ? 'image' : 'picture_as_pdf'}
+                  </span>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      const fileData = doc.data?.data || (typeof doc.data === 'string' ? doc.data : null) || doc.file_url || doc.fileUrl;
-                      if (!fileData) {
-                        alert("Document data is not available (demo seed document).");
-                        return;
-                      }
-                      const newWindow = window.open();
-                      if (newWindow) {
-                        newWindow.document.write(
-                          `<iframe src="${fileData}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
-                        );
-                      }
-                    }}
-                    disabled={!hasData}
-                    className={`p-2 rounded-lg transition-all ${
-                      hasData 
-                        ? 'text-slate-400 hover:text-[#276221] hover:bg-green-50' 
-                        : 'text-slate-200 cursor-not-allowed'
-                    }`}
-                    title="View Document"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">visibility</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const fileData = doc.data?.data || (typeof doc.data === 'string' ? doc.data : null) || doc.file_url || doc.fileUrl;
-                      if (!fileData) {
-                        alert("Document data is not available (demo seed document).");
-                        return;
-                      }
-                      const link = document.createElement('a');
-                      link.href = fileData;
-                      link.download = fileName;
-                      link.click();
-                    }}
-                    disabled={!hasData}
-                    className={`p-2 rounded-lg transition-all ${
-                      hasData 
-                        ? 'text-slate-400 hover:text-[#276221] hover:bg-green-50' 
-                        : 'text-slate-200 cursor-not-allowed'
-                    }`}
-                    title="Download Document"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">download</span>
-                  </button>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-slate-800 truncate">{viewingDoc.name || viewingDoc.fileName}</h3>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">{viewingDoc.fileSize || viewingDoc.size || ''}</p>
                 </div>
               </div>
-            );
-          })}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = viewingDoc.fileData;
+                    link.download = viewingDoc.fileName || viewingDoc.name || 'document';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="p-2 text-slate-400 hover:text-[#00236f] hover:bg-blue-50 rounded-lg transition-all"
+                  title="Download"
+                >
+                  <span className="material-symbols-outlined text-[20px]">download</span>
+                </button>
+                <button
+                  onClick={() => setViewingDoc(null)}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
+                  title="Close"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body - Document Content */}
+            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center min-h-[300px]">
+              {isImage(viewingDoc.fileData) ? (
+                <img
+                  src={viewingDoc.fileData}
+                  alt={viewingDoc.name || 'Document'}
+                  className="max-w-full max-h-[75vh] object-contain p-4"
+                />
+              ) : (
+                <iframe
+                  src={viewingDoc.fileData}
+                  title={viewingDoc.name || 'Document Viewer'}
+                  className="w-full h-[75vh] border-0"
+                />
+              )}
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -827,9 +1016,9 @@ function OverviewTab({ student }) {
         title: "Academic Distinction: Honor Roll",
         message: `Congratulations! ${student.name} has achieved an outstanding academic performance with a CGPA of ${cgpaVal.toFixed(2)}. Keep up the excellent work!`,
         icon: "workspace_premium",
-        bgColor: "bg-[#276221]/5 border-[#276221]/20",
-        textColor: "text-[#276221]",
-        iconBg: "bg-[#276221] shadow-green-200",
+        bgColor: "bg-[#00236f]/5 border-[#00236f]/20",
+        textColor: "text-[#00236f]",
+        iconBg: "bg-[#00236f] shadow-blue-200",
         iconColor: "text-yellow-300"
       };
     }
@@ -850,9 +1039,9 @@ function OverviewTab({ student }) {
       title: "Academic Status: Normal",
       message: `${student.name} is in good academic standing. All requirements for the current academic session are being met successfully.`,
       icon: "check_circle",
-      bgColor: "bg-[#276221]/5 border-[#276221]/10",
-      textColor: "text-[#276221]",
-      iconBg: "bg-[#276221] shadow-[#276221]/10",
+      bgColor: "bg-[#00236f]/5 border-[#00236f]/10",
+      textColor: "text-[#00236f]",
+      iconBg: "bg-[#00236f] shadow-[#00236f]/10",
       iconColor: "text-white"
     };
   };
@@ -867,7 +1056,7 @@ function OverviewTab({ student }) {
           {/* Contact & Personal Information */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#276221] text-[20px]">contact_page</span>
+              <span className="material-symbols-outlined text-[#00236f] text-[20px]">contact_page</span>
               Personal & Contact
             </h3>
             <div className="space-y-4">
@@ -903,7 +1092,7 @@ function OverviewTab({ student }) {
           {/* Family & Guardian Details */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#276221] text-[20px]">family_restroom</span>
+              <span className="material-symbols-outlined text-[#00236f] text-[20px]">family_restroom</span>
               Family & Guardian
             </h3>
             <div className="space-y-4">
@@ -935,7 +1124,7 @@ function OverviewTab({ student }) {
           {/* Academic & Housing Details */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#276221] text-[20px]">menu_book</span>
+              <span className="material-symbols-outlined text-[#00236f] text-[20px]">menu_book</span>
               Academic & Housing
             </h3>
             <div className="space-y-4">
@@ -977,7 +1166,7 @@ function OverviewTab({ student }) {
           {/* Previous Education Record */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#276221] text-[20px]">history_edu</span>
+              <span className="material-symbols-outlined text-[#00236f] text-[20px]">history_edu</span>
               Previous Education
             </h3>
             <div className="space-y-4">
@@ -1006,7 +1195,7 @@ function OverviewTab({ student }) {
         {/* Application Payment & Metrics */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-            <span className="material-symbols-outlined text-[#276221] text-[20px]">payments</span>
+            <span className="material-symbols-outlined text-[#00236f] text-[20px]">payments</span>
             Application Payment & Metrics
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1035,7 +1224,7 @@ function OverviewTab({ student }) {
               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 justify-center">
                 <div className="text-center">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Attendance</p>
-                  <p className="text-lg font-bold text-[#276221] mt-1">{attendancePct}%</p>
+                  <p className="text-lg font-bold text-[#00236f] mt-1">{attendancePct}%</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 justify-center">
@@ -1055,7 +1244,7 @@ function OverviewTab({ student }) {
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider text-slate-900 leading-none">GPA Trend</h3>
-            <span className="px-2 py-0.5 bg-green-50 text-[#276221] rounded text-[9px] font-bold uppercase tracking-wider">{averageLabel}</span>
+            <span className="px-2 py-0.5 bg-green-50 text-[#00236f] rounded text-[9px] font-bold uppercase tracking-wider">{averageLabel}</span>
           </div>
           <div className="flex items-end justify-between h-24 gap-2 mb-4 relative">
             {semestersWithData === 0 && (
@@ -1070,12 +1259,12 @@ function OverviewTab({ student }) {
               return (
                 <div key={semInfo.semester} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
                   {semInfo.hasData && (
-                    <span className="text-[9px] font-bold text-[#276221] leading-none mb-0.5">{semInfo.gpa}</span>
+                    <span className="text-[9px] font-bold text-[#00236f] leading-none mb-0.5">{semInfo.gpa}</span>
                   )}
                   <div 
                     className={`w-full rounded-md transition-all duration-1000 ${
                       semInfo.hasData 
-                        ? 'bg-[#276221]' 
+                        ? 'bg-[#00236f]' 
                         : 'bg-slate-100 border border-dashed border-slate-200'
                     }`} 
                     style={{ height: semInfo.hasData ? `${heightPct}%` : '8px' }} 

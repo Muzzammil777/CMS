@@ -73,3 +73,14 @@ export async function updateFacilityRecord(facilityId, payload) {
   }
   return json.data;
 }
+
+export async function deleteFacilityRecord(facilityId) {
+  const res = await fetch(`${API_BASE}/academics/facilities/${facilityId}`, {
+    method: 'DELETE',
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.success) {
+    throw new Error(getErrorMessage(json, 'Failed to delete facility'));
+  }
+  return json;
+}

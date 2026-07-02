@@ -7,6 +7,7 @@ import {
 import { getUserData, getUserSession } from '../auth/sessionController';
 import { settingsApi } from '../api/settingsApi';
 import { buildApiUrl } from '../api/apiBase';
+import KpiCard from '../components/KpiCard';
 import './FacultyDepartmentPage.css';
 
 // Edit Department Modal
@@ -65,7 +66,7 @@ function EditDepartmentModal({ isOpen, onClose, department, onSave }) {
             />
           </div>
           <div className="dept-form-group">
-            <label className="dept-form-label">Head of Department</label>
+            <label className="dept-form-label">HOD</label>
             <input
               type="text"
               name="head"
@@ -223,7 +224,7 @@ function AddDepartmentModal({ isOpen, onClose, onSave }) {
             />
           </div>
           <div className="dept-form-group">
-            <label className="dept-form-label">Head of Department</label>
+            <label className="dept-form-label">HOD</label>
             <input
               type="text"
               name="head"
@@ -427,9 +428,6 @@ function DepartmentDetailsView({ department, isAdmin, onEdit, onShare, onDelete,
                 </button>
               </>
             )}
-            <button className="dept-btn dept-btn-primary" onClick={onShare}>
-              <Share2 size={15} /> Share Department
-            </button>
           </div>
         </div>
       </div>
@@ -451,7 +449,7 @@ function DepartmentDetailsView({ department, isAdmin, onEdit, onShare, onDelete,
 
       <div className="dept-info-block">
         <div className="dept-info-card">
-          <div className="dept-info-card-title">Head of Department</div>
+          <div className="dept-info-card-title">HOD</div>
           <div className="dept-hod-flex">
             <div className="dept-hod-avatar">
               {(department.head || 'H').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
@@ -493,7 +491,7 @@ function DepartmentDetailsView({ department, isAdmin, onEdit, onShare, onDelete,
 
       <div className="dept-faculty-section">
         <h3 className="dept-faculty-title">
-          <Users size={18} className="text-[#276221]" />
+          <Users size={18} className="text-[#00236f]" />
           Department Faculty Directory
         </h3>
         {facultyList.length === 0 ? (
@@ -537,6 +535,7 @@ export default function FacultyDepartmentPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [mobileActiveTab, setMobileActiveTab] = useState('list');
 
   // Fetch departments and faculty list on mount
   useEffect(() => {
@@ -665,7 +664,7 @@ export default function FacultyDepartmentPage() {
                 width: '48px',
                 height: '48px',
                 border: '4px solid #e2e8f0',
-                borderTopColor: '#276221',
+                borderTopColor: '#00236f',
                 borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite',
                 margin: '0 auto 16px'
@@ -684,58 +683,36 @@ export default function FacultyDepartmentPage() {
             department={selectedDept}
             isAdmin={false}
             onEdit={() => setIsEditOpen(true)}
-            onShare={() => setIsShareOpen(true)}
             facultyList={getFilteredFaculty()}
           />
         ) : (
           /* Admin View: Dashboard stats on top, Sidebar and detail split below */
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
-              <button className="dept-btn dept-btn-primary" onClick={() => setIsAddOpen(true)}>
+            {/* On mobile, only show Add Department when on 'list' view */}
+            <div className={`${mobileActiveTab === 'details' ? 'hidden md:flex' : 'flex'} justify-end mb-6`}>
+              <button className="dept-btn dept-btn-primary w-full md:w-auto justify-center" onClick={() => setIsAddOpen(true)}>
                 + Add Department
               </button>
             </div>
 
-            <div className="dept-kpi-grid">
-              <div className="dept-kpi-card">
-                <div className="dept-kpi-icon-wrapper"><span className="material-symbols-outlined">domain</span></div>
-                <div>
-                  <div className="dept-kpi-value">{aggregateStats.totalDepts}</div>
-                  <div className="dept-kpi-label">Departments</div>
-                </div>
-              </div>
-              <div className="dept-kpi-card">
-                <div className="dept-kpi-icon-wrapper"><span className="material-symbols-outlined">person</span></div>
-                <div>
-                  <div className="dept-kpi-value">{aggregateStats.totalFaculty}</div>
-                  <div className="dept-kpi-label">Total Faculty</div>
-                </div>
-              </div>
-              <div className="dept-kpi-card">
-                <div className="dept-kpi-icon-wrapper"><span className="material-symbols-outlined">group</span></div>
-                <div>
-                  <div className="dept-kpi-value">{aggregateStats.totalStudents}</div>
-                  <div className="dept-kpi-label">Total Students</div>
-                </div>
-              </div>
-              <div className="dept-kpi-card">
-                <div className="dept-kpi-icon-wrapper"><span className="material-symbols-outlined">menu_book</span></div>
-                <div>
-                  <div className="dept-kpi-value">{aggregateStats.totalCourses}</div>
-                  <div className="dept-kpi-label">Total Courses</div>
-                </div>
-              </div>
+            {/* KPI grid hidden on mobile when viewing details */}
+            <div className={`dept-kpi-grid ${mobileActiveTab === 'details' ? 'hidden md:grid' : 'grid'}`}>
+              <KpiCard icon="domain" label="Departments" value={aggregateStats.totalDepts} colorScheme="blue" />
+              <KpiCard icon="person" label="Total Faculty" value={aggregateStats.totalFaculty} colorScheme="purple" />
+              <KpiCard icon="group" label="Total Students" value={aggregateStats.totalStudents} colorScheme="green" />
+              <KpiCard icon="menu_book" label="Total Courses" value={aggregateStats.totalCourses} colorScheme="amber" />
             </div>
 
             <div className="dept-main-grid">
-              <div className="dept-sidebar">
+              {/* Sidebar hidden on mobile when viewing details */}
+              <div className={`dept-sidebar ${mobileActiveTab === 'details' ? 'hidden md:flex' : 'flex'}`}>
                 <div className="dept-sidebar-header">
                   <span className="material-symbols-outlined">domain</span>
                   <span>Departments List</span>
                 </div>
                 <div className="dept-search-wrapper">
                   <input
-                     type="text"
+                    type="text"
                     placeholder="Search department..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
@@ -746,10 +723,13 @@ export default function FacultyDepartmentPage() {
                   {filteredDepartments.map(dept => (
                     <button
                       key={dept.id}
-                      onClick={() => setSelectedDept(dept)}
+                      onClick={() => {
+                        setSelectedDept(dept);
+                        setMobileActiveTab('details');
+                      }}
                       className={`dept-list-btn ${selectedDept.id === dept.id ? 'active' : ''}`}
                     >
-                      <div className="dept-list-code">{dept.code}</div>
+                      {dept.code !== dept.name && <div className="dept-list-code">{dept.code}</div>}
                       <div className="dept-list-name">{dept.name}</div>
                     </button>
                   ))}
@@ -761,14 +741,25 @@ export default function FacultyDepartmentPage() {
                 </div>
               </div>
 
-              <DepartmentDetailsView 
-                department={selectedDept}
-                isAdmin={true}
-                onEdit={() => setIsEditOpen(true)}
-                onShare={() => setIsShareOpen(true)}
-                onDelete={() => handleDeleteDepartment(selectedDept.id)}
-                facultyList={getFilteredFaculty()}
-              />
+              {/* Detail view hidden on mobile when viewing list */}
+              <div className={`dept-detail-container ${mobileActiveTab === 'list' ? 'hidden md:block' : 'block'} w-full`}>
+                {/* Back button visible only on mobile */}
+                <button 
+                  className="flex md:hidden items-center gap-2 text-sm font-bold text-[#00236f] mb-4 hover:underline"
+                  onClick={() => setMobileActiveTab('list')}
+                >
+                  <span className="material-symbols-outlined text-lg">arrow_back</span>
+                  Back to Departments List
+                </button>
+                
+                <DepartmentDetailsView 
+                  department={selectedDept}
+                  isAdmin={true}
+                  onEdit={() => setIsEditOpen(true)}
+                  onDelete={() => handleDeleteDepartment(selectedDept.id)}
+                  facultyList={getFilteredFaculty()}
+                />
+              </div>
             </div>
           </>
         )}
@@ -776,7 +767,6 @@ export default function FacultyDepartmentPage() {
         {/* Modals */}
         <AddDepartmentModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onSave={handleAddDepartment} />
         <EditDepartmentModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} department={selectedDept} onSave={handleEditSave} />
-        <ShareDepartmentModal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} departmentName={selectedDept?.name} />
       </div>
     </Layout>
   );

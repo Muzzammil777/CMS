@@ -1,10 +1,10 @@
 :root {
-  --user-settings-bg: #f0f5f1;
+  --user-settings-bg: #f0f4fc;
   --user-settings-card: #ffffff;
   --user-settings-border: #d9e8dc;
   --user-settings-text: #1f2937;
   --user-settings-muted: #64748b;
-  --user-settings-primary: #276221;
+  --user-settings-primary: #00236f;
   --user-settings-primary-soft: #e8f1eb;
   --user-settings-danger: #dc2626;
 }
@@ -18,7 +18,7 @@
 .user-settings-header {
   border-radius: 16px;
   padding: 20px;
-  background: linear-gradient(110deg, #1e4618, #276221, #3d8b30);
+  background: linear-gradient(110deg, #001a54, #00236f, #1a3c85);
   color: #ffffff;
   margin-bottom: 18px;
 }
@@ -89,12 +89,12 @@
 
 .user-settings-nav-item:hover {
   background: #f1f5f1;
-  color: #276221;
+  color: #00236f;
 }
 
 .user-settings-nav-item.active {
   background: linear-gradient(90deg, #e8f1eb, #e0f1e8);
-  color: #276221;
+  color: #00236f;
   font-weight: 600;
 }
 
@@ -209,7 +209,7 @@
 }
 
 .user-settings-btn-primary {
-  background: linear-gradient(90deg, #276221, #3d8b30);
+  background: linear-gradient(90deg, #00236f, #1a3c85);
   color: #ffffff;
 }
 
@@ -242,7 +242,7 @@
   height: 16px;
   border-radius: 50%;
   border: 2px solid #bfdbfe;
-  border-top-color: #276221;
+  border-top-color: #00236f;
   animation: user-settings-spin 0.9s linear infinite;
 }
 
@@ -341,7 +341,7 @@
 }
 
 .user-settings-toggle-control input:checked + .user-settings-toggle-slider {
-  background: #276221;
+  background: #00236f;
 }
 
 .user-settings-toggle-control input:checked + .user-settings-toggle-slider::before {

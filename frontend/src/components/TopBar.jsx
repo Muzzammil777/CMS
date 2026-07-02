@@ -151,7 +151,7 @@ export default function TopBar({
         )}
         <div className="min-w-0">
           {(!isSidebarVisible || isMobile) && (
-            <p className="text-[10px] md:text-xs font-semibold text-[#276221] tracking-wider uppercase leading-none mb-1">
+            <p className="text-[10px] md:text-xs font-semibold text-[#00236f] tracking-wider uppercase leading-none mb-1">
               {systemSettings?.portalName || 'MIT Connect'}
             </p>
           )}
@@ -196,7 +196,7 @@ export default function TopBar({
             title="Open profile"
           >
             <img 
-              src={avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=276221&color=fff&size=128`} 
+              src={avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=00236f&color=fff&size=128`} 
               alt="Profile" 
               className="w-full h-full object-cover"
             />

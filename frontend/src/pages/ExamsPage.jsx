@@ -695,7 +695,7 @@ export default function ExamsPage({ noLayout = false }) {
     return `${displayHour}:${minutes} ${ampm}`
   }
 
-  const inputClasses = "w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#276221]/10 focus:border-[#276221] outline-none transition-all text-sm text-slate-700 bg-white";
+  const inputClasses = "w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/10 focus:border-[#00236f] outline-none transition-all text-sm text-slate-700 bg-white";
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-0.5";
 
   const inner = (
@@ -785,23 +785,23 @@ export default function ExamsPage({ noLayout = false }) {
         <button
           onClick={() => { setActiveExamsTab('schedules'); setCurrentPage(1); }}
           className={`pb-3 text-sm font-semibold transition-all relative px-4 ${
-            activeExamsTab === 'schedules' ? 'text-[#276221]' : 'text-slate-400 hover:text-slate-600'
+            activeExamsTab === 'schedules' ? 'text-[#00236f]' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           Exam Timetable
           {activeExamsTab === 'schedules' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#276221] rounded-t-full" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00236f] rounded-t-full" />
           )}
         </button>
         <button
           onClick={() => { setActiveExamsTab('marks'); }}
           className={`pb-3 text-sm font-semibold transition-all relative px-4 ${
-            activeExamsTab === 'marks' ? 'text-[#276221]' : 'text-slate-400 hover:text-slate-600'
+            activeExamsTab === 'marks' ? 'text-[#00236f]' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
           Mark Show
           {activeExamsTab === 'marks' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#276221] rounded-t-full" />
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#00236f] rounded-t-full" />
           )}
         </button>
       </div>
@@ -813,7 +813,7 @@ export default function ExamsPage({ noLayout = false }) {
               {isStudent && (
                 <button 
                   onClick={handleOpenAllHallTickets}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#1e4618] transition-all shadow-sm active:scale-95"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#001a54] transition-all shadow-sm active:scale-95"
                 >
                   <span className="material-symbols-outlined text-lg">badge</span>
                   Download Hall Tickets
@@ -843,7 +843,8 @@ export default function ExamsPage({ noLayout = false }) {
             <TableSkeleton cols={isStudent ? 9 : 7} rows={8} />
           ) : (
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-              <table className="w-full text-left">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[900px]">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
                     <th className="px-6 py-4">Course</th>
@@ -870,7 +871,7 @@ export default function ExamsPage({ noLayout = false }) {
                     filteredExamsForTimetable.slice((currentPage-1)*pageSize, currentPage*pageSize).map((exam) => (
                       <tr key={exam._id || exam.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4">
-                          <p className="text-xs font-bold text-[#276221] uppercase">{exam.code}</p>
+                          <p className="text-xs font-bold text-[#00236f] uppercase">{exam.code}</p>
                           <p className="text-sm font-semibold text-slate-900">{exam.name}</p>
                         </td>
                         <td className="px-6 py-4">
@@ -896,7 +897,7 @@ export default function ExamsPage({ noLayout = false }) {
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             exam.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 
-                            exam.status === 'Upcoming' ? 'bg-green-50 text-[#276221]' : 'bg-slate-100 text-slate-600'
+                            exam.status === 'Upcoming' ? 'bg-green-50 text-[#00236f]' : 'bg-slate-100 text-slate-600'
                           }`}>
                             {exam.status}
                           </span>
@@ -923,7 +924,7 @@ export default function ExamsPage({ noLayout = false }) {
                               {exam.status === 'Upcoming' && !exam.registered ? (
                                 <button
                                   onClick={() => handleRegister(exam._id || exam.id)}
-                                  className="px-3 py-1.5 bg-[#276221] text-white rounded-lg text-xs font-semibold hover:bg-[#1e4618] transition-all"
+                                  className="px-3 py-1.5 bg-[#00236f] text-white rounded-lg text-xs font-semibold hover:bg-[#001a54] transition-all"
                                 >
                                   Register
                                 </button>
@@ -979,7 +980,7 @@ export default function ExamsPage({ noLayout = false }) {
                                   </button>
                                   <button
                                     onClick={() => openEditModal(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-[#276221] hover:bg-[#276221]/10 rounded-lg transition-colors"
+                                    className="p-1.5 text-slate-400 hover:text-[#00236f] hover:bg-[#00236f]/10 rounded-lg transition-colors"
                                     title="Edit"
                                   >
                                     <span className="material-symbols-outlined text-lg">edit</span>
@@ -1011,7 +1012,7 @@ export default function ExamsPage({ noLayout = false }) {
                                   </button>
                                   <button
                                     onClick={() => openEditModal(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-[#276221] hover:bg-[#276221]/10 rounded-lg transition-colors"
+                                    className="p-1.5 text-slate-400 hover:text-[#00236f] hover:bg-[#00236f]/10 rounded-lg transition-colors"
                                     title="Edit"
                                   >
                                     <span className="material-symbols-outlined text-lg">edit</span>
@@ -1033,6 +1034,7 @@ export default function ExamsPage({ noLayout = false }) {
                   )}
                 </tbody>
               </table>
+              </div>
               <Pagination
                 currentPage={currentPage}
                 totalPages={Math.max(1, Math.ceil(filteredExamsForTimetable.length / pageSize))}
@@ -1086,7 +1088,7 @@ export default function ExamsPage({ noLayout = false }) {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase border-b border-slate-200">
-                      <th style={{ minWidth: '280px' }} className="px-6 py-4 sticky left-0 bg-slate-50 z-10">Course Details</th>
+                      <th style={{ minWidth: '280px' }} className="px-6 py-4 md:sticky md:left-0 bg-slate-50 z-10">Course Details</th>
                       <th className="px-4 py-4 text-center">Credits</th>
                       <th className="px-6 py-4">Faculty</th>
                       <th className="px-6 py-4 text-center">Attendance</th>
@@ -1096,7 +1098,7 @@ export default function ExamsPage({ noLayout = false }) {
                       <th className="px-4 py-4 text-center">Quiz</th>
                       <th className="px-4 py-4 text-center">End-Sem</th>
                       <th className="px-4 py-4 text-center bg-orange-50/30 font-bold border-l border-slate-100">Total</th>
-                      <th className="px-6 py-4 text-center bg-indigo-50/30 sticky right-0 z-10 border-l border-slate-100">Final Internal Marks</th>
+                      <th className="px-6 py-4 text-center bg-[#eef2ff] md:sticky md:right-0 z-10 border-l border-slate-100 text-indigo-900">Final Internal Marks</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1126,7 +1128,7 @@ export default function ExamsPage({ noLayout = false }) {
                         return (
                           <tr key={i} className="hover:bg-slate-50 transition-colors">
                             {/* Sticky Left: Course Details */}
-                            <td style={{ minWidth: '280px' }} className="px-6 py-4 sticky left-0 bg-white hover:bg-slate-50 z-10 border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                            <td style={{ minWidth: '280px' }} className="px-6 py-4 md:sticky md:left-0 bg-white hover:bg-slate-50 z-10 border-r border-slate-100 md:shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
                               <p className="text-sm font-bold text-slate-800 uppercase tracking-wide leading-tight">{sub.name}</p>
                               <span className="inline-block bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded mt-1.5 uppercase">
                                 {sub.code} ({isPractical ? 'Practical' : 'Theory'})
@@ -1183,7 +1185,7 @@ export default function ExamsPage({ noLayout = false }) {
                             </td>
 
                             {/* Sticky Right: Final Internal Marks */}
-                            <td className="px-6 py-4 sticky right-0 bg-white hover:bg-slate-50 z-10 border-l border-slate-100 shadow-[-2px_0_5px_rgba(0,0,0,0.02)] text-center bg-indigo-50/20">
+                            <td className="px-6 py-4 md:sticky md:right-0 bg-[#f8faff] hover:bg-[#eef2ff] z-10 border-l border-slate-100 md:shadow-[-2px_0_5px_rgba(0,0,0,0.02)] text-center">
                               {finalMark ? (
                                 <div className="flex flex-col items-center justify-center">
                                   <p className="text-base font-extrabold text-indigo-900 leading-tight">

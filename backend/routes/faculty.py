@@ -814,7 +814,7 @@ async def create_faculty(faculty: Faculty):
         email_to = faculty_dict.get("email")
         if email_to:
             emp_id = faculty_dict.get("employeeId") or faculty_dict.get("employee_id")
-            subject = "Welcome to OMS"
+            subject = "Welcome to CMS"
             html_body = f"""
             <html>
             <body>
@@ -827,7 +827,7 @@ async def create_faculty(faculty: Faculty):
                     <li><strong>Employee ID/Username:</strong> {emp_id}</li>
                     <li><strong>Password:</strong> {faculty_dict.get("password") or emp_id}</li>
                 </ul>
-                <p>Best regards,<br>Office Management System (OMS) Support</p>
+                <p>Best regards,<br>College Management System (CMS) Support</p>
             </body>
             </html>
             """
@@ -974,7 +974,7 @@ async def submit_faculty_admission(faculty_data: dict = Body(...)):
             from backend.utils.mailer import send_email
             email_to = faculty_doc.get("email")
             if email_to:
-                subject = "Welcome to OMS"
+                subject = "Welcome to CMS"
                 html_body = f"""
                 <html>
                 <body>
@@ -987,7 +987,7 @@ async def submit_faculty_admission(faculty_data: dict = Body(...)):
                         <li><strong>Employee ID/Username:</strong> {employee_id}</li>
                         <li><strong>Password:</strong> {faculty_doc.get("password") or employee_id}</li>
                     </ul>
-                    <p>Best regards,<br>Office Management System (OMS) Support</p>
+                    <p>Best regards,<br>College Management System (CMS) Support</p>
                 </body>
                 </html>
                 """

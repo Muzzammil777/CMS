@@ -580,7 +580,7 @@ async def _create_student_from_admission(admission: dict[str, Any]) -> bool:
             from backend.utils.mailer import send_email
             email_to = student_data.get("email")
             if email_to:
-                subject = "Welcome to OMS"
+                subject = "Welcome to CMS"
                 html_body = f"""
                 <html>
                 <body>
@@ -593,7 +593,7 @@ async def _create_student_from_admission(admission: dict[str, Any]) -> bool:
                         <li><strong>Roll Number/Username:</strong> {student_id}</li>
                         <li><strong>Password:</strong> {student_data.get("password") or student_id}</li>
                     </ul>
-                    <p>Best regards,<br>Office Management System (OMS) Support</p>
+                    <p>Best regards,<br>College Management System (CMS) Support</p>
                 </body>
                 </html>
                 """
@@ -694,7 +694,7 @@ async def _create_faculty_from_admission(admission: dict[str, Any]) -> bool:
             from backend.utils.mailer import send_email
             email_to = faculty_data.get("email")
             if email_to:
-                subject = "Welcome to OMS"
+                subject = "Welcome to CMS"
                 html_body = f"""
                 <html>
                 <body>
@@ -707,7 +707,7 @@ async def _create_faculty_from_admission(admission: dict[str, Any]) -> bool:
                         <li><strong>Employee ID/Username:</strong> {faculty_id}</li>
                         <li><strong>Password:</strong> {faculty_data.get("password") or faculty_id}</li>
                     </ul>
-                    <p>Best regards,<br>Office Management System (OMS) Support</p>
+                    <p>Best regards,<br>College Management System (CMS) Support</p>
                 </body>
                 </html>
                 """

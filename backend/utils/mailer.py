@@ -19,7 +19,7 @@ def _send_email_sync(to_email: str, subject: str, html_content: str) -> bool:
         # Create message container
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = f"OMS <{email_user}>"
+        msg["From"] = f"CMS <{email_user}>"
         msg["To"] = to_email
         
         # Attach HTML content

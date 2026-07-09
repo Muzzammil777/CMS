@@ -51,7 +51,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00236f 0%, #001a54 100%);
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,12 +139,12 @@
 }
 
 .profile-action-btn.primary {
-  background-color: #00236f;
+  background-color: #6d28d9;
   color: white;
 }
 
 .profile-action-btn.primary:hover {
-  background-color: #001a54;
+  background-color: #4c1d95;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
@@ -167,7 +167,7 @@
 
 .profile-action-btn.tertiary {
   background-color: transparent;
-  color: #00236f;
+  color: #6d28d9;
   border: 1px solid #cbd5e1;
 }
 

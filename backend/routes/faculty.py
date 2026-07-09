@@ -808,6 +808,36 @@ async def create_faculty(faculty: Faculty):
     faculty_dict = faculty.dict(by_alias=True)
     result = await collection.insert_one(faculty_dict)
 
+    # Send welcome email asynchronously
+    try:
+        from backend.utils.mailer import send_email
+        email_to = faculty_dict.get("email")
+        if email_to:
+            emp_id = faculty_dict.get("employeeId") or faculty_dict.get("employee_id")
+            subject = "Welcome to OMS"
+            html_body = f"""
+            <html>
+            <body>
+                <h2>Welcome to CMS!</h2>
+                <p>Dear {faculty_dict.get("name", "Faculty Member")},</p>
+                <p>Your faculty account has been created successfully.</p>
+                <p>Here are your account details to log in:</p>
+                <ul>
+                    <li><strong>Role:</strong> Faculty</li>
+                    <li><strong>Employee ID/Username:</strong> {emp_id}</li>
+                    <li><strong>Password:</strong> {faculty_dict.get("password") or emp_id}</li>
+                </ul>
+                <p>Best regards,<br>Office Management System (OMS) Support</p>
+            </body>
+            </html>
+            """
+            import asyncio
+            asyncio.create_task(send_email(email_to, subject, html_body))
+        else:
+            print(f"[EMAIL WARNING] No email address found for faculty, skipping welcome email.")
+    except Exception as email_err:
+        print(f"[EMAIL ERROR] Failed to trigger welcome email for faculty: {str(email_err)}")
+
     created_doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(created_doc)
 
@@ -938,6 +968,35 @@ async def submit_faculty_admission(faculty_data: dict = Body(...)):
         print(
             f"✅ [Faculty Admission] Document inserted with MongoDB ID: {result.inserted_id}"
         )
+
+        # Send welcome email asynchronously
+        try:
+            from backend.utils.mailer import send_email
+            email_to = faculty_doc.get("email")
+            if email_to:
+                subject = "Welcome to OMS"
+                html_body = f"""
+                <html>
+                <body>
+                    <h2>Welcome to CMS!</h2>
+                    <p>Dear {faculty_doc.get("name") or faculty_doc.get("fullName") or "Faculty Member"},</p>
+                    <p>Your faculty admission/account request has been submitted successfully.</p>
+                    <p>Here are your account details to log in (pending review/activation):</p>
+                    <ul>
+                        <li><strong>Role:</strong> Faculty</li>
+                        <li><strong>Employee ID/Username:</strong> {employee_id}</li>
+                        <li><strong>Password:</strong> {faculty_doc.get("password") or employee_id}</li>
+                    </ul>
+                    <p>Best regards,<br>Office Management System (OMS) Support</p>
+                </body>
+                </html>
+                """
+                import asyncio
+                asyncio.create_task(send_email(email_to, subject, html_body))
+            else:
+                print(f"[EMAIL WARNING] No email address found for faculty admission {employee_id}, skipping welcome email.")
+        except Exception as email_err:
+            print(f"[EMAIL ERROR] Failed to trigger welcome email for faculty admission {employee_id}: {str(email_err)}")
 
         created_doc = await collection.find_one({"_id": result.inserted_id})
         response = serialize_doc(created_doc)

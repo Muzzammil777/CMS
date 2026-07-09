@@ -491,7 +491,7 @@ function DepartmentDetailsView({ department, isAdmin, onEdit, onShare, onDelete,
 
       <div className="dept-faculty-section">
         <h3 className="dept-faculty-title">
-          <Users size={18} className="text-[#00236f]" />
+          <Users size={18} className="text-[#6d28d9]" />
           Department Faculty Directory
         </h3>
         {facultyList.length === 0 ? (
@@ -664,7 +664,7 @@ export default function FacultyDepartmentPage() {
                 width: '48px',
                 height: '48px',
                 border: '4px solid #e2e8f0',
-                borderTopColor: '#00236f',
+                borderTopColor: '#6d28d9',
                 borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite',
                 margin: '0 auto 16px'
@@ -745,7 +745,7 @@ export default function FacultyDepartmentPage() {
               <div className={`dept-detail-container ${mobileActiveTab === 'list' ? 'hidden md:block' : 'block'} w-full`}>
                 {/* Back button visible only on mobile */}
                 <button 
-                  className="flex md:hidden items-center gap-2 text-sm font-bold text-[#00236f] mb-4 hover:underline"
+                  className="flex md:hidden items-center gap-2 text-sm font-bold text-[#6d28d9] mb-4 hover:underline"
                   onClick={() => setMobileActiveTab('list')}
                 >
                   <span className="material-symbols-outlined text-lg">arrow_back</span>

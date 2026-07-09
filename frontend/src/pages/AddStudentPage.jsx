@@ -316,14 +316,14 @@ export default function AddStudentPage() {
 
   return (
     <Layout title="Add New Student"><div className="space-y-4">{/* Page Header */}
-        <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between"><div className="flex items-center gap-3"><div className="p-2 bg-[#00236f]/10 rounded-lg"><span className="material-symbols-outlined text-lg text-[#00236f]">person_add</span></div><div><h1 className="text-lg font-bold text-gray-900">Enroll New Student</h1><p className="text-xs text-gray-600 mt-0.5">Step {step} of 8: {steps[step-1].label}</p></div></div><button
+        <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between"><div className="flex items-center gap-3"><div className="p-2 bg-[#6d28d9]/10 rounded-lg"><span className="material-symbols-outlined text-lg text-[#6d28d9]">person_add</span></div><div><h1 className="text-lg font-bold text-gray-900">Enroll New Student</h1><p className="text-xs text-gray-600 mt-0.5">Step {step} of 8: {steps[step-1].label}</p></div></div><button
             onClick={() =>navigate('/students')}
             className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
           ><span className="material-symbols-outlined text-base">arrow_back</span><span className="font-medium">Back</span></button></div>{/* Progress Bar */}
         <div className="bg-white rounded-lg shadow overflow-hidden"><div className="flex h-1.5">{steps.map((s) =>(
               <div
                 key={s.id}
-                className={`flex-1 transition-all duration-500 ${step >= s.id ? 'bg-[#00236f]' : 'bg-gray-200'}`}
+                className={`flex-1 transition-all duration-500 ${step >= s.id ? 'bg-[#6d28d9]' : 'bg-gray-200'}`}
               />))}
           </div></div>{/* Form Container */}
         <div className="bg-white rounded-lg shadow p-6"><form onSubmit={handleSubmit} className="space-y-6">{/* Step 1: Personal */}
@@ -349,7 +349,7 @@ export default function AddStudentPage() {
                         >
                           <span className="material-symbols-outlined text-[14px]">delete</span>
                         </button>
-                      )}</div><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) =>handleFileChange(e, 'avatar')} /></div><div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Full Name <span className="text-red-500">*</span></label><input name="name" value={formData.name} onChange={handleChange} className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.name ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2 focus:ring-[#00236f]/20`} placeholder="e.g. John Doe" />{errors.name && <p className="text-xs text-red-500 font-medium">{errors.name}</p>}
+                      )}</div><input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) =>handleFileChange(e, 'avatar')} /></div><div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Full Name <span className="text-red-500">*</span></label><input name="name" value={formData.name} onChange={handleChange} className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.name ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20`} placeholder="e.g. John Doe" />{errors.name && <p className="text-xs text-red-500 font-medium">{errors.name}</p>}
                     </div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Date of Birth <span className="text-red-500">*</span></label><input type="date" name="dob" value={formData.dob} onChange={handleChange} className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.dob ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2`} />{errors.dob && <p className="text-xs text-red-500 font-medium">{errors.dob}</p>}
                     </div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Gender <span className="text-red-500">*</span></label><select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Gender</option><option>Male</option><option>Female</option><option>Other</option></select></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Email <span className="text-red-500">*</span></label><input type="email" name="email" value={formData.email} onChange={handleChange} className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.email ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2`} placeholder="example@mit.edu" />{errors.email && <p className="text-xs text-red-500 font-medium">{errors.email}</p>}
                     </div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Phone Number</label><input name="phone" value={formData.phone} onChange={handleChange} maxLength="10" pattern="[0-9]{10}" className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.phone ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2`} placeholder="10-digit number" />{errors.phone && <p className="text-xs text-red-500 font-medium">{errors.phone}</p>}
@@ -362,14 +362,14 @@ export default function AddStudentPage() {
                     <label className="text-xs font-bold text-amber-800 uppercase tracking-wider">Default Password</label>
                   </div>
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={formData.useAutoPassword} onChange={(e) => setFormData(prev => ({ ...prev, useAutoPassword: e.target.checked, defaultPassword: '' }))} className="w-4 h-4 rounded text-[#00236f] focus:ring-[#00236f]" />
+                    <input type="checkbox" checked={formData.useAutoPassword} onChange={(e) => setFormData(prev => ({ ...prev, useAutoPassword: e.target.checked, defaultPassword: '' }))} className="w-4 h-4 rounded text-[#6d28d9] focus:ring-[#6d28d9]" />
                     <span className="text-xs text-gray-700 font-medium">Auto-generate from Student ID / Roll Number</span>
                   </label>
                   {!formData.useAutoPassword && (
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-gray-700">Custom Password <span className="text-red-500">*</span></label>
                       <div className="relative">
-                        <input type={showPassword ? 'text' : 'password'} name="defaultPassword" value={formData.defaultPassword} onChange={handleChange} className={`w-full px-3 py-2 pr-10 text-sm rounded-lg border ${errors.defaultPassword ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2 focus:ring-[#00236f]/20`} placeholder="Enter default password" />
+                        <input type={showPassword ? 'text' : 'password'} name="defaultPassword" value={formData.defaultPassword} onChange={handleChange} className={`w-full px-3 py-2 pr-10 text-sm rounded-lg border ${errors.defaultPassword ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20`} placeholder="Enter default password" />
                         <button type="button" onClick={() => setShowPassword(prev => !prev)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors" title={showPassword ? 'Hide password' : 'Show password'}>
                           <span className="material-symbols-outlined text-[18px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
                         </button>
@@ -413,7 +413,7 @@ export default function AddStudentPage() {
                         }}
                         className={`w-full px-3 py-2 text-sm rounded-lg border ${
                           errors.department ? 'border-red-400' : 'border-gray-200'
-                        } focus:outline-none focus:ring-2 focus:ring-[#00236f]/20 bg-white`}
+                        } focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20 bg-white`}
                       >
                         <option value="">Select Department</option>
                         {departments.map(d => (
@@ -445,8 +445,8 @@ export default function AddStudentPage() {
                       key={option}
                       className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                         formData.quota === option
-                          ? 'border-[#00236f] bg-[#00236f]/5'
-                          : 'border-gray-200 hover:border-[#00236f]/50'
+                          ? 'border-[#6d28d9] bg-[#6d28d9]/5'
+                          : 'border-gray-200 hover:border-[#6d28d9]/50'
                       }`}
                     ><input
                         type="radio"
@@ -454,7 +454,7 @@ export default function AddStudentPage() {
                         value={option}
                         checked={formData.quota === option}
                         onChange={handleChange}
-                        className="w-4 h-4 text-[#00236f] cursor-pointer"
+                        className="w-4 h-4 text-[#6d28d9] cursor-pointer"
                       /><span className="ml-3 font-medium text-gray-700">{option}</span></label>))}
                 </div>{errors.quota && <p className="text-xs text-red-500 font-medium">{errors.quota}</p>}
               </div>)}
@@ -466,8 +466,8 @@ export default function AddStudentPage() {
                       key={option}
                       className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                         formData.accommodation === option
-                          ? 'border-[#00236f] bg-[#00236f]/5'
-                          : 'border-gray-200 hover:border-[#00236f]/50'
+                          ? 'border-[#6d28d9] bg-[#6d28d9]/5'
+                          : 'border-gray-200 hover:border-[#6d28d9]/50'
                       }`}
                     ><input
                         type="radio"
@@ -475,7 +475,7 @@ export default function AddStudentPage() {
                         value={option}
                         checked={formData.accommodation === option}
                         onChange={handleChange}
-                        className="w-4 h-4 text-[#00236f] cursor-pointer"
+                        className="w-4 h-4 text-[#6d28d9] cursor-pointer"
                       /><span className="ml-3 font-medium text-gray-700">{option}</span></label>))}
                 </div>{errors.accommodation && <p className="text-xs text-red-500 font-medium">{errors.accommodation}</p>}
 
@@ -499,7 +499,7 @@ export default function AddStudentPage() {
 
             {/* Step 7: Payment */}
             {step === 7 && (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="bg-green-50 border-2 border-green-200 rounded-lg p-4"><h3 className="text-sm font-bold text-gray-800 mb-3">Application Fee</h3><div className="bg-white rounded-lg p-3 mb-3 border border-green-300"><p className="text-2xl font-bold text-[#00236f]">₹{parseFloat(formData.feeAmount) || 500}</p><p className="text-xs text-gray-600 mt-1">One-time application processing fee</p></div></div><div className="space-y-3"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Payment Method <span className="text-red-500">*</span></label><select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.paymentMethod ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2 bg-white`}><option value="">Select Payment Method</option>{['Debit Card', 'Credit Card', 'UPI', 'Net Banking'].map(m =><option key={m}>{m}</option>)}
+              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="bg-green-50 border-2 border-green-200 rounded-lg p-4"><h3 className="text-sm font-bold text-gray-800 mb-3">Application Fee</h3><div className="bg-white rounded-lg p-3 mb-3 border border-green-300"><p className="text-2xl font-bold text-[#6d28d9]">₹{parseFloat(formData.feeAmount) || 500}</p><p className="text-xs text-gray-600 mt-1">One-time application processing fee</p></div></div><div className="space-y-3"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Payment Method <span className="text-red-500">*</span></label><select name="paymentMethod" value={formData.paymentMethod} onChange={handleChange} className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.paymentMethod ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2 bg-white`}><option value="">Select Payment Method</option>{['Debit Card', 'Credit Card', 'UPI', 'Net Banking'].map(m =><option key={m}>{m}</option>)}
                     </select>{errors.paymentMethod && <p className="text-xs text-red-500 font-medium">{errors.paymentMethod}</p>}
                   </div><div className="bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-xs text-green-800 font-medium">Proceed to the next step to complete your payment securely</p></div></div></div>)}
 
@@ -511,7 +511,7 @@ export default function AddStudentPage() {
                     </div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Relationship <span className="text-red-500">*</span></label><select name="relationship" value={formData.relationship} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Relationship</option>{['Father', 'Mother', 'Legal Guardian', 'Sibling', 'Relative'].map(r =><option key={r}>{r}</option>)}
                       </select></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Phone <span className="text-red-500">*</span></label><input name="guardianPhone" value={formData.guardianPhone} onChange={handleChange} maxLength="10" pattern="[0-9]{10}" className={`w-full px-3 py-2 text-sm rounded-lg border ${errors.guardianPhone ? 'border-red-400' : 'border-gray-200'} focus:outline-none focus:ring-2`} placeholder="10-digit" />{errors.guardianPhone && <p className="text-xs text-red-500 font-medium">{errors.guardianPhone}</p>}
                     </div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Email</label><input type="email" name="guardianEmail" value={formData.guardianEmail} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="optional" /></div><div className="space-y-1 md:col-span-2"><label className="text-xs font-semibold text-gray-700">Occupation</label><input name="guardianOccupation" value={formData.guardianOccupation} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="e.g. Business, Engineer" /></div></div></div>{/* Confirmation */}
-                <div className="bg-[#00236f]/5 border border-[#00236f]/20 rounded-lg p-3"><p className="text-xs text-gray-700">By clicking "Submit Enrollment", you confirm that all information provided is accurate and complete.
+                <div className="bg-[#6d28d9]/5 border border-[#6d28d9]/20 rounded-lg p-3"><p className="text-xs text-gray-700">By clicking "Submit Enrollment", you confirm that all information provided is accurate and complete.
                   </p></div></div>)}
 
             {/* Form Actions */}
@@ -531,14 +531,14 @@ export default function AddStudentPage() {
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="px-4 py-2 bg-[#00236f] text-white text-sm rounded-lg hover:bg-[#001a54] transition-colors font-medium"
+                    className="px-4 py-2 bg-[#6d28d9] text-white text-sm rounded-lg hover:bg-[#4c1d95] transition-colors font-medium"
                   >Next →
                   </button>)}
                 {step === 8 && (
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-4 py-2 bg-[#00236f] text-white text-sm rounded-lg hover:bg-[#001a54] disabled:opacity-50 transition-colors font-medium"
+                    className="px-4 py-2 bg-[#6d28d9] text-white text-sm rounded-lg hover:bg-[#4c1d95] disabled:opacity-50 transition-colors font-medium"
                   >{isSubmitting ? 'Submitting...' : 'Submit Enrollment'}
                   </button>)}
               </div></div></form></div></div></Layout>);

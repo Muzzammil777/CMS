@@ -10,22 +10,22 @@
 
 :root {
   /* Primary Green Theme */
-  --brand-primary: #00236f;
-  --brand-primary-dark: #001a54;
-  --brand-primary-light: #1a3c85;
-  --brand-primary-lighter: #e6ecf7;
-  --brand-primary-softer: #f0f4fc;
+  --brand-primary: #6d28d9;
+  --brand-primary-dark: #4c1d95;
+  --brand-primary-light: #8b5cf6;
+  --brand-primary-lighter: #ede9fe;
+  --brand-primary-softer: #faf5ff;
   
   /* Legacy variable names for compatibility */
-  --brand-blue: #00236f;
-  --brand-blue-dark: #001a54;
-  --brand-navy: #00236f;
-  --brand-cyan: #1a3c85;
-  --brand-cyan-soft: #e6ecf7;
+  --brand-blue: #6d28d9;
+  --brand-blue-dark: #4c1d95;
+  --brand-navy: #6d28d9;
+  --brand-cyan: #8b5cf6;
+  --brand-cyan-soft: #ede9fe;
   
   /* Modern gradient definitions */
-  --brand-gradient: linear-gradient(90deg, #00236f, #1a3c85);
-  --brand-gradient-strong: linear-gradient(135deg, #001a54, #00236f);
+  --brand-gradient: linear-gradient(90deg, #6d28d9, #8b5cf6);
+  --brand-gradient-strong: linear-gradient(135deg, #4c1d95, #6d28d9);
 }
 
 html,
@@ -66,7 +66,7 @@ a {
 
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #e6ecf7 0%, #f0f4fc 55%, #e8f1eb 100%);
+  background: linear-gradient(135deg, #ede9fe 0%, #faf5ff 55%, #e8f1eb 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -759,7 +759,7 @@ a {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #00236f, #1a3c85);
+  background: linear-gradient(135deg, #6d28d9, #8b5cf6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -918,7 +918,7 @@ a {
 }
 
 .stat-card-blue .stat-value {
-  color: #00236f;
+  color: #6d28d9;
 }
 
 .stat-card-green .stat-value {
@@ -926,7 +926,7 @@ a {
 }
 
 .stat-card-purple .stat-value {
-  color: #00236f;
+  color: #6d28d9;
 }
 
 .stat-card-orange .stat-value {
@@ -954,7 +954,7 @@ a {
 }
 
 .stat-card-purple .stat-sub {
-  color: #1a3c85;
+  color: #8b5cf6;
 }
 
 .stat-card-orange .stat-sub {

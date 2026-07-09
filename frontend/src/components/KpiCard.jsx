@@ -22,10 +22,10 @@ export default function KpiCard({
       icon: 'bg-blue-100/50'
     },
     green: {
-      bg: 'bg-[#00236f]/5',
-      border: 'border-[#00236f]/15',
-      text: 'text-[#00236f]',
-      icon: 'bg-[#00236f]/10'
+      bg: 'bg-[#6d28d9]/5',
+      border: 'border-[#6d28d9]/15',
+      text: 'text-[#6d28d9]',
+      icon: 'bg-[#6d28d9]/10'
     },
     emerald: {
       bg: 'bg-emerald-50/50',

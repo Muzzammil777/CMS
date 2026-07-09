@@ -180,7 +180,7 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
   const getMarksColor = (marks) => {
     const percentage = (marks / maxInternal) * 100;
     if (percentage >= 80) return 'text-emerald-600';
-    if (percentage >= 60) return 'text-[#00236f]';
+    if (percentage >= 60) return 'text-[#6d28d9]';
     if (percentage >= 40) return 'text-yellow-600';
     return 'text-red-600';
   };
@@ -188,7 +188,7 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        <div className="bg-[#00236f] text-white px-6 py-4">
+        <div className="bg-[#6d28d9] text-white px-6 py-4">
           <h2 className="text-xl font-semibold flex items-center">
             <span className="material-symbols-outlined mr-2">assignment</span>
             Internal Marks Entry - {exam.name}
@@ -270,7 +270,7 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-[#00236f] text-white rounded-lg hover:bg-[#001a54]"
+            className="px-4 py-2 bg-[#6d28d9] text-white rounded-lg hover:bg-[#4c1d95]"
           >
             Save Internal Marks
           </button>

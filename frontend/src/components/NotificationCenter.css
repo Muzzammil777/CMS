@@ -21,7 +21,7 @@
 
 .notification-header-left .header-icon {
   font-size: 32px;
-  color: #00236f;
+  color: #6d28d9;
   background: #eff6ff;
   width: 56px;
   height: 56px;
@@ -123,7 +123,7 @@
   outline: none;
   background: white;
   background: white;
-  border-color: #00236f;
+  border-color: #6d28d9;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
@@ -169,7 +169,7 @@
 }
 
 .notification-center-btn.primary {
-  background-color: #00236f;
+  background-color: #6d28d9;
   color: white;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
@@ -226,7 +226,7 @@
 }
 
 .clear-search-btn {
-  background: #00236f;
+  background: #6d28d9;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -239,7 +239,7 @@
   width: 48px;
   height: 48px;
   border: 5px solid #f3f3f3;
-  border-top: 5px solid #00236f;
+  border-top: 5px solid #6d28d9;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -379,7 +379,7 @@
   padding: 12px;
   background-color: #f8fafc;
   border-radius: 8px;
-  border-left: 3px solid #00236f;
+  border-left: 3px solid #6d28d9;
 }
 
 .notification-modal-item strong {

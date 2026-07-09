@@ -50,7 +50,7 @@ export default function NotificationPanel({ studentId, isOpen, onClose }) {
       case 'success': return { icon: 'check_circle', color: 'text-emerald-600' };
       case 'warning': return { icon: 'warning', color: 'text-yellow-600' };
       case 'error': return { icon: 'error', color: 'text-red-600' };
-      default: return { icon: 'info', color: 'text-[#00236f]' };
+      default: return { icon: 'info', color: 'text-[#6d28d9]' };
     }
   };
 
@@ -70,13 +70,13 @@ export default function NotificationPanel({ studentId, isOpen, onClose }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center sm:justify-end z-50">
       <div className="bg-white rounded-t-lg sm:rounded-lg shadow-xl w-full sm:w-96 sm:mr-6 max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-[#00236f] text-white px-6 py-4">
+        <div className="bg-[#6d28d9] text-white px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined">notifications</span>
               <h2 className="text-lg font-semibold">Notifications</h2>
               {unreadCount > 0 && (
-                <span className="bg-white text-[#00236f] text-xs font-bold px-2 py-1 rounded-full">
+                <span className="bg-white text-[#6d28d9] text-xs font-bold px-2 py-1 rounded-full">
                   {unreadCount}
                 </span>
               )}
@@ -95,7 +95,7 @@ export default function NotificationPanel({ studentId, isOpen, onClose }) {
           <div className="px-4 py-3 bg-slate-50 border-b">
             <button
               onClick={handleMarkAllRead}
-              className="text-sm text-[#00236f] hover:text-[#00236f]/80 font-medium flex items-center gap-1"
+              className="text-sm text-[#6d28d9] hover:text-[#6d28d9]/80 font-medium flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-sm">done_all</span>
               Mark all as read
@@ -136,7 +136,7 @@ export default function NotificationPanel({ studentId, isOpen, onClose }) {
                         {!notif.read && (
                           <button
                             onClick={() => handleMarkRead(notif.id)}
-                            className="text-xs text-[#00236f] hover:text-[#00236f]/80 font-medium"
+                            className="text-xs text-[#6d28d9] hover:text-[#6d28d9]/80 font-medium"
                           >
                             Mark as read
                           </button>

@@ -83,7 +83,7 @@ export default function UserManagement() {
               placeholder="Search by name or email…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 w-full bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00236f]/30 focus:border-[#00236f] transition-all"
+              className="pl-9 pr-4 py-2 w-full bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/30 focus:border-[#6d28d9] transition-all"
             />
           </div>
         </div>
@@ -121,9 +121,9 @@ export default function UserManagement() {
                         checked={u.active}
                         onChange={(e) => toggleActive(u.id, e.target.checked)}
                       />
-                      <div className="w-8 h-4 bg-slate-200 peer-checked:bg-[#00236f] rounded-full transition-colors" />
+                      <div className="w-8 h-4 bg-slate-200 peer-checked:bg-[#6d28d9] rounded-full transition-colors" />
                       <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
-                      <span className={`text-xs font-medium ${u.active ? 'text-[#00236f]' : 'text-slate-400'}`}>{u.active ? 'Active' : 'Disabled'}</span>
+                      <span className={`text-xs font-medium ${u.active ? 'text-[#6d28d9]' : 'text-slate-400'}`}>{u.active ? 'Active' : 'Disabled'}</span>
                     </label>
                   </td>
                   <td className="px-5 py-3">
@@ -151,8 +151,8 @@ export default function UserManagement() {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-[#00236f]/10 rounded-lg">
-                  <span className="material-symbols-outlined text-[#00236f]">{activeUser.id ? 'edit' : 'person_add'}</span>
+                <div className="p-2 bg-[#6d28d9]/10 rounded-lg">
+                  <span className="material-symbols-outlined text-[#6d28d9]">{activeUser.id ? 'edit' : 'person_add'}</span>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">{activeUser.id ? 'Edit User' : 'Create User'}</h3>
               </div>
@@ -176,13 +176,13 @@ export default function UserManagement() {
                 </select>
               </div>
               <label className="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={activeUser.active} onChange={(e) => setActiveUser((cur) => ({ ...cur, active: e.target.checked }))} className="w-4 h-4 accent-[#00236f]" />
+                <input type="checkbox" checked={activeUser.active} onChange={(e) => setActiveUser((cur) => ({ ...cur, active: e.target.checked }))} className="w-4 h-4 accent-[#6d28d9]" />
                 <span className="text-sm font-medium text-slate-700">Account Active</span>
               </label>
             </div>
             <div className="p-5 border-t border-slate-200 flex items-center justify-end gap-3">
               <button onClick={closeModal} className="px-5 py-2 text-sm font-semibold text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Cancel</button>
-              <button onClick={saveUser} className="px-6 py-2 bg-[#00236f] hover:bg-[#001a54] text-white text-sm font-semibold rounded-lg transition-all shadow-sm active:scale-95">
+              <button onClick={saveUser} className="px-6 py-2 bg-[#6d28d9] hover:bg-[#4c1d95] text-white text-sm font-semibold rounded-lg transition-all shadow-sm active:scale-95">
                 {activeUser.id ? 'Update User' : 'Create User'}
               </button>
             </div>

@@ -133,7 +133,7 @@ export default function TimetableDraftForm({ onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        <div className="bg-[#00236f] text-white px-6 py-4">
+        <div className="bg-[#6d28d9] text-white px-6 py-4">
           <h2 className="text-xl font-semibold flex items-center">
             <span className="material-symbols-outlined mr-2">edit_calendar</span>
             Create Exam Timetable Draft
@@ -198,7 +198,7 @@ export default function TimetableDraftForm({ onClose, onSave }) {
               <button
                 type="button"
                 onClick={addExam}
-                className="px-4 py-2 bg-[#00236f] text-white rounded-lg hover:bg-[#00236f]/90 text-sm flex items-center gap-2"
+                className="px-4 py-2 bg-[#6d28d9] text-white rounded-lg hover:bg-[#6d28d9]/90 text-sm flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-sm">add</span>
                 Add Exam
@@ -329,7 +329,7 @@ export default function TimetableDraftForm({ onClose, onSave }) {
             <button
               type="button"
               onClick={handleSubmitForApproval}
-              className="px-4 py-2 bg-[#00236f] text-white rounded-lg hover:bg-[#00236f]/90 flex items-center gap-2"
+              className="px-4 py-2 bg-[#6d28d9] text-white rounded-lg hover:bg-[#6d28d9]/90 flex items-center gap-2"
             >
               <span className="material-symbols-outlined text-sm">send</span>
               Submit for Approval

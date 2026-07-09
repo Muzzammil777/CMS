@@ -243,7 +243,7 @@ export default function FacilityPage({ noLayout = false }) {
             {canBookFacility && (
               <button
                 onClick={() => setBookingOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#001a54] transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95] transition-colors"
               >
                 <span className="material-symbols-outlined text-lg">add</span>Book Room
               </button>
@@ -280,7 +280,7 @@ export default function FacilityPage({ noLayout = false }) {
               placeholder="Search by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 w-56 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#00236f]/30 focus:border-[#00236f] transition-all duration-200"
+              className="pl-9 pr-4 py-2 w-56 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/30 focus:border-[#6d28d9] transition-all duration-200"
             />
           </div>
 
@@ -289,7 +289,7 @@ export default function FacilityPage({ noLayout = false }) {
               onClick={() => setFilterOpen(prev => !prev)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
                 statusFilter !== 'All'
-                  ? 'bg-[#00236f] text-white border-[#00236f] shadow-sm'
+                  ? 'bg-[#6d28d9] text-white border-[#6d28d9] shadow-sm'
                   : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 shadow-sm'
               }`}
             >
@@ -305,7 +305,7 @@ export default function FacilityPage({ noLayout = false }) {
                     onClick={() => { setStatusFilter(opt); setFilterOpen(false) }}
                     className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors duration-150 ${
                       statusFilter === opt
-                        ? 'bg-[#00236f]/10 text-[#00236f] font-semibold'
+                        ? 'bg-[#6d28d9]/10 text-[#6d28d9] font-semibold'
                         : 'text-slate-600 hover:bg-slate-50'
                     }`}
                   >
@@ -427,8 +427,8 @@ export default function FacilityPage({ noLayout = false }) {
               <>
                 <div className="p-6 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[#00236f]/10 rounded-lg">
-                      <span className="material-symbols-outlined text-[#00236f]">meeting_room</span>
+                    <div className="p-2 bg-[#6d28d9]/10 rounded-lg">
+                      <span className="material-symbols-outlined text-[#6d28d9]">meeting_room</span>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900">Book a Room</h3>
                   </div>
@@ -444,7 +444,7 @@ export default function FacilityPage({ noLayout = false }) {
                         required
                         value={bookingForm.room}
                         onChange={e => setBookingForm({ ...bookingForm, room: e.target.value })}
-                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/20 focus:border-[#00236f] outline-none transition-colors"
+                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] outline-none transition-colors"
                       >
                         <option value="">Select a room</option>
                         {availableRooms.map(r => (
@@ -459,7 +459,7 @@ export default function FacilityPage({ noLayout = false }) {
                         required
                         value={bookingForm.date}
                         onChange={e => setBookingForm({ ...bookingForm, date: e.target.value })}
-                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/20 focus:border-[#00236f] outline-none transition-colors"
+                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] outline-none transition-colors"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -470,7 +470,7 @@ export default function FacilityPage({ noLayout = false }) {
                         placeholder="e.g. Guest Lecture, Lab Session"
                         value={bookingForm.purpose}
                         onChange={e => setBookingForm({ ...bookingForm, purpose: e.target.value })}
-                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/20 focus:border-[#00236f] outline-none transition-colors"
+                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] outline-none transition-colors"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -480,7 +480,7 @@ export default function FacilityPage({ noLayout = false }) {
                         required
                         value={bookingForm.timeFrom}
                         onChange={e => setBookingForm({ ...bookingForm, timeFrom: e.target.value })}
-                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/20 focus:border-[#00236f] outline-none transition-colors"
+                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] outline-none transition-colors"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -490,7 +490,7 @@ export default function FacilityPage({ noLayout = false }) {
                         required
                         value={bookingForm.timeTo}
                         onChange={e => setBookingForm({ ...bookingForm, timeTo: e.target.value })}
-                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/20 focus:border-[#00236f] outline-none transition-colors"
+                        className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] outline-none transition-colors"
                       />
                     </div>
                   </div>
@@ -504,7 +504,7 @@ export default function FacilityPage({ noLayout = false }) {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-2.5 bg-[#00236f] text-white rounded-lg text-sm font-semibold hover:bg-[#001a54] transition-colors"
+                      className="flex-1 px-4 py-2.5 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95] transition-colors"
                     >
                       Confirm Booking
                     </button>

@@ -574,6 +574,36 @@ async def _create_student_from_admission(admission: dict[str, Any]) -> bool:
         result = await students_collection.insert_one(student_data)
         print(f"[SUCCESS] Created student {student_id} from admission {admission_id}")
         print(f"[SUCCESS] Inserted with MongoDB ID: {result.inserted_id}")
+        
+        # Send welcome email asynchronously
+        try:
+            from backend.utils.mailer import send_email
+            email_to = student_data.get("email")
+            if email_to:
+                subject = "Welcome to OMS"
+                html_body = f"""
+                <html>
+                <body>
+                    <h2>Welcome to CMS!</h2>
+                    <p>Dear {name},</p>
+                    <p>Your student account has been created successfully.</p>
+                    <p>Here are your account details to log in:</p>
+                    <ul>
+                        <li><strong>Role:</strong> Student</li>
+                        <li><strong>Roll Number/Username:</strong> {student_id}</li>
+                        <li><strong>Password:</strong> {student_data.get("password") or student_id}</li>
+                    </ul>
+                    <p>Best regards,<br>Office Management System (OMS) Support</p>
+                </body>
+                </html>
+                """
+                import asyncio
+                asyncio.create_task(send_email(email_to, subject, html_body))
+            else:
+                print(f"[EMAIL WARNING] No email address found for student {student_id}, skipping welcome email.")
+        except Exception as email_err:
+            print(f"[EMAIL ERROR] Failed to trigger welcome email for student {student_id}: {str(email_err)}")
+
         return True
         
     except Exception as e:
@@ -658,6 +688,36 @@ async def _create_faculty_from_admission(admission: dict[str, Any]) -> bool:
         
         result = await faculty_collection.insert_one(faculty_data)
         print(f"[SUCCESS] Created faculty {faculty_id} from admission {admission_id}")
+        
+        # Send welcome email asynchronously
+        try:
+            from backend.utils.mailer import send_email
+            email_to = faculty_data.get("email")
+            if email_to:
+                subject = "Welcome to OMS"
+                html_body = f"""
+                <html>
+                <body>
+                    <h2>Welcome to CMS!</h2>
+                    <p>Dear {name},</p>
+                    <p>Your faculty account has been created successfully.</p>
+                    <p>Here are your account details to log in:</p>
+                    <ul>
+                        <li><strong>Role:</strong> Faculty</li>
+                        <li><strong>Employee ID/Username:</strong> {faculty_id}</li>
+                        <li><strong>Password:</strong> {faculty_data.get("password") or faculty_id}</li>
+                    </ul>
+                    <p>Best regards,<br>Office Management System (OMS) Support</p>
+                </body>
+                </html>
+                """
+                import asyncio
+                asyncio.create_task(send_email(email_to, subject, html_body))
+            else:
+                print(f"[EMAIL WARNING] No email address found for faculty {faculty_id}, skipping welcome email.")
+        except Exception as email_err:
+            print(f"[EMAIL ERROR] Failed to trigger welcome email for faculty {faculty_id}: {str(email_err)}")
+
         return True
         
     except Exception as e:

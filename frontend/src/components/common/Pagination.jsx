@@ -43,7 +43,7 @@ export default function Pagination({
           <select
             value={pageSize}
             onChange={e => { onPageSizeChange(Number(e.target.value)); onPageChange(1); }}
-            className="border border-slate-200 rounded-lg px-2 py-1 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#00236f]/20"
+            className="border border-slate-200 rounded-lg px-2 py-1 text-xs font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20"
           >
             {[3, 5, 10, 20, 50].map(n => (
               <option key={n} value={n}>{n} / page</option>
@@ -74,7 +74,7 @@ export default function Pagination({
                   aria-current={currentPage === p ? 'page' : undefined}
                   className={`min-w-[30px] h-[30px] rounded-lg text-xs font-semibold transition-colors ${
                     p === currentPage
-                      ? 'bg-[#00236f] text-white shadow-sm'
+                      ? 'bg-[#6d28d9] text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >

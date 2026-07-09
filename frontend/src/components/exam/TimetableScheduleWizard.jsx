@@ -151,7 +151,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
     onClose();
   };
 
-  const inputClasses = "w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#00236f]/10 focus:border-[#00236f] outline-none transition-all text-sm bg-white text-slate-800";
+  const inputClasses = "w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#6d28d9]/10 focus:border-[#6d28d9] outline-none transition-all text-sm bg-white text-slate-800";
   const labelClasses = "block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider";
 
   return (
@@ -181,7 +181,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
             return (
               <div key={idx} className="flex flex-col items-center flex-1 relative">
                 <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors z-10 ${
-                  isActive || isPassed ? 'bg-[#00236f] text-white' : 'bg-slate-100 text-slate-400'
+                  isActive || isPassed ? 'bg-[#6d28d9] text-white' : 'bg-slate-100 text-slate-400'
                 }`}>
                   {isPassed ? '✓' : stepNum}
                 </div>
@@ -189,7 +189,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                   {label}
                 </div>
                 {idx < 2 && (
-                  <div className={`absolute top-3.5 sm:top-4 left-[50%] w-full h-[2px] z-0 transition-colors ${isPassed ? 'bg-[#00236f]' : 'bg-slate-100'}`} />
+                  <div className={`absolute top-3.5 sm:top-4 left-[50%] w-full h-[2px] z-0 transition-colors ${isPassed ? 'bg-[#6d28d9]' : 'bg-slate-100'}`} />
                 )}
               </div>
             );
@@ -284,7 +284,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                 <button
                   type="button"
                   onClick={handleAddExamRow}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-[#00236f]/10 hover:bg-[#00236f]/20 text-[#00236f] rounded-lg text-xs font-semibold transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-[#6d28d9]/10 hover:bg-[#6d28d9]/20 text-[#6d28d9] rounded-lg text-xs font-semibold transition-all"
                 >
                   <span className="material-symbols-outlined text-sm font-bold">add</span>
                   Add Exam
@@ -316,7 +316,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                           value={exam.code}
                           onChange={(e) => handleExamChange(idx, 'code', e.target.value)}
                           placeholder="e.g. CS301"
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-[#00236f]/10 focus:border-[#00236f] outline-none"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-[#6d28d9]/10 focus:border-[#6d28d9] outline-none"
                         />
                       </div>
                       <div>
@@ -326,7 +326,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                           value={exam.name}
                           onChange={(e) => handleExamChange(idx, 'name', e.target.value)}
                           placeholder="e.g. Data Structures"
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-[#00236f]/10 focus:border-[#00236f] outline-none"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-[#6d28d9]/10 focus:border-[#6d28d9] outline-none"
                         />
                       </div>
                       <div>
@@ -335,7 +335,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                           type="date"
                           value={exam.date}
                           onChange={(e) => handleExamChange(idx, 'date', e.target.value)}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-[#00236f]/10 focus:border-[#00236f] outline-none"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-[#6d28d9]/10 focus:border-[#6d28d9] outline-none"
                         />
                       </div>
                       <div>
@@ -344,7 +344,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                           type="time"
                           value={exam.time}
                           onChange={(e) => handleExamChange(idx, 'time', e.target.value)}
-                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-[#00236f]/10 focus:border-[#00236f] outline-none"
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-[#6d28d9]/10 focus:border-[#6d28d9] outline-none"
                         />
                       </div>
                     </div>
@@ -378,7 +378,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
 
               {loadingPreview ? (
                 <div className="text-center py-16 text-slate-500">
-                  <span className="material-symbols-outlined text-4xl animate-spin text-[#00236f] mb-2">sync</span>
+                  <span className="material-symbols-outlined text-4xl animate-spin text-[#6d28d9] mb-2">sync</span>
                   <p className="text-sm font-semibold">Running conflict checks and auto-assigning classrooms & invigilators...</p>
                 </div>
               ) : (
@@ -398,7 +398,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                         {previewExams.map((exam, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/55 transition-colors">
                             <td className="px-5 py-4">
-                              <span className="text-[10px] font-bold text-[#00236f] block uppercase">{exam.code}</span>
+                              <span className="text-[10px] font-bold text-[#6d28d9] block uppercase">{exam.code}</span>
                               <span className="font-semibold text-slate-700 text-sm">{exam.name}</span>
                             </td>
                             <td className="px-5 py-4 text-slate-600 font-medium">
@@ -406,7 +406,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                               <p className="text-slate-400 font-normal">{exam.time}</p>
                             </td>
                             <td className="px-5 py-4 font-semibold text-slate-700">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#00236f]/5 text-[#00236f] border border-[#00236f]/10">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#6d28d9]/5 text-[#6d28d9] border border-[#6d28d9]/10">
                                 <span className="material-symbols-outlined text-sm">room</span>
                                 {exam.room}
                               </span>
@@ -434,7 +434,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                       <div key={idx} className="p-4 border border-slate-200 bg-white rounded-xl shadow-sm space-y-3">
                         <div className="flex justify-between items-start">
                           <div>
-                            <span className="text-[10px] font-bold text-[#00236f] block uppercase">{exam.code}</span>
+                            <span className="text-[10px] font-bold text-[#6d28d9] block uppercase">{exam.code}</span>
                             <span className="font-semibold text-slate-800 text-sm">{exam.name}</span>
                           </div>
                         </div>
@@ -445,7 +445,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                           </div>
                           <div>
                             <span className="text-[9px] text-slate-400 uppercase font-bold block">Auto-Assigned Room</span>
-                            <span className="inline-flex items-center gap-1 mt-0.5 text-xs font-semibold text-[#00236f]">
+                            <span className="inline-flex items-center gap-1 mt-0.5 text-xs font-semibold text-[#6d28d9]">
                               <span className="material-symbols-outlined text-xs">room</span>
                               {exam.room}
                             </span>
@@ -489,7 +489,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-5 py-2.5 bg-[#00236f] hover:bg-[#001a54] text-white rounded-lg text-sm font-semibold transition-all active:scale-95 shadow-sm"
+                className="px-5 py-2.5 bg-[#6d28d9] hover:bg-[#4c1d95] text-white rounded-lg text-sm font-semibold transition-all active:scale-95 shadow-sm"
               >
                 Next
               </button>
@@ -498,7 +498,7 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
                 type="button"
                 onClick={handleScheduleExams}
                 disabled={submitting || loadingPreview}
-                className="px-5 py-2.5 bg-[#00236f] hover:bg-[#001a54] text-white rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="px-5 py-2.5 bg-[#6d28d9] hover:bg-[#4c1d95] text-white rounded-lg text-sm font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
                 {submitting ? 'Scheduling...' : 'Schedule Exams'}
               </button>

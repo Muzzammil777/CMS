@@ -89,7 +89,7 @@ export default function FacultyProfilePage() {
             </button>
             <button
               onClick={() => navigate('/faculty')}
-              className="px-5 py-2.5 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95] transition-all"
+              className="px-5 py-2.5 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#3b0764] transition-all"
             >
               Back to Faculty
             </button>
@@ -105,14 +105,14 @@ export default function FacultyProfilePage() {
       <div className="flex items-center justify-between mb-8">
         <button
           onClick={() => navigate('/faculty')}
-          className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#6d28d9] hover:border-[#6d28d9] transition-all group uppercase tracking-wider"
+          className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#4c1d95] hover:border-[#4c1d95] transition-all group uppercase tracking-wider"
         >
           <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
           <span>Back to Faculty</span>
         </button>
         <button
           onClick={() => setIsEditModalOpen(true)}
-          className="px-5 py-2.5 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#6d28d9]/90 transition-all"
+          className="px-5 py-2.5 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95]/90 transition-all"
         >
           Edit Profile
         </button>
@@ -124,8 +124,8 @@ export default function FacultyProfilePage() {
 
         <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-10">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
-            <div className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#6d28d9] to-[#60a5fa] p-1 shadow-xl">
-              <div className="w-full h-full rounded-lg bg-white flex items-center justify-center text-[#6d28d9]">
+            <div className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#4c1d95] to-[#60a5fa] p-1 shadow-xl">
+              <div className="w-full h-full rounded-lg bg-white flex items-center justify-center text-[#4c1d95]">
                 <User size={40} />
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function FacultyProfilePage() {
             <div className="text-center sm:text-left">
               <div className="flex flex-col sm:flex-row items-center gap-3 mb-3">
                 <h1 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">{faculty.name}</h1>
-                <span className="px-2.5 py-0.5 bg-green-50 text-[#6d28d9] border border-green-100 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 sm:mt-0">
+                <span className="px-2.5 py-0.5 bg-green-50 text-[#4c1d95] border border-green-100 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 sm:mt-0">
                   {faculty.employeeId}
                 </span>
               </div>
@@ -166,7 +166,7 @@ export default function FacultyProfilePage() {
             onClick={() => setActiveTab(tab.id)}
             className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap ${
               activeTab === tab.id
-                ? 'text-[#6d28d9]'
+                ? 'text-[#4c1d95]'
                 : 'text-slate-400 hover:text-slate-600'
             }`}
           >
@@ -175,7 +175,7 @@ export default function FacultyProfilePage() {
               {tab.label}
             </span>
             {activeTab === tab.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#6d28d9] rounded-t-full" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4c1d95] rounded-t-full" />
             )}
           </button>
         ))}
@@ -186,7 +186,7 @@ export default function FacultyProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
               <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-                <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">contact_page</span>
+                <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">contact_page</span>
                 Contact & Info
               </h3>
 
@@ -220,7 +220,7 @@ export default function FacultyProfilePage() {
               <div className="border-t border-slate-200 my-6" />
 
               <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-                <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">badge</span>
+                <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">badge</span>
                 Personal Details
               </h3>
 
@@ -242,7 +242,7 @@ export default function FacultyProfilePage() {
               <div className="border-t border-slate-200 my-6" />
 
               <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-                <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">badge</span>
+                <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">badge</span>
                 Personal Details
               </h3>
 
@@ -278,13 +278,13 @@ export default function FacultyProfilePage() {
             <div className="lg:col-span-8 space-y-8">
               <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
                 <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-                  <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">school</span>
+                  <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">school</span>
                   Education & Qualifications
                 </h3>
 
                 {/* Primary Qualification from Edit Profile */}
                 <div className="mb-6 p-5 bg-green-50/40 border border-green-100 rounded-xl">
-                  <h4 className="text-xs font-bold text-[#6d28d9] uppercase tracking-wider mb-3">Primary Qualification</h4>
+                  <h4 className="text-xs font-bold text-[#4c1d95] uppercase tracking-wider mb-3">Primary Qualification</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <span className="block text-[10px] uppercase font-bold text-slate-400">Degree / Qualification</span>
@@ -335,7 +335,7 @@ export default function FacultyProfilePage() {
                   <h4 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">Specializations</h4>
                   <div className="flex gap-2 flex-wrap">
                     {faculty.specializations?.map((spec, i) => (
-                      <span key={i} className="px-3 py-1 bg-green-50 text-[#6d28d9] rounded-full text-xs font-semibold">
+                      <span key={i} className="px-3 py-1 bg-green-50 text-[#4c1d95] rounded-full text-xs font-semibold">
                         {spec}
                       </span>
                     ))}
@@ -353,7 +353,7 @@ export default function FacultyProfilePage() {
                         <li key={i}>
                           {pub.title} ({pub.year}){' '}
                           {pub.journal_link && (
-                            <a href={pub.journal_link} target="_blank" rel="noreferrer" className="text-[#6d28d9] font-medium">
+                            <a href={pub.journal_link} target="_blank" rel="noreferrer" className="text-[#4c1d95] font-medium">
                               [Link]
                             </a>
                           )}
@@ -374,7 +374,7 @@ export default function FacultyProfilePage() {
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Performance Metrics</h3>
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-[#6d28d9] text-white rounded-lg text-xs font-semibold uppercase tracking-wider hover:bg-[#6d28d9]/90 transition-all shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-[#4c1d95] text-white rounded-lg text-xs font-semibold uppercase tracking-wider hover:bg-[#4c1d95]/90 transition-all shadow-sm"
                 onClick={() => setIsEvalModalOpen(true)}
               >
                 Add Evaluation
@@ -400,7 +400,7 @@ export default function FacultyProfilePage() {
                         <td className="px-4 py-5">
                           <div className="flex items-center gap-2">
                             <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                              <div className="bg-[#6d28d9] h-full" style={{ width: `${(metric.student_feedback_score / 5) * 100}%` }} />
+                              <div className="bg-[#4c1d95] h-full" style={{ width: `${(metric.student_feedback_score / 5) * 100}%` }} />
                             </div>
                             <span className="text-sm font-semibold text-slate-700">{metric.student_feedback_score.toFixed(1)}</span>
                           </div>
@@ -443,7 +443,7 @@ export default function FacultyProfilePage() {
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Leave History</h3>
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-[#6d28d9] text-white rounded-lg text-xs font-semibold uppercase tracking-wider hover:bg-[#6d28d9]/90 transition-all shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-[#4c1d95] text-white rounded-lg text-xs font-semibold uppercase tracking-wider hover:bg-[#4c1d95]/90 transition-all shadow-sm"
                 onClick={() => setIsRequestLeaveOpen(true)}
               >
                 Request Leave

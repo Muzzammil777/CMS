@@ -290,7 +290,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         <div className="bg-slate-50 flex items-center border-b border-slate-200">
           {steps.map((s, i) => (
             <div key={s.id} className="flex-1 flex items-center">
-              <div className={`h-1.5 flex-1 transition-all duration-500 ${step >= s.id ? 'bg-[#6d28d9]' : 'bg-slate-200'}`} />
+              <div className={`h-1.5 flex-1 transition-all duration-500 ${step >= s.id ? 'bg-[#4c1d95]' : 'bg-slate-200'}`} />
             </div>
           ))}
         </div>
@@ -299,8 +299,8 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         <div className="px-8 py-5 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-              <div className="p-2 bg-[#6d28d9]/10 rounded-lg">
-                <span className="material-symbols-outlined text-[#6d28d9]">{editStudent ? 'edit_note' : 'person_add'}</span>
+              <div className="p-2 bg-[#4c1d95]/10 rounded-lg">
+                <span className="material-symbols-outlined text-[#4c1d95]">{editStudent ? 'edit_note' : 'person_add'}</span>
               </div>
               {editStudent ? 'Edit Student Details' : 'Enroll New Student'}
             </h2>
@@ -352,7 +352,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Full Name <span className="text-red-500">*</span></label>
-                    <input name="name" value={formData.name} onChange={handleChange} className={`w-full px-4 py-2.5 rounded-lg border ${errors.name ? 'border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-[#6d28d9] focus:ring-[#6d28d9]/20'} border border-slate-200 rounded-lg focus:ring-2 outline-none transition-colors text-slate-700`} placeholder="e.g. John Doe" />
+                    <input name="name" value={formData.name} onChange={handleChange} className={`w-full px-4 py-2.5 rounded-lg border ${errors.name ? 'border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-[#4c1d95] focus:ring-[#4c1d95]/20'} border border-slate-200 rounded-lg focus:ring-2 outline-none transition-colors text-slate-700`} placeholder="e.g. John Doe" />
                     {errors.name && <p className="text-xs text-red-500 font-medium">{errors.name}</p>}
                   </div>
                   <div className="space-y-1.5">
@@ -402,7 +402,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Student ID</label>
-                  <input name="id" value={formData.id} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 bg-slate-50/50 font-mono text-[#6d28d9] font-bold" />
+                  <input name="id" value={formData.id} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 bg-slate-50/50 font-mono text-[#4c1d95] font-bold" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Department</label>
@@ -535,7 +535,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
           {/* Step 5: Review */}
           {!editStudent && step === 5 && (
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-              <div className="bg-[#6d28d9]/5 border border-[#6d28d9]/10 rounded-2xl p-6 relative overflow-hidden">
+              <div className="bg-[#4c1d95]/5 border border-[#4c1d95]/10 rounded-2xl p-6 relative overflow-hidden">
                 <div className="flex flex-col md:flex-row gap-6 relative z-10">
                   <div className="w-24 h-24 rounded-2xl bg-white shadow-sm border border-slate-100 overflow-hidden shrink-0">
                     <img src={avatarPreview || `https://ui-avatars.com/api/?name=${formData.name}&background=00236f&color=fff`} className="w-full h-full object-cover" />
@@ -543,7 +543,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl font-bold text-slate-900">{formData.name || 'Anonymous Student'}</h3>
-                      <button onClick={() => setStep(1)} className="text-[10px] font-bold text-[#6d28d9] hover:underline uppercase tracking-widest">Edit Step 1</button>
+                      <button onClick={() => setStep(1)} className="text-[10px] font-bold text-[#4c1d95] hover:underline uppercase tracking-widest">Edit Step 1</button>
                     </div>
                     <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
                       <span className="text-slate-500 flex items-center gap-1.5"><span className="material-symbols-outlined text-base">badge</span> {formData.id}</span>
@@ -553,7 +553,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                   </div>
                 </div>
                 <div className="absolute top-0 right-0 p-8 transform rotate-12 opacity-5 scale-150">
-                  <span className="material-symbols-outlined text-[120px] text-[#6d28d9]">check_circle</span>
+                  <span className="material-symbols-outlined text-[120px] text-[#4c1d95]">check_circle</span>
                 </div>
               </div>
 
@@ -561,7 +561,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                  <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Personal & Bio</h4>
-                      <button onClick={() => setStep(1)} className="text-[10px] font-bold text-[#6d28d9] hover:underline">Edit</button>
+                      <button onClick={() => setStep(1)} className="text-[10px] font-bold text-[#4c1d95] hover:underline">Edit</button>
                     </div>
                     <div className="bg-slate-50 rounded-xl p-4 space-y-3">
                       <div className="flex justify-between text-sm">
@@ -582,7 +582,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                  <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Guardian Details</h4>
-                      <button onClick={() => setStep(3)} className="text-[10px] font-bold text-[#6d28d9] hover:underline">Edit</button>
+                      <button onClick={() => setStep(3)} className="text-[10px] font-bold text-[#4c1d95] hover:underline">Edit</button>
                     </div>
                     <div className="bg-slate-50 rounded-xl p-4 space-y-3">
                       <div className="flex justify-between text-sm">
@@ -605,7 +605,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
               <div className="space-y-4">
                 <div className="flex items-center justify-between px-1">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Documents Uploaded</h4>
-                  <button onClick={() => setStep(4)} className="text-[10px] font-bold text-[#6d28d9] hover:underline">Edit</button>
+                  <button onClick={() => setStep(4)} className="text-[10px] font-bold text-[#4c1d95] hover:underline">Edit</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(formData.docs).filter(([k,v]) => v && k !== 'additional').map(([key, doc]) => (
@@ -661,7 +661,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
               {step < maxStep ? (
                 <button 
                   onClick={handleNext}
-                  className="px-6 py-2.5 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95] transition-colors flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#3b0764] transition-colors flex items-center gap-2"
                 >
                   Continue
                   <span className="material-symbols-outlined text-base">arrow_forward</span>

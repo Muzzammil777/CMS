@@ -181,8 +181,8 @@ export default function BulkUploadStudentPage() {
         {/* Header */}
         <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#6d28d9]/10 rounded-lg">
-              <span className="material-symbols-outlined text-lg text-[#6d28d9]">upload_file</span>
+            <div className="p-2 bg-[#4c1d95]/10 rounded-lg">
+              <span className="material-symbols-outlined text-lg text-[#4c1d95]">upload_file</span>
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900">Bulk Student Creation</h1>
@@ -212,7 +212,7 @@ export default function BulkUploadStudentPage() {
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current.click()}
                 className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[160px] ${
-                  dragActive ? 'border-green-500 bg-green-50/50' : 'border-gray-300 hover:border-[#6d28d9] hover:bg-gray-50/30'
+                  dragActive ? 'border-green-500 bg-green-50/50' : 'border-gray-300 hover:border-[#4c1d95] hover:bg-gray-50/30'
                 }`}
               >
                 <input
@@ -230,7 +230,7 @@ export default function BulkUploadStudentPage() {
                   </div>
                 ) : (
                   <div>
-                    <p className="text-xs font-medium text-gray-700">Drag & drop CSV file, or <span className="text-[#6d28d9] font-semibold underline">browse</span></p>
+                    <p className="text-xs font-medium text-gray-700">Drag & drop CSV file, or <span className="text-[#4c1d95] font-semibold underline">browse</span></p>
                     <p className="text-[10px] text-gray-400 mt-1">File must be in .csv format</p>
                   </div>
                 )}
@@ -261,7 +261,7 @@ export default function BulkUploadStudentPage() {
                       setUseAutoPassword(e.target.checked);
                       if (e.target.checked) setDefaultPassword('');
                     }}
-                    className="w-4 h-4 rounded text-[#6d28d9] focus:ring-[#6d28d9]"
+                    className="w-4 h-4 rounded text-[#4c1d95] focus:ring-[#4c1d95]"
                   />
                   <span className="text-xs text-gray-700 font-medium">Auto-generate from Student ID / Roll Number</span>
                 </label>
@@ -273,7 +273,7 @@ export default function BulkUploadStudentPage() {
                         type={showPassword ? 'text' : 'password'}
                         value={defaultPassword}
                         onChange={(e) => setDefaultPassword(e.target.value)}
-                        className="w-full px-3 py-2 pr-10 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20"
+                        className="w-full px-3 py-2 pr-10 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20"
                         placeholder="e.g. Welcome2026"
                       />
                       <button
@@ -294,7 +294,7 @@ export default function BulkUploadStudentPage() {
               <button
                 onClick={handleUpload}
                 disabled={parsedData.length === 0 || uploading}
-                className="w-full px-6 py-2.5 bg-[#6d28d9] text-white text-sm rounded-lg hover:bg-[#4c1d95] disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow flex items-center justify-center gap-2"
+                className="w-full px-6 py-2.5 bg-[#4c1d95] text-white text-sm rounded-lg hover:bg-[#3b0764] disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow flex items-center justify-center gap-2"
               >
                 {uploading ? (
                   <>

@@ -155,7 +155,7 @@ function ClassCell({ cls, canEdit, onEdit, onClear }) {
         <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 bg-white/80 rounded-r-lg transition-opacity z-10">
           <button
             onClick={onEdit}
-            className="p-1 rounded-md bg-[#6d28d9] text-white hover:bg-[#6d28d9]/90"
+            className="p-1 rounded-md bg-[#4c1d95] text-white hover:bg-[#4c1d95]/90"
             title="Edit"
           >
             <span className="material-symbols-outlined text-sm">edit</span>
@@ -186,7 +186,7 @@ function EntryModal({ initial, onSave, onClose }) {
     onSave({ ...form, ...(THEMES[form.theme] || THEMES.blue) })
   }
 
-  const inputCls = 'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] transition-all'
+  const inputCls = 'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] transition-all'
   const labelCls = 'block text-xs font-semibold text-slate-600 mb-1'
 
   return (
@@ -194,7 +194,7 @@ function EntryModal({ initial, onSave, onClose }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#6d28d9]">schedule</span>
+            <span className="material-symbols-outlined text-[#4c1d95]">schedule</span>
             <h2 className="text-base font-bold text-slate-800">
               {form.code ? 'Edit Class Entry' : 'Add Class Entry'}
             </h2>
@@ -254,7 +254,7 @@ function EntryModal({ initial, onSave, onClose }) {
           <button onClick={onClose} className="px-5 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700">Cancel</button>
           <button
             onClick={handleSave}
-            className="px-5 py-2 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#6d28d9]/90 active:scale-95 shadow-sm"
+            className="px-5 py-2 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95]/90 active:scale-95 shadow-sm"
           >
             Save
           </button>
@@ -296,7 +296,7 @@ function NewClassModal({ onSave, onClose }) {
     onSave({ id, label, ...form })
   }
 
-  const inputCls = 'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] transition-all'
+  const inputCls = 'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] transition-all'
   const labelCls = 'block text-xs font-semibold text-slate-600 mb-1'
 
   return (
@@ -304,7 +304,7 @@ function NewClassModal({ onSave, onClose }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#6d28d9]">add_circle</span>
+            <span className="material-symbols-outlined text-[#4c1d95]">add_circle</span>
             <h2 className="text-base font-bold text-slate-800">Create New Timetable</h2>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -337,7 +337,7 @@ function NewClassModal({ onSave, onClose }) {
           <button onClick={onClose} className="px-5 py-2 text-sm font-semibold text-slate-500 hover:text-slate-700">Cancel</button>
           <button
             onClick={handleSave}
-            className="px-5 py-2 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#6d28d9]/90 active:scale-95 shadow-sm"
+            className="px-5 py-2 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95]/90 active:scale-95 shadow-sm"
           >
             Create
           </button>
@@ -737,7 +737,7 @@ export default function TimetablePage({ noLayout = false }) {
             onClick={() => { setActiveClass(id); setEditMode(false) }}
             className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
               activeClass === id
-                ? 'bg-[#6d28d9] text-white border-[#6d28d9] shadow-sm'
+                ? 'bg-[#4c1d95] text-white border-[#4c1d95] shadow-sm'
                 : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
             }`}
           >
@@ -747,7 +747,7 @@ export default function TimetablePage({ noLayout = false }) {
         {canEdit && (
           <button
             onClick={() => setShowNewClass(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border border-dashed border-slate-300 text-slate-500 hover:border-[#6d28d9] hover:text-[#6d28d9] transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border border-dashed border-slate-300 text-slate-500 hover:border-[#4c1d95] hover:text-[#4c1d95] transition-all"
           >
             <span className="material-symbols-outlined text-base">add</span>New Class
           </button>
@@ -769,7 +769,7 @@ export default function TimetablePage({ noLayout = false }) {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
                 showPeriodEditor
                   ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-[#6d28d9] hover:text-[#6d28d9]'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-[#4c1d95] hover:text-[#4c1d95]'
               }`}
             >
               <span className="material-symbols-outlined text-base">schedule</span>
@@ -782,7 +782,7 @@ export default function TimetablePage({ noLayout = false }) {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
                 editMode
                   ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-[#6d28d9] hover:text-[#6d28d9]'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-[#4c1d95] hover:text-[#4c1d95]'
               }`}
             >
               <span className="material-symbols-outlined text-base">{editMode ? 'check_circle' : 'edit'}</span>
@@ -803,7 +803,7 @@ export default function TimetablePage({ noLayout = false }) {
               <button
                 type="button"
                 onClick={addPeriod}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:border-[#6d28d9] hover:text-[#6d28d9]"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:border-[#4c1d95] hover:text-[#4c1d95]"
               >
                 <span className="material-symbols-outlined text-base">add</span>
                 Create Period
@@ -823,7 +823,7 @@ export default function TimetablePage({ noLayout = false }) {
                         setPeriodSlots(next)
                         persistEditorConfig(next, breakItems)
                       }}
-                      className="w-full px-3 pr-10 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9]"
+                      className="w-full px-3 pr-10 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95]"
                     />
                     <button
                       type="button"
@@ -857,7 +857,7 @@ export default function TimetablePage({ noLayout = false }) {
                       type="text"
                       value={item.label}
                       onChange={(e) => updateBreakItem(item.id, { label: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9]"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95]"
                     />
                     <select
                       value={item.tone}
@@ -914,7 +914,7 @@ export default function TimetablePage({ noLayout = false }) {
                   const badgeClass = itemsAtBoundary.length > 0
                     ? 'bg-white border-slate-300 text-slate-700'
                     : draggingBreakId
-                      ? 'bg-[#6d28d9]/5 border-[#6d28d9]/30 text-[#6d28d9]'
+                      ? 'bg-[#4c1d95]/5 border-[#4c1d95]/30 text-[#4c1d95]'
                       : 'bg-white border-slate-200 text-slate-400'
 
                   return (

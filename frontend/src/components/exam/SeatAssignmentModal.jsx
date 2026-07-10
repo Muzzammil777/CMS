@@ -99,8 +99,8 @@ export default function SeatAssignmentModal({ exam, onClose, onSave }) {
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#6d28d9]/10 rounded-lg">
-              <span className="material-symbols-outlined text-[#6d28d9]">event_seat</span>
+            <div className="p-2 bg-[#4c1d95]/10 rounded-lg">
+              <span className="material-symbols-outlined text-[#4c1d95]">event_seat</span>
             </div>
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-slate-900">Seat Assignment</h3>
@@ -126,7 +126,7 @@ export default function SeatAssignmentModal({ exam, onClose, onSave }) {
                 <select
                   value={selectedHall}
                   onChange={(e) => setSelectedHall(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] outline-none text-sm bg-white text-slate-800"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] outline-none text-sm bg-white text-slate-800"
                 >
                   <option value="">Select Hall</option>
                   {halls.map((hall) => (
@@ -139,14 +139,14 @@ export default function SeatAssignmentModal({ exam, onClose, onSave }) {
               <button
                 onClick={handleAutoAssign}
                 disabled={!selectedHall}
-                className="px-4 py-2.5 bg-[#6d28d9] text-white rounded-lg hover:bg-[#6d28d9]/90 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-sm shadow-sm transition-all"
+                className="px-4 py-2.5 bg-[#4c1d95] text-white rounded-lg hover:bg-[#4c1d95]/90 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-sm shadow-sm transition-all"
               >
                 <span className="material-symbols-outlined text-base">auto_fix_high</span>
                 Auto-assign Seats
               </button>
             </div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-3">
-              Total Students: <span className="text-slate-800 font-bold">{registrations.length}</span> | Assigned: <span className="text-[#6d28d9] font-bold">{Object.keys(assignments).filter(k => assignments[k]).length}</span>
+              Total Students: <span className="text-slate-800 font-bold">{registrations.length}</span> | Assigned: <span className="text-[#4c1d95] font-bold">{Object.keys(assignments).filter(k => assignments[k]).length}</span>
             </p>
           </div>
 
@@ -167,7 +167,7 @@ export default function SeatAssignmentModal({ exam, onClose, onSave }) {
                       value={assignments[reg.studentId] || ''}
                       onChange={(e) => handleManualAssign(reg.studentId, e.target.value)}
                       placeholder="e.g., A-15"
-                      className="w-full px-3 py-2.5 sm:py-2 border border-slate-200 rounded-lg text-center text-sm font-semibold focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] outline-none"
+                      className="w-full px-3 py-2.5 sm:py-2 border border-slate-200 rounded-lg text-center text-sm font-semibold focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] outline-none"
                     />
                   </div>
                 </div>
@@ -186,7 +186,7 @@ export default function SeatAssignmentModal({ exam, onClose, onSave }) {
           </button>
           <button
             onClick={handleSave}
-            className="w-full sm:w-auto px-5 py-2.5 bg-[#6d28d9] text-white rounded-lg hover:bg-[#4c1d95] transition-colors font-semibold text-sm shadow-sm flex items-center justify-center"
+            className="w-full sm:w-auto px-5 py-2.5 bg-[#4c1d95] text-white rounded-lg hover:bg-[#3b0764] transition-colors font-semibold text-sm shadow-sm flex items-center justify-center"
           >
             Save Assignments
           </button>

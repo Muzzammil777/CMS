@@ -83,10 +83,10 @@ function ToggleSwitch({ checked, onChange }) {
         border: 'none',
         cursor: 'pointer',
         flexShrink: 0,
-        background: checked ? '#6d28d9' : '#d1d5db',
+        background: checked ? '#4c1d95' : '#d1d5db',
         transition: 'background 0.2s',
         outline: 'none',
-        boxShadow: checked ? '0 0 0 3px rgba(0, 35, 111,0.18)' : 'none',
+        boxShadow: checked ? '0 0 0 3px rgba(76, 29, 149,0.18)' : 'none',
       }}
     >
       <span style={{
@@ -128,7 +128,7 @@ function ToggleRow({ notifKey, checked, onChange }) {
       {/* Icon */}
       <span
         className="material-symbols-outlined"
-        style={{ fontSize: 22, color: checked ? '#6d28d9' : '#9ca3af', transition: 'color 0.2s', flexShrink: 0 }}
+        style={{ fontSize: 22, color: checked ? '#4c1d95' : '#9ca3af', transition: 'color 0.2s', flexShrink: 0 }}
       >
         {icon}
       </span>
@@ -160,7 +160,7 @@ function GroupSection({ title, keys, form, updateField }) {
         background: 'linear-gradient(90deg, #f8faff 0%, #f1f5ff 100%)',
         borderBottom: '1px solid #e9ecf3',
       }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: '#6d28d9', textTransform: 'uppercase', letterSpacing: 1 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: '#4c1d95', textTransform: 'uppercase', letterSpacing: 1 }}>
           {title}
         </span>
       </div>
@@ -359,10 +359,10 @@ export default function NotificationSettings({ role, userId }) {
           disabled={!dirty || saving}
           style={{
             padding: '9px 22px', borderRadius: 10, border: 'none',
-            background: dirty ? '#6d28d9' : '#d1d5db',
+            background: dirty ? '#4c1d95' : '#d1d5db',
             color: '#fff', fontSize: 13, fontWeight: 600,
             cursor: dirty && !saving ? 'pointer' : 'not-allowed',
-            boxShadow: dirty ? '0 2px 8px rgba(0, 35, 111,0.3)' : 'none',
+            boxShadow: dirty ? '0 2px 8px rgba(76, 29, 149,0.3)' : 'none',
             transition: 'all 0.15s',
           }}
         >

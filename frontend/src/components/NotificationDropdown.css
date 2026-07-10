@@ -88,7 +88,7 @@
 
 .notification-item.unread {
   background-color: #eff6ff;
-  border-left: 3px solid #6d28d9;
+  border-left: 3px solid #4c1d95;
   padding-left: 13px;
 }
 
@@ -136,12 +136,12 @@
 }
 
 .notification-action-btn {
-  background-color: #6d28d9;
+  background-color: #4c1d95;
   color: white;
 }
 
 .notification-action-btn:hover {
-  background-color: #4c1d95;
+  background-color: #3b0764;
 }
 
 .notification-action-btn.danger {
@@ -183,7 +183,7 @@
 }
 
 .view-all-link {
-  color: #6d28d9;
+  color: #4c1d95;
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
@@ -191,7 +191,7 @@
 }
 
 .view-all-link:hover {
-  color: #4c1d95;
+  color: #3b0764;
 }
 
 @media (max-width: 600px) {

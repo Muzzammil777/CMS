@@ -206,7 +206,7 @@ export default function StudentProfilePage() {
             </button>
             <button
               onClick={() => navigate('/students')}
-              className="px-5 py-2.5 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95] transition-all"
+              className="px-5 py-2.5 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#3b0764] transition-all"
             >
               Back to Students
             </button>
@@ -231,14 +231,14 @@ export default function StudentProfilePage() {
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate('/students')}
-            className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#6d28d9] hover:border-[#6d28d9] transition-all group uppercase tracking-wider"
+            className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#4c1d95] hover:border-[#4c1d95] transition-all group uppercase tracking-wider"
           >
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
             <span>Back to Students</span>
           </button>
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="px-5 py-2.5 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#6d28d9]/90 transition-all"
+            className="px-5 py-2.5 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95]/90 transition-all"
           >
             Edit Profile
           </button>
@@ -251,7 +251,7 @@ export default function StudentProfilePage() {
           <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-10">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
               <div 
-                className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#6d28d9] to-[#60a5fa] p-1 shadow-xl cursor-pointer relative group overflow-hidden"
+                className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#4c1d95] to-[#60a5fa] p-1 shadow-xl cursor-pointer relative group overflow-hidden"
               >
                 <img
                   src={student.avatar || `https://ui-avatars.com/api/?name=${student.name}&background=00236f&color=fff&size=128`}
@@ -261,7 +261,7 @@ export default function StudentProfilePage() {
                 />
                 <div 
                   onClick={() => document.getElementById('student-profile-photo-upload').click()}
-                  className="absolute inset-0 bg-[#6d28d9]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 rounded-lg"
+                  className="absolute inset-0 bg-[#4c1d95]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 rounded-lg"
                 >
                   <span className="text-white text-[10px] font-bold text-center tracking-wider px-1">UPLOAD PHOTO</span>
                 </div>
@@ -287,7 +287,7 @@ export default function StudentProfilePage() {
               <div className="text-center sm:text-left">
                 <div className="flex flex-col sm:flex-row items-center gap-3 mb-3">
                   <h1 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">{student.name}</h1>
-                  <span className="px-2.5 py-0.5 bg-green-50 text-[#6d28d9] border border-green-100 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 sm:mt-0">
+                  <span className="px-2.5 py-0.5 bg-green-50 text-[#4c1d95] border border-green-100 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 sm:mt-0">
                     {student.rollNumber || student.id}
                   </span>
                 </div>
@@ -331,7 +331,7 @@ export default function StudentProfilePage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap ${
                     activeTab === tab.id
-                      ? 'text-[#6d28d9]'
+                      ? 'text-[#4c1d95]'
                       : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
@@ -340,7 +340,7 @@ export default function StudentProfilePage() {
                     {tab.label}
                   </span>
                   {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#6d28d9] rounded-t-full" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4c1d95] rounded-t-full" />
                   )}
                 </button>
               ))}
@@ -375,7 +375,7 @@ export default function StudentProfilePage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#6d28d9] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#4c1d95] flex items-center justify-center">
                       <span className="material-symbols-outlined text-[20px]">military_tech</span>
                     </div>
                     <div>
@@ -384,7 +384,7 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#6d28d9] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#4c1d95] flex items-center justify-center">
                       <span className="material-symbols-outlined text-[20px]">analytics</span>
                     </div>
                     <div>
@@ -393,7 +393,7 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#6d28d9] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#4c1d95] flex items-center justify-center">
                       <span className="material-symbols-outlined text-[20px]">menu_book</span>
                     </div>
                     <div>
@@ -402,7 +402,7 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#6d28d9] flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#4c1d95] flex items-center justify-center">
                       <span className="material-symbols-outlined text-[20px]">verified</span>
                     </div>
                     <div>
@@ -689,15 +689,15 @@ function DocumentsTab({ student, onRefresh }) {
     <>
       <div className="space-y-6">
         {/* Upload Section */}
-        <label className={`block bg-[#6d28d9]/5 border-2 border-dashed border-[#6d28d9]/20 rounded-xl p-8 text-center cursor-pointer hover:bg-[#6d28d9]/10 transition-all group ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+        <label className={`block bg-[#4c1d95]/5 border-2 border-dashed border-[#4c1d95]/20 rounded-xl p-8 text-center cursor-pointer hover:bg-[#4c1d95]/10 transition-all group ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
           <input type="file" className="hidden" onChange={handleUpload} accept="image/*,.pdf,.doc,.docx" disabled={uploading} />
           <div className="flex flex-col items-center gap-3">
-            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-[#6d28d9] shadow-lg shadow-[#6d28d9]/10 group-hover:scale-110 transition-transform">
+            <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-[#4c1d95] shadow-lg shadow-[#4c1d95]/10 group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-[28px]">{uploading ? 'hourglass_top' : 'cloud_upload'}</span>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#6d28d9]">{uploading ? 'Uploading...' : 'Upload Document'}</p>
-              <p className="text-[11px] text-[#6d28d9]/50 mt-1">PDF, Images, DOC • Click to browse</p>
+              <p className="text-sm font-semibold text-[#4c1d95]">{uploading ? 'Uploading...' : 'Upload Document'}</p>
+              <p className="text-[11px] text-[#4c1d95]/50 mt-1">PDF, Images, DOC • Click to browse</p>
             </div>
           </div>
         </label>
@@ -706,7 +706,7 @@ function DocumentsTab({ student, onRefresh }) {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <FolderOpen size={18} className="text-[#6d28d9]" />
+              <FolderOpen size={18} className="text-[#4c1d95]" />
               My Documents
             </h3>
             <span className="text-xs font-medium text-slate-400">{docs.length} file{docs.length !== 1 ? 's' : ''}</span>
@@ -733,7 +733,7 @@ function DocumentsTab({ student, onRefresh }) {
                         {hasData && isImage(doc.fileData) ? (
                           <img src={doc.fileData} alt={doc.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full bg-indigo-50 flex items-center justify-center text-[#6d28d9]">
+                          <div className="w-full h-full bg-indigo-50 flex items-center justify-center text-[#4c1d95]">
                             <span className="material-symbols-outlined text-[22px]">
                               {doc.type === 'pdf' || (doc.fileName && doc.fileName.toLowerCase().endsWith('.pdf')) ? 'picture_as_pdf' : 'image'}
                             </span>
@@ -751,7 +751,7 @@ function DocumentsTab({ student, onRefresh }) {
                       {hasData && (
                         <button
                           onClick={() => setViewingDoc(doc)}
-                          className="p-2 text-slate-400 hover:text-[#6d28d9] hover:bg-blue-50 rounded-lg transition-all"
+                          className="p-2 text-slate-400 hover:text-[#4c1d95] hover:bg-blue-50 rounded-lg transition-all"
                           title="View"
                         >
                           <span className="material-symbols-outlined text-[18px]">visibility</span>
@@ -767,7 +767,7 @@ function DocumentsTab({ student, onRefresh }) {
                             link.click();
                             document.body.removeChild(link);
                           }}
-                          className="p-2 text-slate-400 hover:text-[#6d28d9] hover:bg-blue-50 rounded-lg transition-all"
+                          className="p-2 text-slate-400 hover:text-[#4c1d95] hover:bg-blue-50 rounded-lg transition-all"
                           title="Download"
                         >
                           <span className="material-symbols-outlined text-[18px]">download</span>
@@ -799,7 +799,7 @@ function DocumentsTab({ student, onRefresh }) {
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-[#6d28d9] flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-[#4c1d95] flex items-center justify-center flex-shrink-0">
                   <span className="material-symbols-outlined text-[20px]">
                     {isImage(viewingDoc.fileData) ? 'image' : 'picture_as_pdf'}
                   </span>
@@ -819,7 +819,7 @@ function DocumentsTab({ student, onRefresh }) {
                     link.click();
                     document.body.removeChild(link);
                   }}
-                  className="p-2 text-slate-400 hover:text-[#6d28d9] hover:bg-blue-50 rounded-lg transition-all"
+                  className="p-2 text-slate-400 hover:text-[#4c1d95] hover:bg-blue-50 rounded-lg transition-all"
                   title="Download"
                 >
                   <span className="material-symbols-outlined text-[20px]">download</span>
@@ -1016,9 +1016,9 @@ function OverviewTab({ student }) {
         title: "Academic Distinction: Honor Roll",
         message: `Congratulations! ${student.name} has achieved an outstanding academic performance with a CGPA of ${cgpaVal.toFixed(2)}. Keep up the excellent work!`,
         icon: "workspace_premium",
-        bgColor: "bg-[#6d28d9]/5 border-[#6d28d9]/20",
-        textColor: "text-[#6d28d9]",
-        iconBg: "bg-[#6d28d9] shadow-blue-200",
+        bgColor: "bg-[#4c1d95]/5 border-[#4c1d95]/20",
+        textColor: "text-[#4c1d95]",
+        iconBg: "bg-[#4c1d95] shadow-blue-200",
         iconColor: "text-yellow-300"
       };
     }
@@ -1039,9 +1039,9 @@ function OverviewTab({ student }) {
       title: "Academic Status: Normal",
       message: `${student.name} is in good academic standing. All requirements for the current academic session are being met successfully.`,
       icon: "check_circle",
-      bgColor: "bg-[#6d28d9]/5 border-[#6d28d9]/10",
-      textColor: "text-[#6d28d9]",
-      iconBg: "bg-[#6d28d9] shadow-[#6d28d9]/10",
+      bgColor: "bg-[#4c1d95]/5 border-[#4c1d95]/10",
+      textColor: "text-[#4c1d95]",
+      iconBg: "bg-[#4c1d95] shadow-[#4c1d95]/10",
       iconColor: "text-white"
     };
   };
@@ -1056,7 +1056,7 @@ function OverviewTab({ student }) {
           {/* Contact & Personal Information */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">contact_page</span>
+              <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">contact_page</span>
               Personal & Contact
             </h3>
             <div className="space-y-4">
@@ -1092,7 +1092,7 @@ function OverviewTab({ student }) {
           {/* Family & Guardian Details */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">family_restroom</span>
+              <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">family_restroom</span>
               Family & Guardian
             </h3>
             <div className="space-y-4">
@@ -1124,7 +1124,7 @@ function OverviewTab({ student }) {
           {/* Academic & Housing Details */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">menu_book</span>
+              <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">menu_book</span>
               Academic & Housing
             </h3>
             <div className="space-y-4">
@@ -1166,7 +1166,7 @@ function OverviewTab({ student }) {
           {/* Previous Education Record */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">history_edu</span>
+              <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">history_edu</span>
               Previous Education
             </h3>
             <div className="space-y-4">
@@ -1195,7 +1195,7 @@ function OverviewTab({ student }) {
         {/* Application Payment & Metrics */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
           <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-            <span className="material-symbols-outlined text-[#6d28d9] text-[20px]">payments</span>
+            <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">payments</span>
             Application Payment & Metrics
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1224,7 +1224,7 @@ function OverviewTab({ student }) {
               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 justify-center">
                 <div className="text-center">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Attendance</p>
-                  <p className="text-lg font-bold text-[#6d28d9] mt-1">{attendancePct}%</p>
+                  <p className="text-lg font-bold text-[#4c1d95] mt-1">{attendancePct}%</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 justify-center">
@@ -1244,7 +1244,7 @@ function OverviewTab({ student }) {
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider text-slate-900 leading-none">GPA Trend</h3>
-            <span className="px-2 py-0.5 bg-green-50 text-[#6d28d9] rounded text-[9px] font-bold uppercase tracking-wider">{averageLabel}</span>
+            <span className="px-2 py-0.5 bg-green-50 text-[#4c1d95] rounded text-[9px] font-bold uppercase tracking-wider">{averageLabel}</span>
           </div>
           <div className="flex items-end justify-between h-24 gap-2 mb-4 relative">
             {semestersWithData === 0 && (
@@ -1259,12 +1259,12 @@ function OverviewTab({ student }) {
               return (
                 <div key={semInfo.semester} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
                   {semInfo.hasData && (
-                    <span className="text-[9px] font-bold text-[#6d28d9] leading-none mb-0.5">{semInfo.gpa}</span>
+                    <span className="text-[9px] font-bold text-[#4c1d95] leading-none mb-0.5">{semInfo.gpa}</span>
                   )}
                   <div 
                     className={`w-full rounded-md transition-all duration-1000 ${
                       semInfo.hasData 
-                        ? 'bg-[#6d28d9]' 
+                        ? 'bg-[#4c1d95]' 
                         : 'bg-slate-100 border border-dashed border-slate-200'
                     }`} 
                     style={{ height: semInfo.hasData ? `${heightPct}%` : '8px' }} 

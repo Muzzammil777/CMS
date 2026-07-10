@@ -27,7 +27,7 @@ export default function SettingsShell({ tabs, activeTab, onSelect, children, rol
                   onClick={() => onSelect(tab.id)}
                   className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-150 group ${
                     isActive
-                      ? 'bg-[#6d28d9]/10 text-[#6d28d9] font-bold'
+                      ? 'bg-[#4c1d95]/10 text-[#4c1d95] font-bold'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium'
                   }`}
                 >
@@ -35,7 +35,7 @@ export default function SettingsShell({ tabs, activeTab, onSelect, children, rol
                   {tab.icon && (
                     <span
                       className={`material-symbols-outlined text-[20px] flex-shrink-0 transition-colors ${
-                        isActive ? 'text-[#6d28d9]' : 'text-slate-400 group-hover:text-slate-600'
+                        isActive ? 'text-[#4c1d95]' : 'text-slate-400 group-hover:text-slate-600'
                       }`}
                     >
                       {tab.icon}
@@ -47,7 +47,7 @@ export default function SettingsShell({ tabs, activeTab, onSelect, children, rol
 
                   {/* Active indicator */}
                   {isActive && (
-                    <span className="w-2 h-2 rounded-full bg-[#6d28d9] flex-shrink-0" />
+                    <span className="w-2 h-2 rounded-full bg-[#4c1d95] flex-shrink-0" />
                   )}
                 </button>
               );

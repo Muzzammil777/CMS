@@ -20,7 +20,7 @@ function PasswordField({ label, id, value, onChange, placeholder, error }) {
           placeholder={placeholder}
           className={`w-full px-3 py-2 pr-10 text-sm rounded-lg border ${
             error ? 'border-red-400 bg-red-50' : 'border-slate-200'
-          } focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/25 transition-colors`}
+          } focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/25 transition-colors`}
         />
         <button
           type="button"
@@ -197,7 +197,7 @@ export default function SecuritySettings({ role, userId }) {
             <button
               type="submit"
               disabled={pwSaving}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-[#6d28d9] hover:bg-[#1e4d18] text-white text-sm font-semibold rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-[#4c1d95] hover:bg-[#1e4d18] text-white text-sm font-semibold rounded-lg transition-all shadow-sm active:scale-95 disabled:opacity-60"
             >
               {pwSaving ? (
                 <>
@@ -226,7 +226,7 @@ export default function SecuritySettings({ role, userId }) {
       <SettingsCard title="Active Sessions" description="Devices currently logged in to your account.">
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm text-slate-500">{sessions.length} session{sessions.length !== 1 ? 's' : ''} active</span>
-          <button onClick={load} className="text-xs font-semibold text-[#6d28d9] hover:underline flex items-center gap-1">
+          <button onClick={load} className="text-xs font-semibold text-[#4c1d95] hover:underline flex items-center gap-1">
             <span className="material-symbols-outlined text-[16px]">refresh</span> Refresh
           </button>
         </div>

@@ -256,7 +256,7 @@ function AddStudentModal({ isOpen, onClose, onAdd, departments }) {
             onClick={handleSubmit}
             style={{
               padding: '8px 16px',
-              background: '#6d28d9',
+              background: '#4c1d95',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -265,8 +265,8 @@ function AddStudentModal({ isOpen, onClose, onAdd, departments }) {
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#4c1d95'}
-            onMouseLeave={(e) => e.target.style.background = '#6d28d9'}
+            onMouseEnter={(e) => e.target.style.background = '#3b0764'}
+            onMouseLeave={(e) => e.target.style.background = '#4c1d95'}
           >
             Add Student
           </button>
@@ -333,7 +333,7 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
               width: '48px',
               height: '48px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%)',
+              background: 'linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -356,7 +356,7 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
           <div style={{ background: '#eff6ff', padding: '12px', borderRadius: '8px' }}>
-            <p style={{ fontSize: '11px', fontWeight: '600', color: '#6d28d9', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0, marginBottom: '4px' }}>
+            <p style={{ fontSize: '11px', fontWeight: '600', color: '#4c1d95', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0, marginBottom: '4px' }}>
               Department
             </p>
             <p style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937', margin: 0 }}>
@@ -386,7 +386,7 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
         {student.phone && (
           <div style={{ background: '#f0f9ff', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
-              <Phone size={16} color="#8b5cf6" />
+              <Phone size={16} color="#6d28d9" />
               <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>Phone</span>
             </div>
             <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
@@ -400,7 +400,7 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
             onClick={onClose}
             style={{
               padding: '8px 16px',
-              background: '#6d28d9',
+              background: '#4c1d95',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -409,8 +409,8 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#4c1d95'}
-            onMouseLeave={(e) => e.target.style.background = '#6d28d9'}
+            onMouseEnter={(e) => e.target.style.background = '#3b0764'}
+            onMouseLeave={(e) => e.target.style.background = '#4c1d95'}
           >
             Close
           </button>
@@ -565,9 +565,9 @@ export default function FacultyStudentsPage() {
             onClick={() => setFilterOpen(!filterOpen)}
             style={{
               padding: '8px 16px',
-              background: filterOpen ? '#6d28d9' : '#f3f4f6',
+              background: filterOpen ? '#4c1d95' : '#f3f4f6',
               color: filterOpen ? 'white' : '#374151',
-              border: `1px solid ${filterOpen ? '#6d28d9' : '#e5e7eb'}`,
+              border: `1px solid ${filterOpen ? '#4c1d95' : '#e5e7eb'}`,
               borderRadius: '8px',
               cursor: 'pointer',
               display: 'flex',
@@ -723,7 +723,7 @@ export default function FacultyStudentsPage() {
                             cursor: 'pointer',
                             transition: 'all 0.2s'
                           }}
-                          onMouseEnter={(e) => e.target.style.background = '#8b5cf6'}
+                          onMouseEnter={(e) => e.target.style.background = '#6d28d9'}
                           onMouseLeave={(e) => e.target.style.background = '#06b6d4'}
                           title="View student details"
                         >
@@ -739,7 +739,7 @@ export default function FacultyStudentsPage() {
                           }}
                           style={{
                             padding: '6px 10px',
-                            background: student._id && student._id.startsWith('student-') ? '#a0aec0' : '#6d28d9',
+                            background: student._id && student._id.startsWith('student-') ? '#a0aec0' : '#4c1d95',
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
@@ -750,12 +750,12 @@ export default function FacultyStudentsPage() {
                           }}
                           onMouseEnter={(e) => {
                             if (!student._id || !student._id.startsWith('student-')) {
-                              e.target.style.background = '#4c1d95';
+                              e.target.style.background = '#3b0764';
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!student._id || !student._id.startsWith('student-')) {
-                              e.target.style.background = '#6d28d9';
+                              e.target.style.background = '#4c1d95';
                             }
                           }}
                           title={student._id && student._id.startsWith('student-') ? 'Newly added students must be saved first' : 'View full student profile'}

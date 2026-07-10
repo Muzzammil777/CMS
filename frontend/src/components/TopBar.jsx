@@ -151,7 +151,7 @@ export default function TopBar({
         )}
         <div className="min-w-0">
           {(!isSidebarVisible || isMobile) && (
-            <p className="text-[10px] md:text-xs font-semibold text-[#6d28d9] tracking-wider uppercase leading-none mb-1">
+            <p className="text-[10px] md:text-xs font-semibold text-[#4c1d95] tracking-wider uppercase leading-none mb-1">
               {systemSettings?.portalName || 'MIT Connect'}
             </p>
           )}

@@ -123,7 +123,7 @@ export default function GeneralSettings() {
               type="file"
               accept="image/*"
               onChange={(e) => handleFileUpload(e, 'logoFileName')}
-              className="w-full text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#6d28d9]/10 file:text-[#6d28d9] hover:file:bg-[#6d28d9]/20 transition-all"
+              className="w-full text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#4c1d95]/10 file:text-[#4c1d95] hover:file:bg-[#4c1d95]/20 transition-all"
             />
             {form.logoFileName && (
               <div className="mt-3 flex items-center gap-3">
@@ -148,7 +148,7 @@ export default function GeneralSettings() {
               type="file"
               accept="image/*"
               onChange={(e) => handleFileUpload(e, 'faviconFileName')}
-              className="w-full text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#6d28d9]/10 file:text-[#6d28d9] hover:file:bg-[#6d28d9]/20 transition-all"
+              className="w-full text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#4c1d95]/10 file:text-[#4c1d95] hover:file:bg-[#4c1d95]/20 transition-all"
             />
             {form.faviconFileName && (
               <div className="mt-3 flex items-center gap-3">

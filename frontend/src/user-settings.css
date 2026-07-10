@@ -4,7 +4,7 @@
   --user-settings-border: #d9e8dc;
   --user-settings-text: #1f2937;
   --user-settings-muted: #64748b;
-  --user-settings-primary: #6d28d9;
+  --user-settings-primary: #4c1d95;
   --user-settings-primary-soft: #e8f1eb;
   --user-settings-danger: #dc2626;
 }
@@ -18,7 +18,7 @@
 .user-settings-header {
   border-radius: 16px;
   padding: 20px;
-  background: linear-gradient(110deg, #4c1d95, #6d28d9, #8b5cf6);
+  background: linear-gradient(110deg, #3b0764, #4c1d95, #6d28d9);
   color: #ffffff;
   margin-bottom: 18px;
 }
@@ -89,12 +89,12 @@
 
 .user-settings-nav-item:hover {
   background: #f1f5f1;
-  color: #6d28d9;
+  color: #4c1d95;
 }
 
 .user-settings-nav-item.active {
   background: linear-gradient(90deg, #e8f1eb, #e0f1e8);
-  color: #6d28d9;
+  color: #4c1d95;
   font-weight: 600;
 }
 
@@ -209,7 +209,7 @@
 }
 
 .user-settings-btn-primary {
-  background: linear-gradient(90deg, #6d28d9, #8b5cf6);
+  background: linear-gradient(90deg, #4c1d95, #6d28d9);
   color: #ffffff;
 }
 
@@ -242,7 +242,7 @@
   height: 16px;
   border-radius: 50%;
   border: 2px solid #bfdbfe;
-  border-top-color: #6d28d9;
+  border-top-color: #4c1d95;
   animation: user-settings-spin 0.9s linear infinite;
 }
 
@@ -341,7 +341,7 @@
 }
 
 .user-settings-toggle-control input:checked + .user-settings-toggle-slider {
-  background: #6d28d9;
+  background: #4c1d95;
 }
 
 .user-settings-toggle-control input:checked + .user-settings-toggle-slider::before {

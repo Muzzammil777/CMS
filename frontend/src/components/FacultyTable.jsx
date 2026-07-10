@@ -139,7 +139,7 @@ export default function FacultyTable({ faculty, onEdit, onDelete, onViewDetails 
                   <div className="flex items-center justify-end gap-2">
                     <button 
                       onClick={() => onEdit && onEdit(f)}
-                      className="p-1.5 text-slate-400 hover:text-[#6d28d9] hover:bg-[#6d28d9]/10 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-[#4c1d95] hover:bg-[#4c1d95]/10 rounded-lg transition-colors"
                       title="Edit Faculty"
                     >
                       <span className="material-symbols-outlined text-lg">edit</span>

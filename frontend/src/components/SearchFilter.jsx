@@ -2,11 +2,11 @@ export default function SearchFilter({ searchQuery, onSearchChange, onAddClick, 
   return (
     <div className="flex flex-col gap-3 sm:gap-4 mb-6 md:mb-8">
       <div className="relative flex-1 group w-full">
-        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#6d28d9] text-[20px] transition-colors">search</span>
+        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#4c1d95] text-[20px] transition-colors">search</span>
         <input
           type="text"
           placeholder={placeholder}
-          className="w-full bg-white border border-slate-200 rounded-lg pl-11 pr-5 py-2.5 text-sm focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] outline-none transition-all placeholder:text-slate-400 shadow-sm"
+          className="w-full bg-white border border-slate-200 rounded-lg pl-11 pr-5 py-2.5 text-sm focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] outline-none transition-all placeholder:text-slate-400 shadow-sm"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -34,7 +34,7 @@ export default function SearchFilter({ searchQuery, onSearchChange, onAddClick, 
         {onAddClick && (
           <button
             onClick={onAddClick}
-            className="flex items-center justify-center gap-2 h-10 px-4 sm:px-6 bg-[#6d28d9] text-white rounded-lg text-sm font-semibold hover:bg-[#6d28d9]/90 active:scale-[0.98] transition-all shadow-sm flex-1 sm:flex-none whitespace-nowrap"
+            className="flex items-center justify-center gap-2 h-10 px-4 sm:px-6 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95]/90 active:scale-[0.98] transition-all shadow-sm flex-1 sm:flex-none whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-lg">add</span>
             <span>{addButtonLabel}</span>

@@ -177,8 +177,8 @@ export default function EditFacultyPage() {
         {/* Page Header */}
         <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#6d28d9]/10 rounded-lg">
-              <span className="material-symbols-outlined text-lg text-[#6d28d9]">edit</span>
+            <div className="p-2 bg-[#4c1d95]/10 rounded-lg">
+              <span className="material-symbols-outlined text-lg text-[#4c1d95]">edit</span>
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900">Edit Faculty</h1>
@@ -203,7 +203,7 @@ export default function EditFacultyPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700">Full Name <span className="text-red-500">*</span></label>
-                  <input name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20" />
+                  <input name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700">Email <span className="text-red-500">*</span></label>
@@ -226,7 +226,7 @@ export default function EditFacultyPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700">Nationality</label>
-                  <input name="nationality" value={formData.nationality} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20" placeholder="e.g. Indian" />
+                  <input name="nationality" value={formData.nationality} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20" placeholder="e.g. Indian" />
                 </div>
               </div>
             </div>
@@ -262,18 +262,18 @@ export default function EditFacultyPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700">Office Location / Room</label>
-                  <input name="office_location" value={formData.office_location} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20" placeholder="e.g. Room 302, Main Block" />
+                  <input name="office_location" value={formData.office_location} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20" placeholder="e.g. Room 302, Main Block" />
                 </div>
               </div>
             </div>
 
             {/* ── Academic Assignment ── */}
-            <div className="border border-[#6d28d9]/20 rounded-xl p-5 bg-[#f0fdf4]/60">
+            <div className="border border-[#4c1d95]/20 rounded-xl p-5 bg-[#f0fdf4]/60">
               <div className="flex items-center gap-2 mb-5">
-                <div className="w-7 h-7 bg-[#6d28d9] rounded-lg flex items-center justify-center">
+                <div className="w-7 h-7 bg-[#4c1d95] rounded-lg flex items-center justify-center">
                   <span className="material-symbols-outlined text-white text-sm">school</span>
                 </div>
-                <h3 className="text-sm font-bold text-[#6d28d9] uppercase tracking-widest">Academic Assignment</h3>
+                <h3 className="text-sm font-bold text-[#4c1d95] uppercase tracking-widest">Academic Assignment</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -287,13 +287,13 @@ export default function EditFacultyPage() {
                     onChange={handleChange}
                     rows={3}
                     placeholder="e.g. Data Structures, Algorithms, DBMS"
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20 resize-none"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20 resize-none"
                   />
                   {/* Tag preview */}
                   {formData.courses && (
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       {formData.courses.split(',').map(c => c.trim()).filter(Boolean).map((c, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#6d28d9]/10 text-[#6d28d9] text-xs font-semibold rounded-full">
+                        <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#4c1d95]/10 text-[#4c1d95] text-xs font-semibold rounded-full">
                           <span className="material-symbols-outlined text-xs">menu_book</span>{c}
                         </span>
                       ))}
@@ -321,8 +321,8 @@ export default function EditFacultyPage() {
                           }}
                           className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all ${
                             selected
-                              ? 'bg-[#6d28d9] text-white border-[#6d28d9]'
-                              : 'bg-white text-gray-600 border-gray-200 hover:border-[#6d28d9] hover:text-[#6d28d9]'
+                              ? 'bg-[#4c1d95] text-white border-[#4c1d95]'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-[#4c1d95] hover:text-[#4c1d95]'
                           }`}
                         >
                           {cls}
@@ -335,7 +335,7 @@ export default function EditFacultyPage() {
                     value={formData.classes}
                     onChange={handleChange}
                     placeholder="or type: CSE-A, Year 2, ..."
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20"
                   />
                 </div>
 
@@ -388,7 +388,7 @@ export default function EditFacultyPage() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700">College / Institution</label>
-                  <input name="college" value={formData.college} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20" placeholder="e.g. ABC College of Engineering" />
+                  <input name="college" value={formData.college} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20" placeholder="e.g. ABC College of Engineering" />
                 </div>
               </div>
             </div>
@@ -409,7 +409,7 @@ export default function EditFacultyPage() {
               <button type="button" onClick={() => navigate('/faculty')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors font-medium">
                 ← Cancel
               </button>
-              <button type="submit" disabled={saving} className="px-6 py-2 bg-[#6d28d9] text-white text-sm rounded-lg hover:bg-[#4c1d95] disabled:opacity-50 transition-colors font-medium">
+              <button type="submit" disabled={saving} className="px-6 py-2 bg-[#4c1d95] text-white text-sm rounded-lg hover:bg-[#3b0764] disabled:opacity-50 transition-colors font-medium">
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>

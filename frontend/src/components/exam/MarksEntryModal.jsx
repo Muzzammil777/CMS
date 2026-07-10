@@ -131,8 +131,8 @@ export default function MarksEntryModal({ isOpen, onClose, exam, currentUserId }
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#6d28d9]/10 rounded-lg">
-              <span className="material-symbols-outlined text-[#6d28d9]">edit_note</span>
+            <div className="p-2 bg-[#4c1d95]/10 rounded-lg">
+              <span className="material-symbols-outlined text-[#4c1d95]">edit_note</span>
             </div>
             <div>
               <h3 className="text-lg sm:text-xl font-bold text-slate-900">Enter Marks</h3>
@@ -172,14 +172,14 @@ export default function MarksEntryModal({ isOpen, onClose, exam, currentUserId }
               placeholder="Search students by name or roll number..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 outline-none focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] transition-all"
             />
           </div>
 
           {/* Student List */}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-              <div className="w-8 h-8 border-2 border-[#6d28d9] border-t-transparent rounded-full animate-spin mb-3" />
+              <div className="w-8 h-8 border-2 border-[#4c1d95] border-t-transparent rounded-full animate-spin mb-3" />
               <p className="text-sm font-medium">Loading students...</p>
             </div>
           ) : filteredStudents.length === 0 ? (
@@ -224,7 +224,7 @@ export default function MarksEntryModal({ isOpen, onClose, exam, currentUserId }
                               className={`w-24 px-3 py-2 border rounded-lg text-sm font-semibold text-center outline-none transition-all ${
                                 hasError
                                   ? 'border-red-300 focus:ring-red-200 focus:border-red-400 text-red-600 bg-red-50'
-                                  : 'border-slate-200 focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] text-slate-900'
+                                  : 'border-slate-200 focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] text-slate-900'
                               }`}
                               placeholder="—"
                             />
@@ -310,7 +310,7 @@ export default function MarksEntryModal({ isOpen, onClose, exam, currentUserId }
                             className={`w-full px-3 py-1.5 border rounded-lg text-sm font-bold text-center outline-none transition-all ${
                               hasError
                                 ? 'border-red-300 focus:ring-red-200 focus:border-red-400 text-red-600 bg-red-50'
-                                : 'border-slate-200 focus:ring-2 focus:ring-[#6d28d9]/20 focus:border-[#6d28d9] text-slate-900 bg-white'
+                                : 'border-slate-200 focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] text-slate-900 bg-white'
                             }`}
                             placeholder="—"
                           />
@@ -344,7 +344,7 @@ export default function MarksEntryModal({ isOpen, onClose, exam, currentUserId }
             <button
               onClick={handleSave}
               disabled={saving || stats.hasErrors || loading || students.length === 0}
-              className="flex-1 sm:flex-none px-5 py-2.5 bg-[#6d28d9] text-white rounded-lg hover:bg-[#4c1d95] transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+              className="flex-1 sm:flex-none px-5 py-2.5 bg-[#4c1d95] text-white rounded-lg hover:bg-[#3b0764] transition-colors font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
             >
               {saving ? 'Saving...' : 'Save Marks'}
             </button>

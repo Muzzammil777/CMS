@@ -27,11 +27,11 @@ const Ico = {
 
 // ─── Theme Colors ─────────────────────────────────────────────────────────────
 const C = {
-  blue:    '#6d28d9', // Primary Green/Blue Accent
+  blue:    '#4c1d95', // Primary Green/Blue Accent
   cyan:    '#06b6d4',
   green:   '#10b981',
   orange:  '#f97316',
-  purple:  '#8b5cf6',
+  purple:  '#6d28d9',
   red:     '#ef4444',
   teal:    '#14b8a6',
   amber:   '#f59e0b',
@@ -196,8 +196,8 @@ function CalendarRangePicker({startMY,endMY,onChange,onClose}){
     return{
       width:'100%',height:40,borderRadius:8,border:'none',fontSize:13,fontWeight:700,
       cursor:'pointer',transition:'all 0.1s',
-      background: isEdge?'#6d28d9': inRange?'#dbeafe':'transparent',
-      color:      isEdge?'#fff': inRange?'#6d28d9':'#374151',
+      background: isEdge?'#4c1d95': inRange?'#dbeafe':'transparent',
+      color:      isEdge?'#fff': inRange?'#4c1d95':'#374151',
       boxShadow:  isEdge?'0 2px 8px rgba(37,99,235,.3)':'none',
     };
   }
@@ -208,7 +208,7 @@ function CalendarRangePicker({startMY,endMY,onChange,onClose}){
   return(
     <div style={{position:'absolute',zIndex:1100,top:'calc(100% + 10px)',left:0,background:'#fff',borderRadius:18,border:'1.5px solid #e5e7eb',boxShadow:'0 12px 40px rgba(0,0,0,.16)',padding:22,minWidth:330}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}><div style={{display:'flex',alignItems:'center',gap:8}}><button onClick={()=>setViewYear(y=>y-1)} style={{width:28,height:28,borderRadius:7,border:'1px solid #e5e7eb',background:'#f9fafb',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Ico.ChevL/></button><select value={viewYear} onChange={e=>setViewYear(Number(e.target.value))} style={{border:'1.5px solid #e5e7eb',borderRadius:7,padding:'2px 6px',fontWeight:700,fontSize:14,color:'#111827',cursor:'pointer',outline:'none'}}>{YEARS.map(y=><option key={y}>{y}</option>)}
           </select><button onClick={()=>setViewYear(y=>y+1)} style={{width:28,height:28,borderRadius:7,border:'1px solid #e5e7eb',background:'#f9fafb',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Ico.ChevR/></button></div><div style={{fontSize:12,fontWeight:600,padding:'3px 10px',borderRadius:999,
-          color:      phase==='start'?'#6d28d9':'#f97316',
+          color:      phase==='start'?'#4c1d95':'#f97316',
           background: phase==='start'?'#eff6ff':'#fff7ed',
           border:`1px solid ${phase==='start'?'#bfdbfe':'#fed7aa'}`}}>{phase==='start'?'\u2460 Start month':'\u2461 End month'}
         </div><button onClick={onClose} style={{width:28,height:28,borderRadius:7,border:'1px solid #e5e7eb',background:'#f9fafb',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#6b7280'}}><Ico.Close/></button></div><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6}}>{MONTHS_ALL.map((m,mi)=>(
@@ -232,27 +232,27 @@ function CalendarRangePicker({startMY,endMY,onChange,onClose}){
 // ─── UI ATOMS ─────────────────────────────────────────────────────────────────
 function SCard({label,value,sub,tone,icon,trend}){
   const gradients = {
-    blue: 'linear-gradient(135deg, rgba(0, 35, 111, 0.08) 0%, rgba(0, 35, 111, 0.03) 100%)',
+    blue: 'linear-gradient(135deg, rgba(76, 29, 149, 0.08) 0%, rgba(76, 29, 149, 0.03) 100%)',
     green: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.03) 100%)',
-    purple: 'linear-gradient(135deg, rgba(26, 60, 133, 0.08) 0%, rgba(26, 60, 133, 0.03) 100%)',
+    purple: 'linear-gradient(135deg, rgba(109, 40, 217, 0.08) 0%, rgba(109, 40, 217, 0.03) 100%)',
     orange: 'linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%)',
     red: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.03) 100%)',
     teal: 'linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, rgba(20, 184, 166, 0.03) 100%)',
     cyan: 'linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(6, 182, 212, 0.03) 100%)'
   };
   const borderColors = {
-    blue: 'rgba(0, 35, 111, 0.15)',
+    blue: 'rgba(76, 29, 149, 0.15)',
     green: 'rgba(16, 185, 129, 0.15)',
-    purple: 'rgba(26, 60, 133, 0.15)',
+    purple: 'rgba(109, 40, 217, 0.15)',
     orange: 'rgba(249, 115, 22, 0.15)',
     red: 'rgba(239, 68, 68, 0.15)',
     teal: 'rgba(20, 184, 166, 0.15)',
     cyan: 'rgba(6, 182, 212, 0.15)'
   };
   const textColors = {
-    blue: '#6d28d9',
+    blue: '#4c1d95',
     green: '#10b981',
-    purple: '#8b5cf6',
+    purple: '#6d28d9',
     orange: '#f97316',
     red: '#ef4444',
     teal: '#14b8a6',
@@ -393,7 +393,7 @@ function RoleTab({tabs,active,onChange}){
             transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             fontFamily: "'Outfit', sans-serif",
             background: active === t.id ? '#ffffff' : 'transparent',
-            color: active === t.id ? '#6d28d9' : '#64748b',
+            color: active === t.id ? '#4c1d95' : '#64748b',
             boxShadow: active === t.id ? '0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' : 'none'
           }}
         >
@@ -431,7 +431,7 @@ function MiniProgress({value,max=100,color=C.blue}){
 function LoadingSpinner(){
   return(
     <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',padding:'120px 0',gap:16}}>
-      <div style={{width:42,height:42,border:'3px solid #e2e8f0',borderTopColor:'#6d28d9',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}/>
+      <div style={{width:42,height:42,border:'3px solid #e2e8f0',borderTopColor:'#4c1d95',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}/>
       <div style={{color:'#64748b',fontSize:13,fontWeight:600,fontFamily:"'Outfit', sans-serif"}}>Aggregating dynamic database statistics...</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -531,9 +531,9 @@ function AdminView({activeMonths,rangeLabel,department,semester,analyticsData}){
   return(
     <><AlertBanner items={alerts}/><RoleTab tabs={TABS} active={tab} onChange={setTab}/>{tab==='overview'&&(
         <><div className="grid grid-cols-1 lg:grid-cols-3 gap-[18px] mb-[28px]">{[
-              {id:'students',label:'Students & Academics',color:'#6d28d9',bg:'linear-gradient(135deg, rgba(0, 35, 111, 0.08) 0%, rgba(0, 35, 111, 0.02) 100%)',border:'rgba(0, 35, 111, 0.15)',
+              {id:'students',label:'Students & Academics',color:'#4c1d95',bg:'linear-gradient(135deg, rgba(76, 29, 149, 0.08) 0%, rgba(76, 29, 149, 0.02) 100%)',border:'rgba(76, 29, 149, 0.15)',
                 stats:[{k:'Total Students',v:aCards.students},{k:'Avg Attendance',v:`${avgAtt}%`},{k:'Avg Pass Rate',v:`${avgPass}%`},{k:'Active Courses',v:aCards.courses}]},
-              {id:'faculty',label:'Faculty & Staff',color:'#8b5cf6',bg:'linear-gradient(135deg, rgba(26, 60, 133, 0.08) 0%, rgba(26, 60, 133, 0.02) 100%)',border:'rgba(26, 60, 133, 0.15)',
+              {id:'faculty',label:'Faculty & Staff',color:'#6d28d9',bg:'linear-gradient(135deg, rgba(109, 40, 217, 0.08) 0%, rgba(109, 40, 217, 0.02) 100%)',border:'rgba(109, 40, 217, 0.15)',
                 stats:[{k:'Total Faculty',v:aCards.faculty},{k:'Departments',v:'5'},{k:'Professors',v:facultyRankData.find(r=>r.rank==='Professor')?.count??0},{k:'Lecturers',v:facultyRankData.find(r=>r.rank==='Lecturer')?.count??0}]},
               {id:'finance',label:'Finance Overview',color:'#10b981',bg:'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%)',border:'rgba(16, 185, 129, 0.15)',
                 stats:[{k:'Total Income',v:fmtCr(totalIncome)},{k:'Total Expense',v:fmtCr(totalExpense)},{k:'Net Surplus',v:fmtCr(totalIncome-totalExpense)},{k:'Scholarships',v:ad.summaryData?.scholarships??0}]},
@@ -981,7 +981,7 @@ export default function AnalyticsPage({role:propRole}){
             <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:.8,marginBottom:6,display:'flex',alignItems:'center',gap:6,fontFamily:"'Outfit', sans-serif"}}>
               <Ico.Calendar/>Date Range
             </div>
-            <button onClick={()=>setCalOpen(o=>!o)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,height:40,padding:'0 16px',borderRadius:10,border:`1.5px solid ${calOpen?'#6d28d9':'#cbd5e1'}`,background:calOpen?'#faf5ff':'#fff',color:'#1e293b',fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',boxShadow:calOpen?'0 0 0 3px rgba(0, 35, 111,.12)':'none',transition:'all 0.15s',fontFamily:"'Outfit', sans-serif",width:'100%'}}>
+            <button onClick={()=>setCalOpen(o=>!o)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,height:40,padding:'0 16px',borderRadius:10,border:`1.5px solid ${calOpen?'#4c1d95':'#cbd5e1'}`,background:calOpen?'#faf5ff':'#fff',color:'#1e293b',fontSize:13,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',boxShadow:calOpen?'0 0 0 3px rgba(76, 29, 149,.12)':'none',transition:'all 0.15s',fontFamily:"'Outfit', sans-serif",width:'100%'}}>
               <span style={{display:'flex',alignItems:'center',gap:8}}><Ico.Calendar/>{triggerLabel}</span><span style={{fontSize:10,color:'#64748b'}}>▾</span>
             </button>
             {calOpen&&<CalendarRangePicker startMY={startMY} endMY={endMY} onChange={({startMY:s,endMY:e})=>{setStartMY(s);setEndMY(e);}} onClose={()=>setCalOpen(false)}/>}
@@ -1008,7 +1008,7 @@ export default function AnalyticsPage({role:propRole}){
               Reset
             </button>
             
-            <button onClick={()=>exportCSV(role,activeMonths,rangeLabel,'students',analyticsData,DEPTS,DEPT_FULL)} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,height:40,padding:'0 20px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#6d28d9,#4c1d95)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',boxShadow:'0 4px 14px rgba(0, 35, 111,.3)',transition:'all 0.2s',fontFamily:"'Outfit', sans-serif",flex:2}}>
+            <button onClick={()=>exportCSV(role,activeMonths,rangeLabel,'students',analyticsData,DEPTS,DEPT_FULL)} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,height:40,padding:'0 20px',borderRadius:10,border:'none',background:'linear-gradient(135deg,#4c1d95,#3b0764)',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer',boxShadow:'0 4px 14px rgba(76, 29, 149,.3)',transition:'all 0.2s',fontFamily:"'Outfit', sans-serif",flex:2}}>
               <Ico.Download/>Download Report
             </button>
           </div>
@@ -1016,7 +1016,7 @@ export default function AnalyticsPage({role:propRole}){
         
         <div style={{display:'flex',gap:8,marginTop:16,flexWrap:'wrap',alignItems:'center',borderTop:'1px solid #f1f5f9',paddingTop:14}}>
           <span style={{fontSize:12,color:'#64748b',fontWeight:500}}>Active Filters:</span>
-          <span style={{fontSize:12,fontWeight:600,padding:'4px 12px',borderRadius:999,background:'#faf5ff',color:'#6d28d9',border:'1px solid #d4e5d1',fontFamily:"'Outfit', sans-serif"}}>{triggerLabel}</span>
+          <span style={{fontSize:12,fontWeight:600,padding:'4px 12px',borderRadius:999,background:'#faf5ff',color:'#4c1d95',border:'1px solid #d4e5d1',fontFamily:"'Outfit', sans-serif"}}>{triggerLabel}</span>
           <span style={{fontSize:12,fontWeight:600,padding:'4px 12px',borderRadius:999,background:'#faf5ff',color:'#7c3aed',border:'1px solid #ddd6fe',fontFamily:"'Outfit', sans-serif"}}>{semester}</span>
           {department!==DEPT_OPTS[0]&&<span style={{fontSize:12,fontWeight:600,padding:'4px 12px',borderRadius:999,background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0',fontFamily:"'Outfit', sans-serif"}}>{department}</span>}
           {activeMonths.length>1&&<span style={{fontSize:12,fontWeight:600,padding:'4px 12px',borderRadius:999,background:'#fff7ed',color:'#c2410c',border:'1px solid #fed7aa',fontFamily:"'Outfit', sans-serif"}}>{activeMonths.length} Months Range</span>}
@@ -1031,7 +1031,7 @@ export default function AnalyticsPage({role:propRole}){
         .premium-kpi-card:hover {
           transform: translateY(-4px);
           box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.08) !important;
-          border-color: rgba(0, 35, 111, 0.3) !important;
+          border-color: rgba(76, 29, 149, 0.3) !important;
         }
         .content-card-premium {
           background: rgba(255, 255, 255, 0.85);

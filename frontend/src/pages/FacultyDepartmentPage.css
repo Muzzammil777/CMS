@@ -29,14 +29,14 @@
 .dept-kpi-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-  border-color: #6d28d9;
+  border-color: #4c1d95;
 }
 
 .dept-kpi-icon-wrapper {
   width: 3rem;
   height: 3rem;
   background: #f0fdf4;
-  color: #6d28d9;
+  color: #4c1d95;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -114,8 +114,8 @@
 
 .dept-search-input:focus {
   background: white;
-  border-color: #6d28d9;
-  box-shadow: 0 0 0 3px rgba(0, 35, 111, 0.15);
+  border-color: #4c1d95;
+  box-shadow: 0 0 0 3px rgba(76, 29, 149, 0.15);
 }
 
 .dept-list-items {
@@ -142,7 +142,7 @@
 
 .dept-list-btn.active {
   background: #faf5ff;
-  border-left-color: #6d28d9;
+  border-left-color: #4c1d95;
 }
 
 .dept-list-code {
@@ -154,7 +154,7 @@
 }
 
 .dept-list-btn.active .dept-list-code {
-  color: #6d28d9;
+  color: #4c1d95;
 }
 
 .dept-list-name {
@@ -177,12 +177,12 @@
 
 /* Hero Banner */
 .dept-hero-banner {
-  background: #6d28d9;
+  background: #4c1d95;
   border-radius: 20px;
   padding: 2.5rem;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 12px 30px rgba(0, 35, 111, 0.25);
+  box-shadow: 0 12px 30px rgba(76, 29, 149, 0.25);
   color: white;
 }
 
@@ -330,14 +330,14 @@
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6d28d9, #6d28d9);
+  background: linear-gradient(135deg, #4c1d95, #4c1d95);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
   font-weight: 700;
   color: white;
-  box-shadow: 0 4px 10px rgba(0, 35, 111, 0.25);
+  box-shadow: 0 4px 10px rgba(76, 29, 149, 0.25);
   flex-shrink: 0;
 }
 
@@ -389,7 +389,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6d28d9;
+  color: #4c1d95;
   flex-shrink: 0;
 }
 
@@ -409,12 +409,12 @@
 }
 
 a.dept-contact-value {
-  color: #6d28d9;
+  color: #4c1d95;
   transition: color 0.2s;
 }
 
 a.dept-contact-value:hover {
-  color: #4c1d95;
+  color: #3b0764;
   text-decoration: underline;
 }
 
@@ -452,7 +452,7 @@ a.dept-contact-value:hover {
 
 .dept-faculty-member-card:hover {
   background: white;
-  border-color: #6d28d9;
+  border-color: #4c1d95;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -588,8 +588,8 @@ a.dept-contact-value:hover {
 }
 
 .dept-form-input:focus {
-  border-color: #6d28d9;
-  box-shadow: 0 0 0 3px rgba(0, 35, 111, 0.15);
+  border-color: #4c1d95;
+  box-shadow: 0 0 0 3px rgba(76, 29, 149, 0.15);
 }
 
 .dept-form-textarea {
@@ -606,8 +606,8 @@ a.dept-contact-value:hover {
 }
 
 .dept-form-textarea:focus {
-  border-color: #6d28d9;
-  box-shadow: 0 0 0 3px rgba(0, 35, 111, 0.15);
+  border-color: #4c1d95;
+  box-shadow: 0 0 0 3px rgba(76, 29, 149, 0.15);
 }
 
 .dept-form-row {
@@ -646,12 +646,12 @@ a.dept-contact-value:hover {
 }
 
 .dept-btn-primary {
-  background: #6d28d9;
+  background: #4c1d95;
   color: white;
 }
 
 .dept-btn-primary:hover {
-  background: #4c1d95;
+  background: #3b0764;
 }
 
 /* Animations */

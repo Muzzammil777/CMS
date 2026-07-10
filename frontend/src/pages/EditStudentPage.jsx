@@ -195,8 +195,8 @@ export default function EditStudentPage() {
         {/* Page Header */}
         <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#6d28d9]/10 rounded-lg">
-              <span className="material-symbols-outlined text-lg text-[#6d28d9]">edit</span>
+            <div className="p-2 bg-[#4c1d95]/10 rounded-lg">
+              <span className="material-symbols-outlined text-lg text-[#4c1d95]">edit</span>
             </div>
             <div>
               <h1 className="text-lg font-bold text-gray-900">Edit Student</h1>
@@ -221,7 +221,7 @@ export default function EditStudentPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700">Full Name <span className="text-red-500">*</span></label>
-                  <input name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/20" />
+                  <input name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-700">Email <span className="text-red-500">*</span></label>
@@ -414,7 +414,7 @@ export default function EditStudentPage() {
               <button type="button" onClick={() => navigate('/students')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors font-medium">
                 ← Cancel
               </button>
-              <button type="submit" disabled={saving} className="px-6 py-2 bg-[#6d28d9] text-white text-sm rounded-lg hover:bg-[#4c1d95] disabled:opacity-50 transition-colors font-medium">
+              <button type="submit" disabled={saving} className="px-6 py-2 bg-[#4c1d95] text-white text-sm rounded-lg hover:bg-[#3b0764] disabled:opacity-50 transition-colors font-medium">
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>

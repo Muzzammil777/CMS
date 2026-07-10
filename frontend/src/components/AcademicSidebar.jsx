@@ -245,7 +245,8 @@ export default function AcademicSidebar({
               {!isCollapsed ? (
                 <button 
                   onClick={() => toggleGroup(group.title)}
-                  className="w-full flex items-center justify-between px-3 text-[10px] font-bold uppercase tracking-wider mb-2 text-white/50 hover:text-white transition-colors"
+                  style={{ color: 'rgba(255, 255, 255, 0.65)' }}
+                  className="w-full flex items-center justify-between px-3 text-[10px] font-bold uppercase tracking-wider mb-2 hover:text-white transition-colors"
                 >
                   <span>{group.title}</span>
                   <span className="material-symbols-outlined text-xs">

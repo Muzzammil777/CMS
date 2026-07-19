@@ -40,7 +40,11 @@ async def lifespan(app):
 
     print(f"Connecting to MongoDB at {mask_mongodb_uri(MONGODB_URI)}...")
     try:
-        client = AsyncIOMotorClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        client = AsyncIOMotorClient(
+            MONGODB_URI, 
+            serverSelectionTimeoutMS=30000, 
+            connectTimeoutMS=30000
+        )
         await client.admin.command("ping")
 
         try:

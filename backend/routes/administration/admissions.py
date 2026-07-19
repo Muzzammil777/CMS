@@ -819,7 +819,17 @@ async def delete_admission(admission_id: str):
 
     return {"message": "Admission deleted successfully", "id": admission_id}
 
-
+@router.get("/faculty")
+async def get_faculty_admissions():
+    """Get all faculty admissions"""
+    faculty_admissions_collection = _faculty_admissions_collection()
+    data: list[dict[str, Any]] = []
+    
+    async for item in faculty_admissions_collection.find().sort("created_at", -1):
+        data.append(_serialize_faculty_admission(item))
+    
+    return data
+    
 @router.get("/{admission_id}")
 async def get_admission(admission_id: str):
     admissions_collection = _admissions_collection()

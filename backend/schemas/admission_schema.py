@@ -13,6 +13,12 @@ class PersonalInfo(BaseModel):
     city: str
     state: str
     pincode: str
+    guardianName: Optional[str] = None
+    guardianPhone: Optional[str] = None
+    relationship: Optional[str] = None
+    guardianEmail: Optional[str] = None
+    guardianOccupation: Optional[str] = None
+
 
 
 class AcademicInfo(BaseModel):

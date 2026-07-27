@@ -10,28 +10,30 @@
 
 :root {
   /* Primary Green Theme */
-  --brand-primary: #276221;
-  --brand-primary-dark: #1e4618;
-  --brand-primary-light: #3d8b30;
-  --brand-primary-lighter: #e6f2e9;
-  --brand-primary-softer: #f0f5f1;
+  --brand-primary: #4c1d95;
+  --brand-primary-dark: #3b0764;
+  --brand-primary-light: #6d28d9;
+  --brand-primary-lighter: #ede9fe;
+  --brand-primary-softer: #faf5ff;
   
   /* Legacy variable names for compatibility */
-  --brand-blue: #276221;
-  --brand-blue-dark: #1e4618;
-  --brand-navy: #276221;
-  --brand-cyan: #3d8b30;
-  --brand-cyan-soft: #e6f2e9;
+  --brand-blue: #4c1d95;
+  --brand-blue-dark: #3b0764;
+  --brand-navy: #4c1d95;
+  --brand-cyan: #6d28d9;
+  --brand-cyan-soft: #ede9fe;
   
   /* Modern gradient definitions */
-  --brand-gradient: linear-gradient(90deg, #276221, #3d8b30);
-  --brand-gradient-strong: linear-gradient(135deg, #1e4618, #276221);
+  --brand-gradient: linear-gradient(90deg, #4c1d95, #6d28d9);
+  --brand-gradient-strong: linear-gradient(135deg, #3b0764, #4c1d95);
 }
 
 html,
 body,
 #root {
   min-height: 100%;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
@@ -40,6 +42,16 @@ body {
   color: #1f2937;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Hide scrollbars globally (scrolling still works) ── */
+* {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE / Edge */
+}
+*::-webkit-scrollbar {
+  display: none;                /* Chrome / Safari / Opera */
 }
 
 button,
@@ -54,7 +66,7 @@ a {
 
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #e6f2e9 0%, #f0f5f1 55%, #e8f1eb 100%);
+  background: linear-gradient(135deg, #ede9fe 0%, #faf5ff 55%, #e8f1eb 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,8 +81,8 @@ a {
   border-radius: 28px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(39, 98, 33, 0.3);
-  box-shadow: 0 24px 70px rgba(39, 98, 33, 0.12);
+  border: 1px solid rgba(76, 29, 149, 0.3);
+  box-shadow: 0 24px 70px rgba(76, 29, 149, 0.12);
 }
 
 .login-showcase {
@@ -81,7 +93,7 @@ a {
   justify-content: space-between;
   color: #ffffff;
   background:
-    linear-gradient(145deg, rgba(30, 70, 24, 0.88), rgba(39, 98, 33, 0.76)),
+    linear-gradient(145deg, rgba(59, 7, 100, 0.88), rgba(76, 29, 149, 0.76)),
     url('https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1600&q=80');
   background-size: cover;
   background-position: center;
@@ -92,8 +104,8 @@ a {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 20%, rgba(61, 139, 48, 0.32), transparent 30%),
-    radial-gradient(circle at 80% 75%, rgba(39, 98, 33, 0.22), transparent 26%);
+    radial-gradient(circle at 20% 20%, rgba(109, 40, 217, 0.32), transparent 30%),
+    radial-gradient(circle at 80% 75%, rgba(76, 29, 149, 0.22), transparent 26%);
   pointer-events: none;
 }
 
@@ -169,7 +181,7 @@ a {
 .showcase-card {
   padding: 22px;
   border-radius: 20px;
-  background: linear-gradient(135deg, rgba(39, 98, 33, 0.36), rgba(61, 139, 48, 0.26));
+  background: linear-gradient(135deg, rgba(76, 29, 149, 0.36), rgba(109, 40, 217, 0.26));
   border: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
@@ -223,7 +235,7 @@ a {
 
 .login-brand-split .brand-icon {
   margin-bottom: 0;
-  box-shadow: 0 12px 24px rgba(39, 98, 33, 0.24);
+  box-shadow: 0 12px 24px rgba(76, 29, 149, 0.24);
 }
 
 .login-brand h1 {
@@ -264,7 +276,7 @@ a {
 .role-switch-btn.active {
   color: #ffffff;
   background: var(--brand-gradient);
-  box-shadow: 0 8px 16px rgba(39, 98, 33, 0.28);
+  box-shadow: 0 8px 16px rgba(76, 29, 149, 0.28);
 }
 
 .role-select-hidden {
@@ -321,7 +333,7 @@ a {
 .form-group input:focus,
 .form-group select:focus {
   border-color: var(--brand-blue);
-  box-shadow: 0 0 0 3px rgba(39, 98, 33, 0.08);
+  box-shadow: 0 0 0 3px rgba(76, 29, 149, 0.08);
   background: #fff;
 }
 
@@ -383,7 +395,7 @@ a {
 
 .btn-login:hover {
   background: var(--brand-gradient-strong);
-  box-shadow: 0 4px 12px rgba(39, 98, 33, 0.32);
+  box-shadow: 0 4px 12px rgba(76, 29, 149, 0.32);
 }
 
 .btn-login:active {
@@ -652,7 +664,7 @@ a {
 .sidebar-nav ul li a.active {
   background: var(--brand-gradient);
   color: #ffffff;
-  box-shadow: 0 8px 18px rgba(39, 98, 33, 0.2);
+  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.2);
 }
 
 .sidebar-footer {
@@ -691,6 +703,8 @@ a {
   flex: 1;
   padding: 32px;
   min-height: 100vh;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .topbar {
@@ -745,7 +759,7 @@ a {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #276221, #3d8b30);
+  background: linear-gradient(135deg, #4c1d95, #6d28d9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -904,7 +918,7 @@ a {
 }
 
 .stat-card-blue .stat-value {
-  color: #276221;
+  color: #4c1d95;
 }
 
 .stat-card-green .stat-value {
@@ -912,7 +926,7 @@ a {
 }
 
 .stat-card-purple .stat-value {
-  color: #6d28d9;
+  color: #4c1d95;
 }
 
 .stat-card-orange .stat-value {
@@ -940,7 +954,7 @@ a {
 }
 
 .stat-card-purple .stat-sub {
-  color: #8b5cf6;
+  color: #6d28d9;
 }
 
 .stat-card-orange .stat-sub {
@@ -1141,36 +1155,78 @@ a {
 
 @media (max-width: 768px) {
   .login-page {
-    padding: 16px;
+    padding: 12px;
   }
 
   .login-shell {
     min-height: auto;
-    border-radius: 22px;
+    border-radius: 18px;
   }
 
   .login-showcase {
-    padding: 28px 24px;
+    padding: 24px 20px;
+  }
+
+  .showcase-badge {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .showcase-brand-card h1 {
+    font-size: 28px;
+  }
+
+  .showcase-brand-card p {
+    font-size: 13px;
   }
 
   .showcase-copy h2 {
-    font-size: 32px;
+    font-size: 28px;
+    letter-spacing: -1px;
   }
 
   .showcase-copy p {
-    font-size: 15px;
+    font-size: 14px;
+    line-height: 1.6;
   }
 
   .showcase-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .showcase-card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .showcase-card h3 {
+    font-size: 15px;
+  }
+
+  .showcase-card p {
+    font-size: 13px;
   }
 
   .login-container {
-    padding: 32px 22px;
+    padding: 28px 18px;
+  }
+
+  .login-brand h1 {
+    font-size: 20px;
   }
 
   .role-switcher {
     grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .role-switch-btn {
+    height: 42px;
+    font-size: 13px;
+    border-radius: 10px;
   }
 
   .brand-mark-row {
@@ -1180,6 +1236,20 @@ a {
   .login-links {
     flex-wrap: wrap;
     gap: 12px 18px;
+  }
+
+  .form-group input[type='text'],
+  .form-group input[type='password'],
+  .form-group select {
+    height: 48px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  .btn-login {
+    height: 48px;
+    font-size: 15px;
+    border-radius: 12px;
   }
 
   .sidebar {
@@ -1194,21 +1264,29 @@ a {
   .main-content {
     margin-left: 0;
     padding: 16px;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
   }
 
   .profile-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    padding: 16px;
   }
 
   .profile-right {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .student-name {
+    font-size: 18px;
   }
 
   .mobile-menu-btn {
@@ -1217,6 +1295,141 @@ a {
 
   .sidebar-desktop-toggle {
     display: none;
+  }
+
+  /* Table responsiveness */
+  .settings-table-wrap,
+  .overflow-x-auto {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .settings-table,
+  .overflow-x-auto > table {
+    min-width: 750px !important;
+  }
+
+  /* Global responsive data tables */
+  .bg-white.rounded-xl.border.border-slate-200.overflow-hidden {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bg-white.rounded-xl.border.border-slate-200.overflow-hidden > table {
+    min-width: 750px !important;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .topbar-left h2 {
+    font-size: 20px;
+  }
+
+  /* Bottom grid responsive */
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+}
+
+/* Phone-specific (very small screens) */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 8px;
+  }
+
+  .login-shell {
+    border-radius: 14px;
+  }
+
+  .login-showcase {
+    padding: 20px 16px;
+  }
+
+  .showcase-copy h2 {
+    font-size: 24px;
+  }
+
+  .showcase-brand-card {
+    gap: 12px;
+  }
+
+  .showcase-brand-card h1 {
+    font-size: 24px;
+  }
+
+  .login-container {
+    padding: 24px 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .content-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .profile-header {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .profile-left {
+    gap: 12px;
+  }
+
+  .profile-meta {
+    gap: 12px;
+  }
+
+  .meta-item {
+    font-size: 12px;
+  }
+
+  .avatar-initials {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .student-name {
+    font-size: 16px;
+  }
+
+  .notice-item {
+    padding: 10px;
   }
 }
 
@@ -1229,3 +1442,24 @@ a {
     margin-left: 0;
   }
 }
+
+/* Global Table Row Dividers - Thin & Dark */
+table {
+  border-collapse: collapse !important;
+}
+
+table tbody tr {
+  border-bottom: 1px solid #cbd5e1 !important; /* Thin distinct slate-300 border */
+}
+
+/* Override Tailwind's divide classes to ensure they use the correct color */
+tbody.divide-y > :not([hidden]) ~ :not([hidden]),
+.divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-top-width: 1px !important;
+  border-color: #cbd5e1 !important;
+}
+
+table tr {
+  border-color: #cbd5e1 !important;
+}
+

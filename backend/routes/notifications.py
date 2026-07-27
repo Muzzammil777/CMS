@@ -17,21 +17,33 @@ router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
 
 @router.get("/{role}")
-async def list_notifications(role: str, limit: Optional[int] = None, search: Optional[str] = None):
+async def list_notifications(
+    role: str,
+    limit: Optional[int] = None,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    priority: Optional[str] = None,
+    status: Optional[str] = None,
+    userId: Optional[str] = None,
+):
     try:
         db = get_db()
     except HTTPException as error:
         if error.status_code == 503:
-            data, unread_count = list_dev_notifications(role, limit, search)
+            data, unread_count = list_dev_notifications(role, limit, search, category, priority, status)
             return {"success": True, "role": role, "data": data, "count": len(data), "unreadCount": unread_count}
         raise
-    query = {
-        "$or": [
-            {"receiverRole": role},
-            {"receiverRole": "ALL"},
-            {"senderRole": role},
-        ]
-    }
+    
+    # Build role-match clause: role-wide OR user-specific for this user
+    role_clause = [
+        {"receiverRole": role, "receiverUserId": {"$exists": False}},
+        {"receiverRole": "ALL"},
+        {"senderRole": role},
+    ]
+    if userId:
+        role_clause.append({"receiverRole": role, "receiverUserId": userId})
+
+    query = {"$or": role_clause}
 
     if search:
         query["$and"] = [
@@ -43,6 +55,15 @@ async def list_notifications(role: str, limit: Optional[int] = None, search: Opt
             }
         ]
 
+    if category:
+        query["module"] = category
+        
+    if priority:
+        query["priority"] = priority
+        
+    if status:
+        query["status"] = status
+
     cursor = db["notifications"].find(query).sort("createdAt", -1)
     if limit and limit > 0:
         cursor = cursor.limit(limit)
@@ -51,16 +72,14 @@ async def list_notifications(role: str, limit: Optional[int] = None, search: Opt
     async for row in cursor:
         data.append(serialize_doc(row))
 
-    unread_count = await db["notifications"].count_documents(
-        {
-            "$or": [
-                {"receiverRole": role},
-                {"receiverRole": "ALL"},
-                {"senderRole": role},
-            ],
-            "status": "unread",
-        }
-    )
+    unread_query = {"$or": role_clause, "status": "unread"}
+    
+    if category:
+        unread_query["module"] = category
+    if priority:
+        unread_query["priority"] = priority
+
+    unread_count = await db["notifications"].count_documents(unread_query)
 
     return {
         "success": True,
@@ -72,22 +91,24 @@ async def list_notifications(role: str, limit: Optional[int] = None, search: Opt
 
 
 @router.get("/{role}/unread")
-async def unread_count(role: str):
+async def unread_count(role: str, userId: Optional[str] = None):
     try:
         db = get_db()
     except HTTPException as error:
         if error.status_code == 503:
             return {"success": True, "role": role, "unreadCount": unread_dev_notifications(role)}
         raise
+
+    role_clause = [
+        {"receiverRole": role, "receiverUserId": {"$exists": False}},
+        {"receiverRole": "ALL"},
+        {"senderRole": role},
+    ]
+    if userId:
+        role_clause.append({"receiverRole": role, "receiverUserId": userId})
+
     unread = await db["notifications"].count_documents(
-        {
-            "$or": [
-                {"receiverRole": role},
-                {"receiverRole": "ALL"},
-                {"senderRole": role},
-            ],
-            "status": "unread",
-        }
+        {"$or": role_clause, "status": "unread"}
     )
     return {"success": True, "role": role, "unreadCount": unread}
 

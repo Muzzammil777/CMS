@@ -1,23 +1,27 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import FacultyTable from '../components/FacultyTable';
 import SearchFilter from '../components/SearchFilter';
-import AddEditFacultyModal from '../components/AddEditFacultyModal';
-import { PageContainer, StatsSection } from '../components/common';
+import { PageContainer, StatsSection, Pagination, TableSkeleton } from '../components/common';
+import { API_BASE } from '../api/apiBase';
 import '../styles.css';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = API_BASE;
 
 export default function FacultyPage() {
+  const navigate = useNavigate();
   const [facultyList, setFacultyList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingFaculty, setEditingFaculty] = useState(null);
   
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 3;
 
   useEffect(() => {
     fetchFaculty();
@@ -41,9 +45,14 @@ export default function FacultyPage() {
   };
 
   const filteredFaculty = facultyList.filter(faculty =>
-    faculty.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faculty.employeeId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    faculty.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    // apply department/status filters
+    (departmentFilter ? ((faculty.department || faculty.departmentId || '').toString().toLowerCase().includes(departmentFilter.toLowerCase())) : true) &&
+    (statusFilter ? ((faculty.employment_status || faculty.status || '').toString().toLowerCase().includes(statusFilter.toLowerCase())) : true) &&
+    (
+      faculty.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faculty.employeeId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faculty.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
   );
 
   const totalPages = Math.max(1, Math.ceil(filteredFaculty.length / ITEMS_PER_PAGE));
@@ -55,9 +64,65 @@ export default function FacultyPage() {
     setCurrentPage(1);
   };
 
+  const handleFilterClick = () => {
+    const dep = window.prompt('Filter by department (leave empty to clear):', departmentFilter || '')
+    if (dep === null) return
+    setDepartmentFilter(dep || '')
+    const st = window.prompt('Filter by status (e.g. Active) (leave empty to clear):', statusFilter || '')
+    if (st === null) return
+    setStatusFilter(st || '')
+    setCurrentPage(1)
+  };
+
+  const handleExportClick = async () => {
+    const fmt = (window.prompt('Export format: csv or pdf (default csv)', 'csv') || 'csv').toLowerCase()
+    const rows = filteredFaculty.map(f => ({
+      Name: f.name || f.fullName || '',
+      EmployeeId: f.employeeId || f.id || '',
+      Email: f.email || '',
+      Department: f.department || f.departmentId || '',
+      Status: f.employment_status || f.status || ''
+    }))
+    if (rows.length === 0) { alert('No data to export'); return }
+
+    if (fmt === 'pdf') {
+      try {
+        const doc = new jsPDF()
+        const header = Object.keys(rows[0])
+        const data = rows.map(r => header.map(h => r[h]))
+
+        if (typeof autoTable === 'function') {
+          autoTable(doc, { head: [header], body: data, styles: { fontSize: 8 } })
+        } else if (typeof doc.autoTable === 'function') {
+          doc.autoTable({ head: [header], body: data, styles: { fontSize: 8 } })
+        } else {
+          throw new Error('jspdf-autotable plugin not available')
+        }
+
+        doc.save(`faculty_export_${new Date().toISOString().slice(0,10)}.pdf`)
+      } catch (e) {
+        console.error('PDF export failed', e)
+        alert('PDF export failed: ' + (e.message || e))
+      }
+      return
+    }
+
+    const header = Object.keys(rows[0]).join(',')
+    const csv = [header].concat(rows.map(r => Object.values(r).map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `faculty_export_${new Date().toISOString().slice(0,10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  };
+
   const handleEditFaculty = (faculty) => {
-    setEditingFaculty(faculty);
-    setIsModalOpen(true);
+    const facultyId = faculty._id || faculty.id || faculty.employeeId;
+    navigate(`/edit-faculty/${encodeURIComponent(facultyId)}`);
   };
 
   const handleDeleteFaculty = async (faculty) => {
@@ -69,7 +134,9 @@ export default function FacultyPage() {
         method: 'DELETE'
       });
       if (response.ok) {
-        setFacultyList(facultyList.filter(f => f._id !== faculty._id && f.employeeId !== faculty.employeeId));
+        // Re-fetch from server to get an accurate up-to-date list
+        // (avoids client-side filter bugs with missing/mismatched _id fields)
+        await fetchFaculty();
         alert('Faculty member deleted successfully');
       } else {
         alert('Failed to delete faculty member');
@@ -78,17 +145,6 @@ export default function FacultyPage() {
       console.error('Error deleting faculty:', err);
       alert('Error deleting faculty member');
     }
-  };
-
-  const handleModalClose = () => {
-    setIsModalOpen(false);
-    setEditingFaculty(null);
-  };
-
-  const handleModalSuccess = async () => {
-    setIsModalOpen(false);
-    setEditingFaculty(null);
-    await fetchFaculty();
   };
 
   const activeFaculty = facultyList.filter(f => f.employment_status === 'Active').length;
@@ -114,6 +170,11 @@ export default function FacultyPage() {
             searchQuery={searchQuery}
             onSearchChange={handleSearch}
             placeholder="Search faculty by name, ID, or email..."
+            onFilterClick={handleFilterClick}
+            onExportClick={handleExportClick}
+            onAddClick={() => navigate('/add-faculty')}
+            addButtonLabel="Add Faculty"
+            onBulkClick={() => navigate('/bulk-upload-faculty')}
           />
         </div>
 
@@ -131,31 +192,22 @@ export default function FacultyPage() {
             </button>
           </div>
         ) : loading ? (
-          <div className="bg-white rounded-lg border border-gray-200 shadow p-6">
-            <div className="w-full h-96 flex flex-col items-center justify-center gap-4 animate-pulse">
-              <div className="w-12 h-12 bg-slate-100 rounded-full" />
-              <div className="w-48 h-4 bg-slate-100 rounded" />
-              <div className="w-32 h-3 bg-slate-50 rounded" />
-            </div>
-          </div>
+          <TableSkeleton cols={5} rows={6} />
         ) : (
-          <FacultyTable 
-            faculty={paginatedFaculty}
-            onEdit={handleEditFaculty}
-            onDelete={handleDeleteFaculty}
-          />
+          <>
+            <FacultyTable 
+              faculty={paginatedFaculty}
+              onEdit={handleEditFaculty}
+              onDelete={handleDeleteFaculty}
+            />
+            <Pagination 
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          </>
         )}
       </PageContainer>
-
-      {/* Modal */}
-      {isModalOpen && (
-        <AddEditFacultyModal 
-          faculty={editingFaculty}
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          onSuccess={handleModalSuccess}
-        />
-      )}
     </Layout>
   );
 }

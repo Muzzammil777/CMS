@@ -15,7 +15,7 @@ class FacultyLeave(BaseModel):
 
 
 class LeaveRequest(BaseModel):
-    faculty_id: str = Field(alias="facultyId")
+    faculty_id: Optional[str] = Field(default=None, alias="facultyId")
     leave_type: str = Field(alias="leaveType")
     start_date: str = Field(alias="startDate")
     end_date: str = Field(alias="endDate")

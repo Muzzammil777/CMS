@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { userSettingsApi } from '../../api/userSettingsApi';
 import { useSettingsContext } from '../../context/SettingsContext';
-import { SaveToast, SectionActions, SectionError, SectionLoader, ToggleSwitch, isDirty } from './SettingsCommon';
+import { SettingsCard, SettingsActions, SettingsError, SettingsLoader, SettingsToast, ToggleRow, inputCls, labelCls, isDirty } from '../settings/SettingsPanelCommon';
 
 export default function TeachingPreferences({ role, userId }) {
   const { setSectionData, markSectionDirty } = useSettingsContext();
@@ -13,73 +13,47 @@ export default function TeachingPreferences({ role, userId }) {
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    if (role !== 'faculty') {
-      setLoading(false);
-      return;
-    }
-
+    if (role !== 'faculty') { setLoading(false); return; }
     let mounted = true;
+    setLoading(true);
+    userSettingsApi.getTeachingPreferences(userId).then((data) => {
+      if (!mounted) return;
+      setForm(data);
+      setBaseline(data);
+      setSectionData('teachingPreferences', data);
+    }).catch((e) => { if (mounted) setError(e.message); })
+    .finally(() => { if (mounted) setLoading(false); });
 
-    async function load() {
-      setLoading(true);
-      setError('');
-
-      try {
-        const data = await userSettingsApi.getTeachingPreferences(userId);
-        if (!mounted) {
-          return;
-        }
-
-        setForm(data);
-        setBaseline(data);
-        setSectionData('teachingPreferences', data);
-      } catch (loadError) {
-        if (mounted) {
-          setError(loadError.message);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    load();
     return () => {
       mounted = false;
       markSectionDirty('teaching-preferences', false);
     };
   }, [markSectionDirty, role, setSectionData, userId]);
 
-  const dirty = useMemo(() => isDirty(form, baseline), [baseline, form]);
+  const dirty = useMemo(() => isDirty(form, baseline), [form, baseline]);
 
   useEffect(() => {
     markSectionDirty('teaching-preferences', dirty);
   }, [dirty, markSectionDirty]);
 
   if (role !== 'faculty') {
-    return <SectionError message="Teaching preferences are available only for faculty accounts." />;
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-sm text-slate-500 text-center">
+        Teaching preferences are available only for faculty accounts.
+      </div>
+    );
   }
 
-  if (loading) {
-    return <SectionLoader label="Loading teaching preferences..." />;
-  }
-
-  if (!form) {
-    return <SectionError message={error || 'Unable to load teaching preferences.'} />;
-  }
+  if (loading) return <SettingsLoader label="Loading teaching preferences…" />;
+  if (!form) return <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-sm text-red-500">{error || 'Unable to load teaching preferences.'}</div>;
 
   function updateField(field, value) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setForm((cur) => ({ ...cur, [field]: value }));
   }
 
   async function handleSave() {
     setSaving(true);
     setError('');
-
     try {
       const response = await userSettingsApi.updateTeachingPreferences(userId, form);
       const updated = response.data;
@@ -87,8 +61,8 @@ export default function TeachingPreferences({ role, userId }) {
       setBaseline(updated);
       setSectionData('teachingPreferences', updated);
       setToast('Teaching preferences saved.');
-    } catch (saveError) {
-      setError(saveError.message);
+    } catch (e) {
+      setError(e.message);
     } finally {
       setSaving(false);
     }
@@ -100,49 +74,38 @@ export default function TeachingPreferences({ role, userId }) {
   }
 
   return (
-    <section className="user-settings-section">
-      <header>
-        <h3>Teaching Preferences</h3>
-        <p>Manage instructional mode, office hours, and grading automation options.</p>
-      </header>
+    <div className="flex flex-col gap-5">
+      <SettingsError message={error} />
 
-      <SectionError message={error} />
+      <SettingsCard title="Teaching Preferences" description="Configure your instructional preferences and grading automation.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
+          <div>
+            <label className={labelCls}>Preferred Teaching Mode</label>
+            <select value={form.preferredMode || 'Hybrid'} onChange={(e) => updateField('preferredMode', e.target.value)} className={inputCls}>
+              <option value="Offline">Offline</option>
+              <option value="Online">Online</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Office Hours</label>
+            <input type="text" value={form.officeHours || ''} onChange={(e) => updateField('officeHours', e.target.value)} placeholder="e.g. 2PM – 4PM" className={inputCls} />
+          </div>
+        </div>
 
-      <div className="user-settings-grid">
-        <label>
-          Preferred Teaching Mode
-          <select
-            value={form.preferredMode || 'Hybrid'}
-            onChange={(event) => updateField('preferredMode', event.target.value)}
-          >
-            <option value="Offline">Offline</option>
-            <option value="Online">Online</option>
-            <option value="Hybrid">Hybrid</option>
-          </select>
-        </label>
-
-        <label>
-          Office Hours
-          <input
-            type="text"
-            value={form.officeHours || ''}
-            onChange={(event) => updateField('officeHours', event.target.value)}
-            placeholder="e.g. 2PM - 4PM"
-          />
-        </label>
-
-        <div className="user-settings-grid-span-2">
-          <ToggleSwitch
+        <div className="border border-slate-100 rounded-xl overflow-hidden">
+          <ToggleRow
             label="Auto Publish Grades"
-            description="Automatically publish grades once approved."
+            description="Automatically publish grades to students once you approve them."
             checked={Boolean(form.autoPublishGrades)}
-            onChange={(value) => updateField('autoPublishGrades', value)}
+            onChange={(v) => updateField('autoPublishGrades', v)}
           />
         </div>
-      </div>
 
-      <SectionActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
-      <SaveToast message={toast} onClear={() => setToast('')} />
-    </section>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
+
+      <SettingsToast message={toast} onClear={() => setToast('')} />
+    </div>
   );
 }

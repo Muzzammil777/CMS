@@ -6,11 +6,14 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from pathlib import Path
 
-# Load environment variables
-load_dotenv(dotenv_path=Path(__file__).parent.parent.with_name(".env"))
+# Load environment variables from backend folder or project root folder
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent.parent / ".env")
 
 # MongoDB connection
-MONGODB_URI = os.getenv("MONGODB_URI") or "mongodb+srv://priyadharshini:Ezhilithanya@cluster0.crvutrr.mongodb.net/College_db"
+MONGODB_URI = os.getenv("MONGODB_URI")
+if not MONGODB_URI:
+    raise RuntimeError("MONGODB_URI environment variable is not set. Please set it in your .env file.")
 
 _db = None
 

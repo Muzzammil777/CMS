@@ -28,8 +28,8 @@ export default function FacultyTable({ faculty, onEdit, onDelete, onViewDetails 
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-      <table className="w-full text-left">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm overflow-x-auto">
+      <table className="w-full text-left min-w-[700px]">
         <thead>
           <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
             <th className="px-6 py-4">Faculty Information</th>
@@ -94,7 +94,29 @@ export default function FacultyTable({ faculty, onEdit, onDelete, onViewDetails 
                 </td>
                 
                 <td className="px-6 py-4">
-                  <p className="text-sm font-medium text-slate-700">{f.subject || f.specialization || 'N/A'}</p>
+                  {(() => {
+                    const courseList = Array.isArray(f.courses) ? f.courses : (f.courses ? f.courses.split(',').map(s=>s.trim()).filter(Boolean) : []);
+                    const classList  = Array.isArray(f.classes) ? f.classes : ((f.classes || f.assignedClasses) ? (f.classes || f.assignedClasses).toString().split(',').map(s=>s.trim()).filter(Boolean) : []);
+                    const primary    = courseList[0] || f.subject || f.specialization || 'N/A';
+                    return (
+                      <div>
+                        <p className="text-sm font-medium text-slate-700">{primary}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {courseList.length > 1 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">
+                              +{courseList.length - 1} courses
+                            </span>
+                          )}
+                          {classList.slice(0, 2).map(c => (
+                            <span key={c} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">{c}</span>
+                          ))}
+                          {classList.length > 2 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">+{classList.length - 2}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </td>
 
                 <td className="px-6 py-4">
@@ -117,7 +139,7 @@ export default function FacultyTable({ faculty, onEdit, onDelete, onViewDetails 
                   <div className="flex items-center justify-end gap-2">
                     <button 
                       onClick={() => onEdit && onEdit(f)}
-                      className="p-1.5 text-slate-400 hover:text-[#276221] hover:bg-[#276221]/10 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-[#4c1d95] hover:bg-[#4c1d95]/10 rounded-lg transition-colors"
                       title="Edit Faculty"
                     >
                       <span className="material-symbols-outlined text-lg">edit</span>

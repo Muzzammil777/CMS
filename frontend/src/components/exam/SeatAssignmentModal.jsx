@@ -94,27 +94,39 @@ export default function SeatAssignmentModal({ exam, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        <div className="bg-[#276221] text-white px-6 py-4">
-          <h2 className="text-xl font-semibold flex items-center">
-            <span className="material-symbols-outlined mr-2">event_seat</span>
-            Seat Assignment - {exam.name}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] overflow-hidden flex flex-col transition-all duration-300">
+        {/* Header */}
+        <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#4c1d95]/10 rounded-lg">
+              <span className="material-symbols-outlined text-[#4c1d95]">event_seat</span>
+            </div>
+            <div>
+              <h3 className="text-lg sm:text-xl font-bold text-slate-900">Seat Assignment</h3>
+              <p className="text-xs sm:text-sm text-slate-500">{exam.code} - {exam.name}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+          >
+            <span className="material-symbols-outlined text-slate-400">close</span>
+          </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
           {/* Hall Selection & Auto-assign */}
-          <div className="mb-6 bg-slate-50 p-4 rounded-lg">
-            <div className="flex gap-4 items-end">
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-xs sm:text-sm font-semibold text-slate-700 mb-2 uppercase tracking-wider">
                   Exam Hall
                 </label>
                 <select
                   value={selectedHall}
                   onChange={(e) => setSelectedHall(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#276221]/20 focus:border-[#276221]"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] outline-none text-sm bg-white text-slate-800"
                 >
                   <option value="">Select Hall</option>
                   {halls.map((hall) => (
@@ -127,34 +139,35 @@ export default function SeatAssignmentModal({ exam, onClose, onSave }) {
               <button
                 onClick={handleAutoAssign}
                 disabled={!selectedHall}
-                className="px-4 py-2 bg-[#276221] text-white rounded-lg hover:bg-[#276221]/90 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2.5 bg-[#4c1d95] text-white rounded-lg hover:bg-[#4c1d95]/90 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-sm shadow-sm transition-all"
               >
-                <span className="material-symbols-outlined text-sm">auto_fix_high</span>
+                <span className="material-symbols-outlined text-base">auto_fix_high</span>
                 Auto-assign Seats
               </button>
             </div>
-            <p className="text-sm text-slate-600 mt-2">
-              Total Students: {registrations.length} | Assigned: {Object.keys(assignments).filter(k => assignments[k]).length}
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-3">
+              Total Students: <span className="text-slate-800 font-bold">{registrations.length}</span> | Assigned: <span className="text-[#4c1d95] font-bold">{Object.keys(assignments).filter(k => assignments[k]).length}</span>
             </p>
           </div>
 
           {/* Student List with Seat Assignments */}
-          <div className="space-y-2">
-            <h3 className="font-medium text-slate-700 mb-3">Manual Seat Assignment</h3>
-            <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
+          <div>
+            <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">Manual Seat Assignment</h3>
+            <div className="space-y-2.5">
               {registrations.map((reg) => (
-                <div key={reg.id} className="flex items-center gap-4 p-3 bg-white border rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium text-slate-800">{reg.studentId}</p>
-                    <p className="text-sm text-slate-600">{reg.studentName}</p>
+                <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white border border-slate-100 hover:border-slate-200 rounded-xl transition-all shadow-sm">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 uppercase tracking-wide leading-tight">{reg.studentName}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{reg.studentId}</p>
                   </div>
-                  <div className="w-48">
+                  <div className="w-full sm:w-44 flex items-center gap-2">
+                    <span className="text-[10px] sm:hidden font-bold text-slate-400 uppercase">Seat:</span>
                     <input
                       type="text"
                       value={assignments[reg.studentId] || ''}
                       onChange={(e) => handleManualAssign(reg.studentId, e.target.value)}
                       placeholder="e.g., A-15"
-                      className="w-full px-3 py-2 border rounded-lg text-center focus:ring-2 focus:ring-[#276221]/20 focus:border-[#276221]"
+                      className="w-full px-3 py-2.5 sm:py-2 border border-slate-200 rounded-lg text-center text-sm font-semibold focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95] outline-none"
                     />
                   </div>
                 </div>
@@ -164,16 +177,16 @@ export default function SeatAssignmentModal({ exam, onClose, onSave }) {
         </div>
 
         {/* Actions */}
-        <div className="px-6 py-4 bg-slate-50 flex justify-end gap-3">
+        <div className="p-4 sm:p-6 border-t border-slate-200 flex flex-col-reverse sm:flex-row justify-end gap-3 bg-slate-50/50 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300"
+            className="w-full sm:w-auto px-4 py-2.5 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-semibold text-sm"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-800"
+            className="w-full sm:w-auto px-5 py-2.5 bg-[#4c1d95] text-white rounded-lg hover:bg-[#3b0764] transition-colors font-semibold text-sm shadow-sm flex items-center justify-center"
           >
             Save Assignments
           </button>

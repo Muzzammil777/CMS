@@ -1,126 +1,177 @@
 import { useEffect, useState } from 'react';
 import { settingsApi } from '../../api/settingsApi';
-import SettingsActionBar from './SettingsActionBar';
-import SettingsToast from './SettingsToast';
+import { SettingsActions, SettingsCard, SettingsError, SettingsLoader, SettingsToast, inputCls, labelCls, isDirty } from './SettingsPanelCommon';
+import { buildUploadUrl, buildApiUrl } from '../../api/apiBase';
 
 export default function GeneralSettings() {
   const [form, setForm] = useState(null);
   const [baseline, setBaseline] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
-    async function load() {
-      const data = await settingsApi.getGeneralSettings();
+    settingsApi.getGeneralSettings().then((data) => {
       setForm(data);
       setBaseline(data);
-    }
-
-    load();
+    }).catch(() => setError('Failed to load settings.'));
   }, []);
 
-  if (!form) {
-    return <div className="settings-skeleton">Loading general settings...</div>;
+  function setField(key, value) {
+    setForm((cur) => ({ ...cur, [key]: value }));
   }
 
-  function setField(key, value) {
-    setForm((current) => ({
-      ...current,
-      [key]: value,
-    }));
+  async function handleFileUpload(e, field) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await fetch(buildApiUrl('/settings/upload'), {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+      const data = await response.json();
+      setField(field, data.fileName);
+      setToast(`${field === 'logoFileName' ? 'Logo' : 'Favicon'} uploaded successfully.`);
+    } catch (err) {
+      setError('Failed to upload image.');
+    }
   }
 
   async function handleSave() {
     setSaving(true);
-    const updated = await settingsApi.updateGeneralSettings(form);
-    setBaseline(updated);
-    setForm(updated);
-    setToast({ type: 'success', message: 'General settings updated successfully.' });
-    setSaving(false);
+    setError('');
+    try {
+      const updated = await settingsApi.updateGeneralSettings(form);
+      setBaseline(updated);
+      setForm(updated);
+      setToast('Portal settings saved successfully.');
+      window.dispatchEvent(new CustomEvent('cms-settings-update'));
+    } catch {
+      setError('Failed to save settings.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleReset() {
     setForm(baseline);
-    setToast({ type: 'success', message: 'General settings were reset.' });
+    setToast('Settings reset to last saved values.');
   }
 
-  return (
-    <section className="settings-card-grid">
-      <article className="settings-card">
-        <h3>Portal Preferences</h3>
-        <p>Configure portal identity, locale, and display standards.</p>
+  if (!form) return <SettingsLoader label="Loading portal settings…" />;
 
-        <div className="settings-form-grid">
-          <label>
-            Portal Name
+  const dirty = isDirty(form, baseline);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <SettingsError message={error} />
+
+      {/* Portal Identity */}
+      <SettingsCard title="Portal Identity" description="Customize the name and regional settings for the portal.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className={labelCls}>Portal Name</label>
             <input
               type="text"
-              value={form.portalName}
-              onChange={(event) => setField('portalName', event.target.value)}
+              value={form.portalName || ''}
+              onChange={(e) => setField('portalName', e.target.value)}
+              className={inputCls}
+              placeholder="e.g. MIT Connect"
             />
-          </label>
-
-          <label>
-            Theme
-            <select value={form.theme} onChange={(event) => setField('theme', event.target.value)}>
-              <option>Ocean Blue</option>
-              <option>Slate Gray</option>
-              <option>Emerald Cloud</option>
-            </select>
-          </label>
-
-          <label>
-            Language
-            <select value={form.language} onChange={(event) => setField('language', event.target.value)}>
+          </div>
+          <div>
+            <label className={labelCls}>Language</label>
+            <select value={form.language || 'English'} onChange={(e) => setField('language', e.target.value)} className={inputCls}>
               <option>English</option>
               <option>Hindi</option>
               <option>Tamil</option>
             </select>
-          </label>
-
-          <label>
-            Timezone
-            <select value={form.timezone} onChange={(event) => setField('timezone', event.target.value)}>
+          </div>
+          <div>
+            <label className={labelCls}>Timezone</label>
+            <select value={form.timezone || 'Asia/Kolkata'} onChange={(e) => setField('timezone', e.target.value)} className={inputCls}>
               <option>Asia/Kolkata</option>
               <option>UTC</option>
               <option>Asia/Singapore</option>
             </select>
-          </label>
-
-          <label>
-            Date Format
-            <select value={form.dateFormat} onChange={(event) => setField('dateFormat', event.target.value)}>
+          </div>
+          <div>
+            <label className={labelCls}>Date Format</label>
+            <select value={form.dateFormat || 'DD/MM/YYYY'} onChange={(e) => setField('dateFormat', e.target.value)} className={inputCls}>
               <option>DD/MM/YYYY</option>
               <option>MM/DD/YYYY</option>
               <option>YYYY-MM-DD</option>
             </select>
-          </label>
-
-          <label>
-            University Logo
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => setField('logoFileName', event.target.files?.[0]?.name || form.logoFileName)}
-            />
-            <small>Current: {form.logoFileName}</small>
-          </label>
-
-          <label>
-            Favicon
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(event) => setField('faviconFileName', event.target.files?.[0]?.name || form.faviconFileName)}
-            />
-            <small>Current: {form.faviconFileName}</small>
-          </label>
+          </div>
         </div>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
 
-        <SettingsActionBar onSave={handleSave} onReset={handleReset} saving={saving} />
-      </article>
+      {/* Branding */}
+      <SettingsCard title="Branding Assets" description="Upload your institution logo and favicon.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className={labelCls}>University Logo</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileUpload(e, 'logoFileName')}
+              className="w-full text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#4c1d95]/10 file:text-[#4c1d95] hover:file:bg-[#4c1d95]/20 transition-all"
+            />
+            {form.logoFileName && (
+              <div className="mt-3 flex items-center gap-3">
+                <img src={buildUploadUrl(form.logoFileName)} alt="Logo Preview" className="h-10 w-auto object-contain rounded border border-slate-200 p-1 bg-slate-50" />
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-slate-500">Current: <span className="font-medium">{form.logoFileName}</span></p>
+                  <button
+                    type="button"
+                    onClick={() => setField('logoFileName', '')}
+                    className="text-xs text-red-600 hover:text-red-800 hover:underline font-medium flex items-center gap-1 w-fit transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    Remove Logo
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div>
+            <label className={labelCls}>Favicon</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileUpload(e, 'faviconFileName')}
+              className="w-full text-sm text-slate-600 border border-slate-200 rounded-lg px-3 py-2 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#4c1d95]/10 file:text-[#4c1d95] hover:file:bg-[#4c1d95]/20 transition-all"
+            />
+            {form.faviconFileName && (
+              <div className="mt-3 flex items-center gap-3">
+                <img src={buildUploadUrl(form.faviconFileName)} alt="Favicon Preview" className="h-8 w-8 object-contain rounded border border-slate-200 p-1 bg-slate-50" />
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs text-slate-500">Current: <span className="font-medium">{form.faviconFileName}</span></p>
+                  <button
+                    type="button"
+                    onClick={() => setField('faviconFileName', '')}
+                    className="text-xs text-red-600 hover:text-red-800 hover:underline font-medium flex items-center gap-1 w-fit transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    Remove Favicon
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
 
-      <SettingsToast toast={toast} onDismiss={() => setToast(null)} />
-    </section>
+      <SettingsToast message={toast} onClear={() => setToast('')} />
+    </div>
   );
 }

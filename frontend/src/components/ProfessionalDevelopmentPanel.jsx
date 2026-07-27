@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Plus, Trash2, Award, TrendingUp } from 'lucide-react';
+import { buildApiUrl } from '../api/apiBase';
 
 export default function ProfessionalDevelopmentPanel({ facultyId }) {
   const [activities, setActivities] = useState([]);
@@ -31,7 +32,7 @@ export default function ProfessionalDevelopmentPanel({ facultyId }) {
     try {
       const params = selectedFilter ? `?activity_type=${selectedFilter}` : '';
       const response = await fetch(
-        `/api/faculty/${facultyId}/professional-development${params}`
+        buildApiUrl(`/faculty/${facultyId}/professional-development${params}`)
       );
       
       if (!response.ok) throw new Error('Failed to fetch activities');
@@ -49,7 +50,7 @@ export default function ProfessionalDevelopmentPanel({ facultyId }) {
   const fetchSummary = async () => {
     try {
       const response = await fetch(
-        `/api/faculty/${facultyId}/professional-development/summary?academic_year=2024`
+        buildApiUrl(`/faculty/${facultyId}/professional-development/summary?academic_year=2024`)
       );
       
       if (response.ok) {
@@ -66,7 +67,7 @@ export default function ProfessionalDevelopmentPanel({ facultyId }) {
     
     try {
       const response = await fetch(
-        `/api/faculty/${facultyId}/professional-development`,
+        buildApiUrl(`/faculty/${facultyId}/professional-development`),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -108,7 +109,7 @@ export default function ProfessionalDevelopmentPanel({ facultyId }) {
       // Note: This assumes a DELETE endpoint exists
       // If not, you'll need to implement it in the backend
       const response = await fetch(
-        `/api/faculty/${facultyId}/professional-development/${activityId}`,
+        buildApiUrl(`/faculty/${facultyId}/professional-development/${activityId}`),
         { method: 'DELETE' }
       );
 

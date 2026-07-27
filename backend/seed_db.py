@@ -28,28 +28,28 @@ def seed():
     
     # 1. Seed Staff Details
     print("Seeding staff_details collection...")
-        print("Retrieving staff_details from MongoDB...")
-        staff_details = list(db.staff_details.find())
-        print(f"Retrieved {len(staff_details)} staff from staff_details collection.")
-        # Create payroll entries for each staff
-        payroll_entries = []
-        for staff in staff_details:
-            payroll_entry = {
-                "staffId": staff.get("staffId"),
-                "staffName": staff.get("staffName"),
-                "designation": staff.get("designation"),
-                "department": staff.get("department"),
-                "category": staff.get("category"),
-                # Add payroll fields as needed
-                "salary": 0,
-                "createdAt": "2026-03-16"
-            }
-            payroll_entries.append(payroll_entry)
-        if payroll_entries:
-            db.payroll.insert_many(payroll_entries)
-            print(f"SUCCESS: Seeded {len(payroll_entries)} payroll entries into payroll collection.")
-        else:
-            print("No staff found to create payroll entries.")
+    print("Retrieving staff_details from MongoDB...")
+    staff_details = list(db.staff_details.find())
+    print(f"Retrieved {len(staff_details)} staff from staff_details collection.")
+    # Create payroll entries for each staff
+    payroll_entries = []
+    for staff in staff_details:
+        payroll_entry = {
+            "staffId": staff.get("staffId"),
+            "staffName": staff.get("staffName"),
+            "designation": staff.get("designation"),
+            "department": staff.get("department"),
+            "category": staff.get("category"),
+            # Add payroll fields as needed
+            "salary": 0,
+            "createdAt": "2026-03-16"
+        }
+        payroll_entries.append(payroll_entry)
+    if payroll_entries:
+        db.payroll.insert_many(payroll_entries)
+        print(f"SUCCESS: Seeded {len(payroll_entries)} payroll entries into payroll collection.")
+    else:
+        print("No staff found to create payroll entries.")
     
     # 2. Seed Payroll
     print("Seeding payroll collection...")

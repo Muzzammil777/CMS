@@ -5,6 +5,79 @@ import {
   upsertInternalMark,
 } from '../../api/examsApi';
 import { getUserSession } from '../../auth/sessionController';
+import { buildApiUrl } from '../../api/apiBase';
+
+function isClassAssigned(classId, classLabel, assignedClasses) {
+  if (!assignedClasses || assignedClasses.length === 0) return false;
+  
+  const normalizedLabel = classLabel.toLowerCase();
+  const normalizedId = classId.toLowerCase();
+  
+  const deptCodes = {
+    'cse': ['computer science', 'computer science & engineering', 'computer science and engineering'],
+    'ece': ['electronics', 'electronics & communication', 'electronics and communication'],
+    'me': ['mechanical', 'mechanical engineering'],
+    'ce': ['civil', 'civil engineering'],
+    'it': ['information technology'],
+    'eee': ['electrical', 'electrical engineering', 'electrical & electronics', 'electrical and electronics']
+  };
+  
+  return assignedClasses.some(ac => {
+    const normalizedAc = ac.trim().toLowerCase();
+    if (!normalizedAc) return false;
+    
+    if (normalizedLabel.includes(normalizedAc) || normalizedId.includes(normalizedAc)) {
+      return true;
+    }
+    
+    const parts = normalizedAc.split(/[-_\s]+/);
+    if (parts.length >= 2) {
+      const first = parts[0];
+      const last = parts[parts.length - 1];
+      if (last.length === 1 && /[a-z]/.test(last)) {
+        const studentSec = normalizedId.split('-').pop();
+        if (studentSec === last) {
+          if (first === 'cs' || first === 'cse') {
+            return normalizedId.includes('computer-science') || normalizedId.includes('cse');
+          }
+          for (const [code, names] of Object.entries(deptCodes)) {
+            if (first === code) {
+              return names.some(name => normalizedId.includes(name.replace(/\s+/g, '-')));
+            }
+          }
+        }
+      }
+    }
+    
+    const matchNum = normalizedAc.match(/\d+/);
+    if (matchNum) {
+      const num = matchNum[0];
+      const yearWords = {
+        '1': ['1st', '1', 'first'],
+        '2': ['2nd', '2', 'second'],
+        '3': ['3rd', '3', 'third'],
+        '4': ['4th', '4', 'fourth']
+      };
+      if (yearWords[num]) {
+        return yearWords[num].some(w => normalizedId.includes(w));
+      }
+    }
+    
+    return false;
+  });
+}
+
+function buildClassMeta(student) {
+  const department = String(student?.department || 'General')
+  const year = String(student?.year || 'Year')
+  const section = String(student?.section || 'A')
+  const classLabel = `${department} - ${year} - Sec ${section}`
+  const classId = `${department}__${year}__${section}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return { classId, classLabel }
+}
 
 export default function InternalMarksModal({ exam, onClose, onSave }) {
   const [registrations, setRegistrations] = useState([]);
@@ -18,13 +91,42 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
     async function loadData() {
       try {
         const examId = exam._id || exam.id;
-        const [regs, existingMarks] = await Promise.all([
+        const [regs, existingMarks, studentsRes] = await Promise.all([
           listRegistrations({ examId }),
-          listInternalMarks({ examId }),
+          listInternalMarks({ examId, entered_by: session?.userId }),
+          fetch(buildApiUrl('/students')).then(res => res.json()).catch(() => [])
         ]);
         if (cancelled) return;
 
-        setRegistrations(regs);
+        const studentsList = Array.isArray(studentsRes) ? studentsRes : (Array.isArray(studentsRes?.data) ? studentsRes.data : []);
+        const studentClassMap = {};
+        studentsList.forEach(student => {
+          const { classId, classLabel } = buildClassMeta(student);
+          studentClassMap[student.id || student.rollNumber] = { classId, classLabel };
+        });
+
+        let assignedClasses = [];
+        if (session?.role === 'faculty') {
+          const facRes = await fetch(buildApiUrl(`/faculty/${session.userId}`));
+          if (facRes.ok) {
+            const facData = await facRes.json();
+            const assigned = facData?.assignedClasses || facData?.classes || [];
+            assignedClasses = Array.isArray(assigned) 
+              ? assigned 
+              : (typeof assigned === 'string' ? assigned.split(',').map(s => s.trim()).filter(Boolean) : []);
+          }
+        }
+
+        const filteredRegs = regs.filter(reg => {
+          if (session?.role === 'faculty') {
+            const studentClass = studentClassMap[reg.studentId];
+            if (!studentClass) return false;
+            return isClassAssigned(studentClass.classId, studentClass.classLabel, assignedClasses);
+          }
+          return true;
+        });
+
+        setRegistrations(filteredRegs);
 
         const marksObj = {};
         existingMarks.forEach((m) => {
@@ -41,7 +143,7 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
     return () => {
       cancelled = true;
     };
-  }, [exam._id, exam.id]);
+  }, [exam._id, exam.id, session?.userId, session?.role]);
 
   const handleMarksChange = (studentId, value) => {
     const numValue = parseFloat(value);
@@ -78,7 +180,7 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
   const getMarksColor = (marks) => {
     const percentage = (marks / maxInternal) * 100;
     if (percentage >= 80) return 'text-emerald-600';
-    if (percentage >= 60) return 'text-[#276221]';
+    if (percentage >= 60) return 'text-[#4c1d95]';
     if (percentage >= 40) return 'text-yellow-600';
     return 'text-red-600';
   };
@@ -86,7 +188,7 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        <div className="bg-[#276221] text-white px-6 py-4">
+        <div className="bg-[#4c1d95] text-white px-6 py-4">
           <h2 className="text-xl font-semibold flex items-center">
             <span className="material-symbols-outlined mr-2">assignment</span>
             Internal Marks Entry - {exam.name}
@@ -102,7 +204,7 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
             <input
               type="number"
               value={maxInternal}
-              onChange={(e) => setMaxInternal(parseInt(e.target.value) || 20)}
+              onChange={(e) => setMaxInternal(e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0)}
               min="1"
               max="50"
               className="w-32 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
@@ -168,7 +270,7 @@ export default function InternalMarksModal({ exam, onClose, onSave }) {
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-[#276221] text-white rounded-lg hover:bg-[#1e4618]"
+            className="px-4 py-2 bg-[#4c1d95] text-white rounded-lg hover:bg-[#3b0764]"
           >
             Save Internal Marks
           </button>

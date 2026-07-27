@@ -1,192 +1,131 @@
 import { useEffect, useMemo, useState } from 'react';
 import { userSettingsApi } from '../../api/userSettingsApi';
 import { useSettingsContext } from '../../context/SettingsContext';
-import { SaveToast, SectionActions, SectionError, SectionLoader, isDirty } from './SettingsCommon';
+import { SettingsCard, SettingsActions, SettingsError, SettingsLoader, SettingsToast, inputCls, labelCls, isDirty } from '../settings/SettingsPanelCommon';
+import { updateUserData } from '../../auth/sessionController';
 
-function isEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+function isEmail(v) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
 export default function ProfileSettings({ role, userId }) {
   const { setSectionData, markSectionDirty } = useSettingsContext();
   const [profile, setProfile] = useState(null);
-  const [baselineProfile, setBaselineProfile] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [baseline, setBaseline] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [validation, setValidation] = useState({});
 
   useEffect(() => {
     let mounted = true;
+    setLoading(true);
+    userSettingsApi.getProfile(role, userId).then((data) => {
+      if (!mounted) return;
+      setProfile(data);
+      setBaseline(data);
+      setSectionData('profile', data);
+    }).catch((e) => { if (mounted) setError(e.message); })
+    .finally(() => { if (mounted) setLoading(false); });
 
-    async function load() {
-      setLoading(true);
-      setError('');
-
-      try {
-        const data = await userSettingsApi.getProfile(role, userId);
-        if (!mounted) {
-          return;
-        }
-
-        setProfile(data);
-        setBaselineProfile(data);
-        setSectionData('profile', data);
-      } catch (loadError) {
-        if (mounted) {
-          setError(loadError.message);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    load();
     return () => {
       mounted = false;
       markSectionDirty('profile', false);
     };
   }, [markSectionDirty, role, setSectionData, userId]);
 
-  const dirty = useMemo(() => isDirty(profile, baselineProfile), [profile, baselineProfile]);
+  const dirty = useMemo(() => isDirty(profile, baseline), [profile, baseline]);
 
   useEffect(() => {
     markSectionDirty('profile', dirty);
   }, [dirty, markSectionDirty]);
 
-  if (loading) {
-    return <SectionLoader label="Loading profile settings..." />;
-  }
-
-  if (!profile) {
-    return <SectionError message={error || 'Failed to load profile.'} />;
-  }
+  if (loading) return <SettingsLoader label="Loading profile…" />;
+  if (!profile) return <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-sm text-red-500">{error || 'Failed to load profile.'}</div>;
 
   function updateField(field, value) {
-    setProfile((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setProfile((cur) => ({ ...cur, [field]: value }));
   }
 
   function validateForm() {
-    const nextErrors = {};
-
-    if (!profile.name?.trim()) {
-      nextErrors.name = 'Name is required.';
-    }
-
-    if (!profile.email?.trim()) {
-      nextErrors.email = 'Email is required.';
-    } else if (!isEmail(profile.email.trim())) {
-      nextErrors.email = 'Enter a valid email address.';
-    }
-
-    if (profile.phone && !/^\d{10}$/.test(profile.phone)) {
-      nextErrors.phone = 'Phone should contain 10 digits.';
-    }
-
-    setValidation(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    const errs = {};
+    if (!profile.name?.trim()) errs.name = 'Name is required.';
+    if (!profile.email?.trim()) errs.email = 'Email is required.';
+    else if (!isEmail(profile.email.trim())) errs.email = 'Enter a valid email address.';
+    if (profile.phone && !/^\d{10}$/.test(profile.phone)) errs.phone = 'Phone must be 10 digits.';
+    setValidation(errs);
+    return Object.keys(errs).length === 0;
   }
 
   async function handleSave() {
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setSaving(true);
     setError('');
-
     try {
       const response = await userSettingsApi.updateProfile(role, userId, profile);
       const updated = response.data;
-
       setProfile(updated);
-      setBaselineProfile(updated);
+      setBaseline(updated);
       setSectionData('profile', updated);
+      updateUserData(updated);
       setToast('Profile updated successfully.');
-    } catch (saveError) {
-      setError(saveError.message);
+    } catch (e) {
+      setError(e.message);
     } finally {
       setSaving(false);
     }
   }
 
   function handleReset() {
-    setProfile(baselineProfile);
+    setProfile(baseline);
     setValidation({});
     setToast('Profile reset to last saved values.');
   }
 
   return (
-    <section className="user-settings-section">
-      <header>
-        <h3>Profile</h3>
-        <p>Manage your identity and contact information.</p>
-      </header>
+    <div className="flex flex-col gap-5">
+      <SettingsError message={error} />
 
-      <SectionError message={error} />
+      <SettingsCard title="Personal Information" description="Your name, contact details, and a brief bio.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className={labelCls}>Full Name *</label>
+            <input type="text" value={profile.name || ''} onChange={(e) => updateField('name', e.target.value)} className={inputCls} placeholder="e.g. Arjun Kumar" />
+            {validation.name && <p className="text-xs text-red-500 mt-1">{validation.name}</p>}
+          </div>
+          <div>
+            <label className={labelCls}>Email Address *</label>
+            <input type="email" value={profile.email || ''} onChange={(e) => updateField('email', e.target.value)} className={inputCls} />
+            {validation.email && <p className="text-xs text-red-500 mt-1">{validation.email}</p>}
+          </div>
+          <div>
+            <label className={labelCls}>Phone Number</label>
+            <input type="text" value={profile.phone || ''} onChange={(e) => updateField('phone', e.target.value)} placeholder="10 digit number" className={inputCls} />
+            {validation.phone && <p className="text-xs text-red-500 mt-1">{validation.phone}</p>}
+          </div>
+          <div>
+            {profile.department !== undefined ? (
+              <>
+                <label className={labelCls}>Department</label>
+                <input type="text" value={profile.department || ''} onChange={(e) => updateField('department', e.target.value)} className={inputCls} />
+              </>
+            ) : (
+              <>
+                <label className={labelCls}>Address</label>
+                <input type="text" value={profile.address || ''} onChange={(e) => updateField('address', e.target.value)} className={inputCls} />
+              </>
+            )}
+          </div>
+          <div className="md:col-span-2">
+            <label className={labelCls}>Bio</label>
+            <textarea rows={3} value={profile.bio || ''} onChange={(e) => updateField('bio', e.target.value)} className={`${inputCls} resize-none`} placeholder="A short description about yourself…" />
+          </div>
+        </div>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
 
-      <div className="user-settings-grid">
-        <label>
-          Full Name
-          <input type="text" value={profile.name || ''} onChange={(event) => updateField('name', event.target.value)} />
-          {validation.name ? <small className="user-settings-field-error">{validation.name}</small> : null}
-        </label>
-
-        <label>
-          Email Address
-          <input
-            type="email"
-            value={profile.email || ''}
-            onChange={(event) => updateField('email', event.target.value)}
-          />
-          {validation.email ? <small className="user-settings-field-error">{validation.email}</small> : null}
-        </label>
-
-        <label>
-          Phone
-          <input
-            type="text"
-            value={profile.phone || ''}
-            onChange={(event) => updateField('phone', event.target.value)}
-            placeholder="10 digit mobile number"
-          />
-          {validation.phone ? <small className="user-settings-field-error">{validation.phone}</small> : null}
-        </label>
-
-        {role === 'faculty' ? (
-          <label>
-            Department
-            <input
-              type="text"
-              value={profile.department || ''}
-              onChange={(event) => updateField('department', event.target.value)}
-            />
-          </label>
-        ) : (
-          <label>
-            Address
-            <input
-              type="text"
-              value={profile.address || ''}
-              onChange={(event) => updateField('address', event.target.value)}
-            />
-          </label>
-        )}
-
-        <label className="user-settings-grid-span-2">
-          Bio
-          <textarea rows="3" value={profile.bio || ''} onChange={(event) => updateField('bio', event.target.value)} />
-        </label>
-      </div>
-
-      <SectionActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
-      <SaveToast message={toast} onClear={() => setToast('')} />
-    </section>
+      <SettingsToast message={toast} onClear={() => setToast('')} />
+    </div>
   );
 }

@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
+import { getUserSession, updateUserData } from '../auth/sessionController';
+import { buildApiUrl } from '../api/apiBase';
+import { settingsApi } from '../api/settingsApi';
 
 export default function AddStudentModal({ isOpen, onClose, onSuccess, editStudent }) {
   const [step, setStep] = useState(1);
@@ -43,6 +46,29 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
   const [formData, setFormData] = useState(initialData);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
+  const maxStep = editStudent ? 3 : 5;
+  const [departments, setDepartments] = useState([]);
+
+  useEffect(() => {
+    const fetchDepts = async () => {
+      try {
+        const data = await settingsApi.getDepartments();
+        setDepartments(data || []);
+        if (data && data.length > 0 && !editStudent) {
+          const draft = localStorage.getItem('add_student_draft');
+          if (!draft) {
+            setFormData(prev => ({
+              ...prev,
+              department: prev.department === 'Computer Science' ? data[0].name : prev.department
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching departments in AddStudentModal:', err);
+      }
+    };
+    fetchDepts();
+  }, [editStudent]);
 
   // Load draft from localStorage on mount or populate from editStudent
   useEffect(() => {
@@ -59,14 +85,23 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         }
       };
 
+      const normalizedId = editStudent.student_id || editStudent.rollNumber || editStudent.id || editStudent._id || initialData.id;
+      const normalizedGuardianName = editStudent.guardianName || editStudent.guardian || '';
+      const normalizedGuardianPhone = editStudent.guardianPhone || '';
+
       setFormData({
         ...initialData,
         ...editStudent,
         dob: formatDate(editStudent.dob),
         enrollDate: formatDate(editStudent.enrollDate),
-        docs: editStudent.docs || initialData.docs
+        docs: editStudent.docs || initialData.docs,
+        id: editStudent.id || normalizedId,
+        rollNumber: editStudent.rollNumber || editStudent.id || normalizedId,
+        guardianName: normalizedGuardianName,
+        guardianPhone: normalizedGuardianPhone
       });
       if (editStudent.avatar) setAvatarPreview(editStudent.avatar);
+      setErrors({});
       setStep(1);
     } else {
       const draft = localStorage.getItem('add_student_draft');
@@ -82,6 +117,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         setFormData(initialData);
         setAvatarPreview(null);
       }
+      setErrors({});
       setStep(1);
     }
   }, [isOpen, editStudent]);
@@ -130,11 +166,11 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
     } else if (s === 3) {
       if (!formData.guardianName) newErrors.guardianName = 'Guardian Name is required';
       if (!formData.guardianPhone) newErrors.guardianPhone = 'Guardian Phone is required';
-    } else if (s === 4) {
+    } else if (s === 4 && !editStudent) {
       if (!formData.docs.marksheet10) newErrors.marksheet10 = '10th Marksheet is required';
       if (!formData.docs.marksheet12) newErrors.marksheet12 = '12th Marksheet is required';
       if (!formData.docs.aadhar) newErrors.aadhar = 'Aadhar Card is required';
-      if (!formData.docs.photo) newErrors.photo = 'Passport Photo is required';
+      if (!formData.docs.tc) newErrors.tc = 'Transfer Certificate is required';
     }
     
     setErrors(newErrors);
@@ -142,7 +178,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
   };
 
   const handleNext = () => {
-    if (validateStep(step)) {
+    if (validateStep(step) && step < maxStep) {
       setStep(s => s + 1);
     }
   };
@@ -158,17 +194,23 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
       setIsSubmitting(true);
       try {
         // Prepare data for backend
-        const studentId = editStudent ? (editStudent.rollNumber || editStudent.id) : formData.id;
+        const studentId = editStudent
+          ? (editStudent.student_id || editStudent.rollNumber || editStudent.id || editStudent._id || formData.id)
+          : formData.id;
         const url = editStudent 
-          ? `/api/students/${encodeURIComponent(studentId)}`
-          : '/api/students';
+          ? buildApiUrl(`/students/${encodeURIComponent(studentId)}`)
+          : buildApiUrl('/students');
         
         const method = editStudent ? 'PUT' : 'POST';
 
         // Format data to match backend schema
         const payload = {
           ...formData,
+          id: formData.id || formData.rollNumber || formData.student_id || studentId,
+          rollNumber: formData.rollNumber || formData.id || formData.student_id || studentId,
+          guardian: formData.guardianName || formData.guardian || '',
           semester: parseInt(formData.semester) || 1,
+          cgpa: formData.cgpa ? parseFloat(formData.cgpa) : null,
           enrollDate: formData.enrollDate ? new Date(formData.enrollDate).toISOString() : null,
           dob: formData.dob ? new Date(formData.dob).toISOString() : null,
           // Convert docs to simple documents list for now if the backend expects list of dicts
@@ -194,6 +236,15 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         const savedStudent = await res.json();
         console.log('Success:', savedStudent);
         
+        const session = getUserSession();
+        if (session && (session.userId === studentId || session.userId === studentId.toString())) {
+          updateUserData({
+            name: savedStudent.name,
+            email: savedStudent.email,
+            avatar: savedStudent.avatar
+          });
+        }
+
         if (onSuccess) onSuccess(savedStudent);
         localStorage.removeItem('add_student_draft');
         alert(editStudent ? 'Student details updated successfully!' : 'Student enrolled successfully!');
@@ -219,12 +270,16 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
     return [];
   };
 
-  const steps = [
+  const steps = editStudent ? [
+    { id: 1, label: 'Personal' },
+    { id: 2, label: 'Academic' },
+    { id: 3, label: 'Guardian' }
+  ] : [
     { id: 1, label: 'Personal' },
     { id: 2, label: 'Academic' },
     { id: 3, label: 'Guardian' },
     { id: 4, label: 'Documents' },
-    { id: 5, label: 'Review' },
+    { id: 5, label: 'Review' }
   ];
 
   return (
@@ -235,7 +290,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         <div className="bg-slate-50 flex items-center border-b border-slate-200">
           {steps.map((s, i) => (
             <div key={s.id} className="flex-1 flex items-center">
-              <div className={`h-1.5 flex-1 transition-all duration-500 ${step >= s.id ? 'bg-[#276221]' : 'bg-slate-200'}`} />
+              <div className={`h-1.5 flex-1 transition-all duration-500 ${step >= s.id ? 'bg-[#4c1d95]' : 'bg-slate-200'}`} />
             </div>
           ))}
         </div>
@@ -244,21 +299,16 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
         <div className="px-8 py-5 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-              <div className="p-2 bg-[#276221]/10 rounded-lg">
-                <span className="material-symbols-outlined text-[#276221]">{editStudent ? 'edit_note' : 'person_add'}</span>
+              <div className="p-2 bg-[#4c1d95]/10 rounded-lg">
+                <span className="material-symbols-outlined text-[#4c1d95]">{editStudent ? 'edit_note' : 'person_add'}</span>
               </div>
               {editStudent ? 'Edit Student Details' : 'Enroll New Student'}
             </h2>
-            <p className="text-sm text-slate-500 mt-1">Step {step} of 5: {steps[step-1].label} Information</p>
+            <p className="text-sm text-slate-500 mt-1">Step {step} of {maxStep}: {steps[step-1].label} Information</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
-            <span className="material-symbols-outlined">close</span>
-          </button>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
-          
+        <div className="px-8 py-6 overflow-y-auto flex-1">
           {/* Step 1: Personal */}
           {step === 1 && (
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
@@ -279,6 +329,22 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                     <div className="absolute inset-0 bg-green-700/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <span className="text-white text-xs font-bold">CHANGE PHOTO</span>
                     </div>
+                    {avatarPreview && !avatarPreview.startsWith('https://ui-avatars.com') && (
+                      <button 
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm('Are you sure you want to remove the profile photo?')) {
+                            setAvatarPreview(null);
+                            setFormData(prev => ({ ...prev, avatar: null }));
+                          }
+                        }}
+                        className="absolute top-1.5 right-1.5 z-20 p-1 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border border-white/10"
+                        title="Remove profile photo"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    )}
                   </div>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'avatar')} />
                 </div>
@@ -286,7 +352,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">Full Name <span className="text-red-500">*</span></label>
-                    <input name="name" value={formData.name} onChange={handleChange} className={`w-full px-4 py-2.5 rounded-lg border ${errors.name ? 'border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-[#276221] focus:ring-[#276221]/20'} border border-slate-200 rounded-lg focus:ring-2 outline-none transition-colors text-slate-700`} placeholder="e.g. John Doe" />
+                    <input name="name" value={formData.name} onChange={handleChange} className={`w-full px-4 py-2.5 rounded-lg border ${errors.name ? 'border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-[#4c1d95] focus:ring-[#4c1d95]/20'} border border-slate-200 rounded-lg focus:ring-2 outline-none transition-colors text-slate-700`} placeholder="e.g. John Doe" />
                     {errors.name && <p className="text-xs text-red-500 font-medium">{errors.name}</p>}
                   </div>
                   <div className="space-y-1.5">
@@ -336,12 +402,12 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Student ID</label>
-                  <input name="id" value={formData.id} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 bg-slate-50/50 font-mono text-[#276221] font-bold" />
+                  <input name="id" value={formData.id} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 bg-slate-50/50 font-mono text-[#4c1d95] font-bold" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Department</label>
                   <select name="department" value={formData.department} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 outline-none text-slate-700 bg-white">
-                    {['Computer Science', 'Mechanical Eng.', 'Electrical Eng.', 'Civil Engineering', 'Automobile Eng.', 'Electronics Eng.'].map(d => <option key={d}>{d}</option>)}
+                    {departments.map(d => <option key={d.code} value={d.name}>{d.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
@@ -365,6 +431,10 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Enrollment Date</label>
                   <input type="date" name="enrollDate" value={formData.enrollDate} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 outline-none text-slate-700" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">CGPA</label>
+                  <input type="number" step="0.01" min="0" max="10" name="cgpa" value={formData.cgpa || ''} onChange={handleChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-600 outline-none text-slate-700" placeholder="e.g. 8.5" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">Admission Type</label>
@@ -413,7 +483,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
           )}
 
           {/* Step 4: Documents */}
-          {step === 4 && (
+          {!editStudent && step === 4 && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
               <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-4 flex gap-3">
                 <span className="material-symbols-outlined text-orange-600">file_upload</span>
@@ -422,22 +492,22 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { label: '10th Marksheet', field: 'marksheet10' },
-                  { label: '12th Marksheet', field: 'marksheet12' },
-                  { label: 'Aadhar Card', field: 'aadhar' },
-                  { label: 'Passport Photo', field: 'photo' },
-                  { label: 'Transfer Certificate', field: 'tc' },
+                  { label: '10th Marksheet', field: 'marksheet10', required: true },
+                  { label: '12th Marksheet', field: 'marksheet12', required: true },
+                  { label: 'Aadhar Card', field: 'aadhar', required: true },
+                  { label: 'Passport Photo', field: 'photo', required: false },
+                  { label: 'Transfer Certificate', field: 'tc', required: true },
                 ].map((doc) => (
-                  <div key={doc.field} className={`relative border-2 border-dashed rounded-xl p-4 transition-all ${formData.docs[doc.field] ? 'border-green-200 bg-green-50/30' : errors[doc.field] ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-green-300 hover:bg-slate-50'} group`}>
+                  <div key={doc.field} className={`relative border-2 border-dashed rounded-xl p-4 transition-all ${formData.docs[doc.field] ? 'border-green-200 bg-green-50/30' : (errors[doc.field] && doc.required) ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-green-300 hover:bg-slate-50'} group`}>
                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => handleFileChange(e, doc.field)} />
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${formData.docs[doc.field] ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400 group-hover:bg-green-100 group-hover:text-green-600'}`}>
                         <span className="material-symbols-outlined text-lg">{formData.docs[doc.field] ? 'verified' : 'upload'}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-slate-700 truncate">{doc.label} *</p>
+                        <p className="text-xs font-bold text-slate-700 truncate">{doc.label}{doc.required ? ' *' : ''}</p>
                         <p className="text-[10px] text-slate-400 truncate">
-                          {formData.docs[doc.field] ? formData.docs[doc.field].name : 'Click to browse or drag & drop'}
+                           {formData.docs[doc.field] ? formData.docs[doc.field].name : 'Click to browse or drag & drop'}
                         </p>
                       </div>
                     </div>
@@ -463,17 +533,17 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
           )}
 
           {/* Step 5: Review */}
-          {step === 5 && (
+          {!editStudent && step === 5 && (
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-              <div className="bg-[#276221]/5 border border-[#276221]/10 rounded-2xl p-6 relative overflow-hidden">
+              <div className="bg-[#4c1d95]/5 border border-[#4c1d95]/10 rounded-2xl p-6 relative overflow-hidden">
                 <div className="flex flex-col md:flex-row gap-6 relative z-10">
                   <div className="w-24 h-24 rounded-2xl bg-white shadow-sm border border-slate-100 overflow-hidden shrink-0">
-                    <img src={avatarPreview || `https://ui-avatars.com/api/?name=${formData.name}&background=276221&color=fff`} className="w-full h-full object-cover" />
+                    <img src={avatarPreview || `https://ui-avatars.com/api/?name=${formData.name}&background=00236f&color=fff`} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl font-bold text-slate-900">{formData.name || 'Anonymous Student'}</h3>
-                      <button onClick={() => setStep(1)} className="text-[10px] font-bold text-[#276221] hover:underline uppercase tracking-widest">Edit Step 1</button>
+                      <button onClick={() => setStep(1)} className="text-[10px] font-bold text-[#4c1d95] hover:underline uppercase tracking-widest">Edit Step 1</button>
                     </div>
                     <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
                       <span className="text-slate-500 flex items-center gap-1.5"><span className="material-symbols-outlined text-base">badge</span> {formData.id}</span>
@@ -483,7 +553,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                   </div>
                 </div>
                 <div className="absolute top-0 right-0 p-8 transform rotate-12 opacity-5 scale-150">
-                  <span className="material-symbols-outlined text-[120px] text-[#276221]">check_circle</span>
+                  <span className="material-symbols-outlined text-[120px] text-[#4c1d95]">check_circle</span>
                 </div>
               </div>
 
@@ -491,7 +561,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                  <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Personal & Bio</h4>
-                      <button onClick={() => setStep(1)} className="text-[10px] font-bold text-[#276221] hover:underline">Edit</button>
+                      <button onClick={() => setStep(1)} className="text-[10px] font-bold text-[#4c1d95] hover:underline">Edit</button>
                     </div>
                     <div className="bg-slate-50 rounded-xl p-4 space-y-3">
                       <div className="flex justify-between text-sm">
@@ -512,7 +582,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                  <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Guardian Details</h4>
-                      <button onClick={() => setStep(3)} className="text-[10px] font-bold text-[#276221] hover:underline">Edit</button>
+                      <button onClick={() => setStep(3)} className="text-[10px] font-bold text-[#4c1d95] hover:underline">Edit</button>
                     </div>
                     <div className="bg-slate-50 rounded-xl p-4 space-y-3">
                       <div className="flex justify-between text-sm">
@@ -535,7 +605,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
               <div className="space-y-4">
                 <div className="flex items-center justify-between px-1">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Documents Uploaded</h4>
-                  <button onClick={() => setStep(4)} className="text-[10px] font-bold text-[#276221] hover:underline">Edit</button>
+                  <button onClick={() => setStep(4)} className="text-[10px] font-bold text-[#4c1d95] hover:underline">Edit</button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(formData.docs).filter(([k,v]) => v && k !== 'additional').map(([key, doc]) => (
@@ -588,10 +658,10 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                   PREVIOUS
                 </button>
               )}
-              {step < 5 ? (
+              {step < maxStep ? (
                 <button 
                   onClick={handleNext}
-                  className="px-6 py-2.5 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#1e4618] transition-colors flex items-center gap-2"
+                  className="px-6 py-2.5 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#3b0764] transition-colors flex items-center gap-2"
                 >
                   Continue
                   <span className="material-symbols-outlined text-base">arrow_forward</span>
@@ -602,7 +672,7 @@ export default function AddStudentModal({ isOpen, onClose, onSuccess, editStuden
                    disabled={isSubmitting}
                    className={`px-6 py-2.5 ${isSubmitting ? 'bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'} text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2`}
                 >
-                  {isSubmitting ? 'Processing...' : editStudent ? 'Save Changes' : 'Complete Enrollment'}
+                  {isSubmitting ? 'Processing...' : editStudent ? 'Update Student' : 'Complete Enrollment'}
                   <span className="material-symbols-outlined text-base">{isSubmitting ? 'sync' : 'verified_user'}</span>
                 </button>
               )}

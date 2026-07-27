@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { buildApiUrl } from '../api/apiBase';
 
 export default function AssignCourseModal({ isOpen, onClose, onSuccess, facultyId }) {
   const [formData, setFormData] = useState({
@@ -19,7 +20,7 @@ export default function AssignCourseModal({ isOpen, onClose, onSuccess, facultyI
     const { name, value } = e.target;
     setFormData(prev => ({ 
       ...prev, 
-      [name]: name === 'credits' ? parseInt(value) || 0 : value 
+      [name]: name === 'credits' ? (value === '' ? '' : parseInt(value, 10) || 0) : value 
     }));
   };
 
@@ -29,7 +30,7 @@ export default function AssignCourseModal({ isOpen, onClose, onSuccess, facultyI
     setError(null);
     
     try {
-      const response = await fetch(`/api/faculty/${facultyId}/courses`, {
+      const response = await fetch(buildApiUrl(`/faculty/${facultyId}/courses`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

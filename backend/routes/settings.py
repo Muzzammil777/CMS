@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 def _require_role(role: str) -> str:
     normalized = normalize_role(role)
     if not normalized:
-        raise HTTPException(status_code=400, detail="Invalid role. Allowed values: student, faculty.")
+        raise HTTPException(status_code=400, detail="Invalid role. Allowed values: student, faculty, finance, admin.")
     return normalized
 
 
@@ -102,15 +102,27 @@ async def update_profile_by_role(role: str, user_id: str, payload: PartialSettin
 
 @router.get("/{role}/{user_id}/notifications")
 async def get_notifications_by_role(role: str, user_id: str):
-    notifications = get_section(_require_role(role), user_id, "notifications")
-    if not notifications:
-        raise HTTPException(status_code=404, detail="Notification preferences not found for user.")
+    resolved_role = _require_role(role)
+    notifications = get_section(resolved_role, user_id, "notifications")
+    if notifications is None:
+        from backend.stores.settings_store import _student_seed, _faculty_seed, _finance_seed, _admin_seed
+        if resolved_role == "student":
+            return _student_seed()["notifications"]
+        elif resolved_role == "faculty":
+            return _faculty_seed()["notifications"]
+        elif resolved_role == "finance":
+            return _finance_seed()["notifications"]
+        elif resolved_role == "admin":
+            return _admin_seed()["notifications"]
+        else:
+            return {}
     return notifications
 
 
 @router.put("/{role}/{user_id}/notifications")
 async def update_notifications_by_role(role: str, user_id: str, payload: PartialSettingsPayload):
-    updated = update_section(_require_role(role), user_id, "notifications", payload.as_dict())
+    resolved_role = _require_role(role)
+    updated = update_section(resolved_role, user_id, "notifications", payload.as_dict())
     if not updated:
         raise HTTPException(status_code=404, detail="Notification preferences not found for user.")
     return {"message": "Notification preferences updated successfully", "data": updated}

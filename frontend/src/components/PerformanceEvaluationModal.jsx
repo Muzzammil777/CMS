@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { buildApiUrl } from '../api/apiBase';
 
 export default function PerformanceEvaluationModal({ isOpen, onClose, onSuccess, facultyId, facultyName }) {
   const [formData, setFormData] = useState({
@@ -43,7 +44,7 @@ export default function PerformanceEvaluationModal({ isOpen, onClose, onSuccess,
     setError(null);
     
     try {
-      const response = await fetch(`/api/faculty/${facultyId}/evaluations`, {
+      const response = await fetch(buildApiUrl(`/faculty/${facultyId}/evaluations`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

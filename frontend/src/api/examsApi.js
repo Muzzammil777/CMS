@@ -32,8 +32,9 @@ export function calculateGrade(marks, maxMarks) {
   return 'F'
 }
 
-export async function listExams() {
-  const res = await fetch(`${API_BASE}/exams`)
+export async function listExams({ role, userId } = {}) {
+  const query = buildQuery({ role, userId })
+  const res = await fetch(`${API_BASE}/exams${query}`)
   const json = await parseResponse(res, 'Failed to fetch exams')
   return Array.isArray(json.data) ? json.data : []
 }
@@ -107,8 +108,8 @@ export async function upsertMark(payload) {
   return json.data
 }
 
-export async function listInternalMarks({ examId, studentId } = {}) {
-  const query = buildQuery({ exam_id: examId, student_id: studentId })
+export async function listInternalMarks({ examId, studentId, entered_by } = {}) {
+  const query = buildQuery({ exam_id: examId, student_id: studentId, entered_by })
   const res = await fetch(`${API_BASE}/exams/internal-marks${query}`)
   const json = await parseResponse(res, 'Failed to fetch internal marks')
   return Array.isArray(json.data) ? json.data : []
@@ -289,4 +290,30 @@ export async function markAllNotificationsRead(studentId) {
     body: JSON.stringify({ studentId }),
   })
   await parseResponse(res, 'Failed to mark all notifications as read')
+}
+
+export async function getSchedulePreview(payload) {
+  const res = await fetch(`${API_BASE}/exams/schedule-preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  const json = await parseResponse(res, 'Failed to get schedule preview')
+  return json.data
+}
+
+export async function submitBulkSchedule(payload) {
+  const res = await fetch(`${API_BASE}/exams/schedule-bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  const json = await parseResponse(res, 'Failed to schedule exams')
+  return json.data
+}
+
+export async function listEnrolledStudents(examId) {
+  const res = await fetch(`${API_BASE}/exams/${encodeURIComponent(examId)}/enrolled-students`)
+  const json = await parseResponse(res, 'Failed to fetch enrolled students')
+  return Array.isArray(json.data) ? json.data : []
 }

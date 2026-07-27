@@ -2,86 +2,84 @@
  * KpiCard Component
  * Standardized KPI/Statistic Card used across all pages
  * 
- * Design Reference: Admission Management Page
- * - Consistent sizing and layout
- * - Icon in rounded background (top-left)
- * - Large bold value
- * - Small muted label
- * - Color-coded backgrounds
+ * Updated:
+ * - Compact horizontal layout (reduced KPI card size)
+ * - Harmonious color tokens
  */
 
 export default function KpiCard({ 
   icon, 
   label, 
   value,
-  colorScheme = 'blue'
+  colorScheme = 'blue',
+  sub
 }) {
-  // Consistent color scheme across all KPI cards
   const colorSchemes = {
     blue: {
-      bg: 'bg-green-50',
-      border: 'border-green-200',
-      text: 'text-green-700',
-      icon: 'bg-green-100'
+      bg: 'bg-blue-50/50',
+      border: 'border-blue-100',
+      text: 'text-blue-700',
+      icon: 'bg-blue-100/50'
     },
     green: {
-      bg: 'bg-green-50',
-      border: 'border-green-200',
-      text: 'text-green-600',
-      icon: 'bg-green-100'
+      bg: 'bg-[#4c1d95]/5',
+      border: 'border-[#4c1d95]/15',
+      text: 'text-[#4c1d95]',
+      icon: 'bg-[#4c1d95]/10'
     },
     emerald: {
-      bg: 'bg-emerald-50',
-      border: 'border-emerald-200',
-      text: 'text-emerald-600',
-      icon: 'bg-emerald-100'
+      bg: 'bg-emerald-50/50',
+      border: 'border-emerald-100',
+      text: 'text-emerald-700',
+      icon: 'bg-emerald-100/50'
     },
     red: {
-      bg: 'bg-red-50',
-      border: 'border-red-200',
-      text: 'text-red-600',
-      icon: 'bg-red-100'
+      bg: 'bg-red-50/50',
+      border: 'border-red-100',
+      text: 'text-red-700',
+      icon: 'bg-red-100/50'
     },
     purple: {
-      bg: 'bg-purple-50',
-      border: 'border-purple-200',
-      text: 'text-purple-600',
-      icon: 'bg-purple-100'
+      bg: 'bg-purple-50/50',
+      border: 'border-purple-100',
+      text: 'text-purple-700',
+      icon: 'bg-purple-100/50'
     },
     orange: {
-      bg: 'bg-orange-50',
-      border: 'border-orange-200',
-      text: 'text-orange-600',
-      icon: 'bg-orange-100'
+      bg: 'bg-orange-50/50',
+      border: 'border-orange-100',
+      text: 'text-orange-700',
+      icon: 'bg-orange-100/50'
     },
     cyan: {
-      bg: 'bg-cyan-50',
-      border: 'border-cyan-200',
-      text: 'text-cyan-600',
-      icon: 'bg-cyan-100'
+      bg: 'bg-cyan-50/50',
+      border: 'border-cyan-100',
+      text: 'text-cyan-700',
+      icon: 'bg-cyan-100/50'
     },
     amber: {
-      bg: 'bg-amber-50',
-      border: 'border-amber-200',
-      text: 'text-amber-600',
-      icon: 'bg-amber-100'
+      bg: 'bg-amber-50/50',
+      border: 'border-amber-100',
+      text: 'text-amber-700',
+      icon: 'bg-amber-100/50'
     }
   };
 
   const colors = colorSchemes[colorScheme] || colorSchemes.blue;
 
   return (
-    <div className={`${colors.bg} border ${colors.border} rounded-lg p-6 transition-all duration-300 hover:shadow-md`}>
-      {/* Icon Container - Top Left */}
-      <div className={`${colors.icon} ${colors.text} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
-        <span className="material-symbols-outlined text-xl">{icon}</span>
+    <div className={`${colors.bg} border ${colors.border} rounded-xl p-4 transition-all duration-300 hover:shadow-sm hover:translate-y-[-1px] flex items-center gap-4`}>
+      {/* Icon Container */}
+      <div className={`${colors.icon} ${colors.text} w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0`}>
+        <span className="material-symbols-outlined text-lg">{icon}</span>
       </div>
       
-      {/* Value - Large and Bold */}
-      <p className={`text-3xl font-bold ${colors.text} mb-2`}>{value}</p>
-      
-      {/* Label - Small and Muted */}
-      <p className="text-sm font-medium text-gray-700">{label}</p>
+      {/* Text Container */}
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">{label}</p>
+        <p className={`text-xl font-extrabold ${colors.text} mt-0.5 truncate leading-tight`}>{value}</p>
+        {sub && <p className="text-[9px] text-gray-500 font-medium truncate mt-0.5">{sub}</p>}
+      </div>
     </div>
   );
 }

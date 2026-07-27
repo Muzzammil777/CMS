@@ -21,7 +21,7 @@
 
 .notification-header-left .header-icon {
   font-size: 32px;
-  color: #276221;
+  color: #4c1d95;
   background: #eff6ff;
   width: 56px;
   height: 56px;
@@ -123,7 +123,7 @@
   outline: none;
   background: white;
   background: white;
-  border-color: #276221;
+  border-color: #4c1d95;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 
@@ -169,7 +169,7 @@
 }
 
 .notification-center-btn.primary {
-  background-color: #276221;
+  background-color: #4c1d95;
   color: white;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
@@ -226,7 +226,7 @@
 }
 
 .clear-search-btn {
-  background: #276221;
+  background: #4c1d95;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -239,7 +239,7 @@
   width: 48px;
   height: 48px;
   border: 5px solid #f3f3f3;
-  border-top: 5px solid #276221;
+  border-top: 5px solid #4c1d95;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -379,7 +379,7 @@
   padding: 12px;
   background-color: #f8fafc;
   border-radius: 8px;
-  border-left: 3px solid #276221;
+  border-left: 3px solid #4c1d95;
 }
 
 .notification-modal-item strong {
@@ -464,6 +464,37 @@
     padding: 12px;
   }
 
+  .notification-center-header-v2 {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .notification-header-left .header-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+    border-radius: 12px;
+  }
+
+  .notification-header-left h1 {
+    font-size: 20px;
+  }
+
+  .notification-header-stats {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
   .notification-center-header {
     flex-direction: column;
     align-items: flex-start;
@@ -471,6 +502,9 @@
 
   .notification-center-toolbar {
     flex-direction: column;
+    padding: 10px;
+    border-radius: 14px;
+    margin-bottom: 20px;
   }
 
   .notification-center-search {
@@ -486,7 +520,37 @@
     min-width: 100px;
   }
 
+  .notification-center-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .notification-center-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .notification-center-empty-v2 {
+    min-height: 300px;
+    padding: 24px;
+    border-radius: 16px;
+  }
+
   .notification-modal {
     max-width: 100%;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .notification-modal-header {
+    padding: 16px;
+  }
+
+  .notification-modal-body {
+    padding: 16px;
+  }
+
+  .notification-modal-grid {
+    grid-template-columns: 1fr;
   }
 }

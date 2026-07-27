@@ -1,105 +1,117 @@
 import { useEffect, useState } from 'react';
 import { settingsApi } from '../../api/settingsApi';
-import SettingsActionBar from './SettingsActionBar';
-import SettingsToast from './SettingsToast';
+import { SettingsActions, SettingsCard, SettingsError, SettingsLoader, SettingsToast, inputCls, labelCls, isDirty } from './SettingsPanelCommon';
 
 export default function AcademicSettings() {
   const [form, setForm] = useState(null);
   const [baseline, setBaseline] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
-    async function load() {
-      const data = await settingsApi.getAcademicSettings();
+    settingsApi.getAcademicSettings().then((data) => {
       setForm(data);
       setBaseline(data);
-    }
-
-    load();
+    }).catch(() => setError('Failed to load academic settings.'));
   }, []);
 
-  if (!form) {
-    return <div className="settings-skeleton">Loading academic configuration...</div>;
-  }
-
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((cur) => ({ ...cur, [field]: value }));
   }
 
   async function handleSave() {
     setSaving(true);
-    const updated = await settingsApi.updateAcademicSettings(form);
-    setBaseline(updated);
-    setForm(updated);
-    setToast({ type: 'success', message: 'Academic configuration updated.' });
-    setSaving(false);
+    setError('');
+    try {
+      const updated = await settingsApi.updateAcademicSettings(form);
+      setBaseline(updated);
+      setForm(updated);
+      setToast('Academic configuration saved.');
+    } catch {
+      setError('Failed to save academic settings.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleReset() {
     setForm(baseline);
-    setToast({ type: 'success', message: 'Academic configuration reset.' });
+    setToast('Reset to last saved values.');
   }
 
-  return (
-    <section className="settings-card-grid">
-      <article className="settings-card">
-        <h3>Academic Configuration</h3>
-        <p>Manage academic years, semesters, credits, and grading standards.</p>
+  if (!form) return <SettingsLoader label="Loading academic configuration…" />;
 
-        <div className="settings-form-grid">
-          <label>
-            Current Academic Year
+  const dirty = isDirty(form, baseline);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <SettingsError message={error} />
+
+      {/* Academic Year & Semesters */}
+      <SettingsCard title="Academic Year & Semesters" description="Set the active academic year and semester structure.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className={labelCls}>Current Academic Year</label>
             <input
               type="text"
-              value={form.currentYear}
-              onChange={(event) => updateField('currentYear', event.target.value)}
+              value={form.currentYear || ''}
+              onChange={(e) => updateField('currentYear', e.target.value)}
+              className={inputCls}
+              placeholder="e.g. 2024–2025"
             />
-          </label>
-
-          <label>
-            Number of Semesters
+          </div>
+          <div>
+            <label className={labelCls}>Number of Semesters</label>
             <input
               type="number"
               min="1"
               max="4"
-              value={form.semesters}
-              onChange={(event) => updateField('semesters', Number(event.target.value) || 1)}
+              value={form.semesters || 2}
+              onChange={(e) => updateField('semesters', Number(e.target.value) || 1)}
+              className={inputCls}
             />
-          </label>
-
-          <label>
-            Credit System
-            <select value={form.creditSystem} onChange={(event) => updateField('creditSystem', event.target.value)}>
+          </div>
+          <div>
+            <label className={labelCls}>Credit System</label>
+            <select value={form.creditSystem || 'CBCS'} onChange={(e) => updateField('creditSystem', e.target.value)} className={inputCls}>
               <option>CBCS</option>
               <option>Choice Based Credit</option>
               <option>Fixed Credit</option>
             </select>
-          </label>
-
-          <label className="settings-form-span-2">
-            Attendance Rules
-            <textarea
-              rows="3"
-              value={form.attendanceRule}
-              onChange={(event) => updateField('attendanceRule', event.target.value)}
-            />
-          </label>
-
-          <label className="settings-form-span-2">
-            Grade Rules
-            <textarea
-              rows="3"
-              value={form.gradeRule}
-              onChange={(event) => updateField('gradeRule', event.target.value)}
-            />
-          </label>
+          </div>
         </div>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
 
-        <SettingsActionBar onSave={handleSave} onReset={handleReset} saving={saving} />
-      </article>
+      {/* Grading & Attendance */}
+      <SettingsCard title="Grading & Attendance Rules" description="Define grading standards and minimum attendance requirements.">
+        <div className="flex flex-col gap-5">
+          <div>
+            <label className={labelCls}>Attendance Rules</label>
+            <textarea
+              rows={3}
+              value={form.attendanceRule || ''}
+              onChange={(e) => updateField('attendanceRule', e.target.value)}
+              placeholder="e.g. Minimum 75% attendance required per semester."
+              className={`${inputCls} resize-none`}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Grade Rules</label>
+            <textarea
+              rows={3}
+              value={form.gradeRule || ''}
+              onChange={(e) => updateField('gradeRule', e.target.value)}
+              placeholder="e.g. O: 91–100, A+: 81–90, A: 71–80 …"
+              className={`${inputCls} resize-none`}
+            />
+          </div>
+        </div>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
 
-      <SettingsToast toast={toast} onDismiss={() => setToast(null)} />
-    </section>
+      <SettingsToast message={toast} onClear={() => setToast('')} />
+    </div>
   );
 }

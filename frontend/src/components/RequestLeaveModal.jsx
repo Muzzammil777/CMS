@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { buildApiUrl } from '../api/apiBase';
 
 export default function RequestLeaveModal({ isOpen, onClose, onSuccess, facultyId }) {
   const [formData, setFormData] = useState({
@@ -35,7 +36,7 @@ export default function RequestLeaveModal({ isOpen, onClose, onSuccess, facultyI
     }
 
     try {
-      const response = await fetch(`/api/faculty/${facultyId}/leave`, {
+      const response = await fetch(buildApiUrl(`/faculty/${facultyId}/leave`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

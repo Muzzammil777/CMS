@@ -20,13 +20,7 @@ export const students = [
     guardian: 'Michael Anderson',
     guardianPhone: '+91 90123 45000',
     avatar: 'https://ui-avatars.com/api/?name=John+Anderson&background=2563eb&color=fff&size=128',
-    subjects: [
-      { code: 'CS301', name: 'Data Structures', internal: 41, external: 45, total: 86, grade: 'A' },
-      { code: 'CS302', name: 'Operating Systems', internal: 39, external: 43, total: 82, grade: 'A' },
-      { code: 'CS303', name: 'Database Systems', internal: 42, external: 44, total: 86, grade: 'A' },
-      { code: 'CS304', name: 'Computer Networks', internal: 34, external: 38, total: 72, grade: 'B+' },
-      { code: 'MA301', name: 'Discrete Mathematics', internal: 40, external: 44, total: 84, grade: 'A' },
-    ],
+    subjects: [],
     fees: [
       { id: 'FEE-101', type: 'Tuition Fee', amount: 75000, paid: 75000, due: 0, date: '2024-07-15', status: 'Paid' },
       { id: 'FEE-102', type: 'Hostel Fee', amount: 45000, paid: 30000, due: 15000, date: '2024-07-20', status: 'Partial' },
@@ -67,13 +61,7 @@ export const students = [
     guardian: 'Rajesh Kumar',
     guardianPhone: '+91 98765 43200',
     avatar: 'https://ui-avatars.com/api/?name=Aarav+Kumar&background=2563eb&color=fff&size=128',
-    subjects: [
-      { code: 'CS301', name: 'Data Structures', internal: 42, external: 48, total: 90, grade: 'A+' },
-      { code: 'CS302', name: 'Operating Systems', internal: 38, external: 44, total: 82, grade: 'A' },
-      { code: 'CS303', name: 'Database Systems', internal: 40, external: 46, total: 86, grade: 'A' },
-      { code: 'CS304', name: 'Computer Networks', internal: 35, external: 40, total: 75, grade: 'B+' },
-      { code: 'MA301', name: 'Discrete Mathematics', internal: 44, external: 48, total: 92, grade: 'A+' },
-    ],
+    subjects: [],
     fees: [
       { id: 'FEE-001', type: 'Tuition Fee', amount: 75000, paid: 75000, due: 0, date: '2024-07-15', status: 'Paid' },
       { id: 'FEE-002', type: 'Hostel Fee', amount: 45000, paid: 45000, due: 0, date: '2024-07-20', status: 'Paid' },
@@ -116,13 +104,7 @@ export const students = [
     guardian: 'Suresh Sharma',
     guardianPhone: '+91 87654 32100',
     avatar: 'https://ui-avatars.com/api/?name=Priya+Sharma&background=7c3aed&color=fff&size=128',
-    subjects: [
-      { code: 'CS301', name: 'Data Structures', internal: 46, external: 48, total: 94, grade: 'A+' },
-      { code: 'CS302', name: 'Operating Systems', internal: 42, external: 46, total: 88, grade: 'A+' },
-      { code: 'CS303', name: 'Database Systems', internal: 44, external: 48, total: 92, grade: 'A+' },
-      { code: 'CS304', name: 'Computer Networks', internal: 40, external: 44, total: 84, grade: 'A' },
-      { code: 'MA301', name: 'Discrete Mathematics', internal: 46, external: 50, total: 96, grade: 'A+' },
-    ],
+    subjects: [],
     fees: [
       { id: 'FEE-001', type: 'Tuition Fee', amount: 75000, paid: 75000, due: 0, date: '2024-07-15', status: 'Paid' },
       { id: 'FEE-002', type: 'Hostel Fee', amount: 45000, paid: 45000, due: 0, date: '2024-07-20', status: 'Paid' },

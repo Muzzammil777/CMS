@@ -2,12 +2,12 @@ from datetime import datetime, timezone
 from typing import Any
 
 from bson import ObjectId
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 
 from backend.db import get_db
 from backend.schemas.admission_schema import AdmissionCreate
 
-router = APIRouter(prefix="/admissions", tags=["Admissions"])
+router = APIRouter(prefix="/api/admissions", tags=["Admissions"])
 
 
 def _admissions_collection():
@@ -85,6 +85,50 @@ def _serialize_admission(item: dict[str, Any]) -> dict[str, Any]:
     if not serialized.get("fullName") and serialized.get("name"):
         serialized["fullName"] = serialized["name"]
 
+    # Flatten nested personal fields for frontend compatibility
+    personal = serialized.get("personal") or {}
+    for field in ["address", "city", "state", "pincode", "guardianName", "guardianPhone", "relationship", "guardianEmail", "guardianOccupation"]:
+        if not serialized.get(field) and personal.get(field):
+            serialized[field] = personal.get(field)
+
+    # Flatten academic info
+    academic = serialized.get("academic") or {}
+    if not serialized.get("previousSchool") and academic.get("previous_school"):
+        serialized["previousSchool"] = academic.get("previous_school")
+    if not serialized.get("board") and academic.get("board"):
+        serialized["board"] = academic.get("board")
+    if not serialized.get("yearOfPassing") and academic.get("year_of_passing"):
+        serialized["yearOfPassing"] = academic.get("year_of_passing")
+    if not serialized.get("marksPercentage") and academic.get("marks_percentage"):
+        serialized["marksPercentage"] = academic.get("marks_percentage")
+
+    # Flatten course info
+    course_info = serialized.get("course_info") or {}
+    if not serialized.get("course") and course_info.get("course"):
+        serialized["course"] = course_info.get("course")
+    if not serialized.get("courseCategory") and course_info.get("category"):
+        serialized["courseCategory"] = course_info.get("category")
+
+    # Set student defaults for admissions review page
+    is_student = (
+        serialized.get("type") == "student"
+        or serialized.get("role") == "student"
+        or "roll" in serialized
+        or "semester" in serialized
+    )
+    if is_student:
+        if not serialized.get("semester"):
+            serialized["semester"] = 1
+        if not serialized.get("roll"):
+            serialized["roll"] = (
+                serialized.get("rollNumber")
+                or serialized.get("roll_number")
+                or serialized.get("id")
+                or ""
+            )
+        if not serialized.get("cgpa"):
+            serialized["cgpa"] = 0.0
+
     return serialized
 
 
@@ -112,16 +156,37 @@ def _normalize_from_flat_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "phone": phone,
         "dateOfBirth": payload.get("dateOfBirth") or payload.get("dob") or "",
         "gender": payload.get("gender") or "",
+        "bloodGroup": payload.get("bloodGroup") or "",
+        "admissionType": payload.get("admissionType") or "Regular",
         "previousSchool": payload.get("previousSchool") or "",
         "board": payload.get("board") or "",
         "yearOfPassing": _to_int(payload.get("yearOfPassing")),
         "marksPercentage": _to_float(payload.get("marksPercentage")),
         "courseCategory": payload.get("courseCategory") or "",
         "course": payload.get("course") or "",
+        "department": payload.get("department") or "",
         "quota": payload.get("quota") or "",
         "accommodation": payload.get("accommodation") or "",
         "roomType": payload.get("roomType") or "",
-        "documents": {
+        # Flat fields for direct root access
+        "address": payload.get("address") or "",
+        "city": payload.get("city") or "",
+        "state": payload.get("state") or "",
+        "pincode": payload.get("pincode") or "",
+        "guardianName": payload.get("guardianName") or "",
+        "guardianPhone": payload.get("guardianPhone") or "",
+        "relationship": payload.get("relationship") or "",
+        "guardianEmail": payload.get("guardianEmail") or "",
+        "guardianOccupation": payload.get("guardianOccupation") or "",
+        "hostelName": payload.get("hostelName") or "",
+        "semester": payload.get("semester") or 1,
+        "roll": payload.get("roll") or payload.get("rollNumber") or payload.get("roll_number") or admission_id,
+        "cgpa": _to_float(payload.get("cgpa"), 0.0),
+        "avatar": payload.get("avatar") or "",
+        "section": payload.get("section") or "A",
+        "year": payload.get("year") or "1st Year",
+        "enrollDate": payload.get("enrollDate") or _today_ymd(),
+        "documents": payload.get("documents") or {
             "passport_photo": payload.get("passportPhoto"),
             "aadhaar_card": payload.get("aadhaarCard"),
             "marksheet": payload.get("marksheet"),
@@ -136,20 +201,28 @@ def _normalize_from_flat_payload(payload: dict[str, Any]) -> dict[str, Any]:
         },
         "payment_status": payment_status,
         "paymentStatus": payment_status,
+        "password": payload.get("password") or "",
     }
 
     # Keep nested structure for backwards compatibility with any existing API consumers.
     normalized["personal"] = {
         "full_name": normalized["fullName"],
         "gender": normalized["gender"],
+        "bloodGroup": normalized["bloodGroup"],
         "dob": normalized["dateOfBirth"],
         "email": normalized["email"],
         "phone": normalized["phone"],
         "student_id": normalized["id"],
-        "address": payload.get("address") or "",
-        "city": payload.get("city") or "",
-        "state": payload.get("state") or "",
-        "pincode": payload.get("pincode") or "",
+        "address": normalized["address"],
+        "city": normalized["city"],
+        "state": normalized["state"],
+        "pincode": normalized["pincode"],
+        "guardianName": normalized["guardianName"],
+        "guardianPhone": normalized["guardianPhone"],
+        "relationship": normalized["relationship"],
+        "guardianEmail": normalized["guardianEmail"],
+        "guardianOccupation": normalized["guardianOccupation"],
+        "avatar": normalized["avatar"],
     }
     normalized["academic"] = {
         "previous_school": normalized["previousSchool"],
@@ -196,12 +269,34 @@ def _normalize_from_nested_payload(payload: dict[str, Any]) -> dict[str, Any]:
             "yearOfPassing": academic.get("year_of_passing") or 0,
             "marksPercentage": academic.get("marks_percentage") or 0,
             "courseCategory": course.get("category") or "",
+            "department": payload.get("department") or "",
             "payment_status": payment_status,
             "paymentStatus": payment_status,
+            "password": payload.get("password") or admission.get("password") or "",
             "course_info": {
                 "category": course.get("category") or "",
                 "course": course.get("course") or "",
             },
+            # Flat fields for direct root access
+            "address": personal.get("address") or "",
+            "city": personal.get("city") or "",
+            "state": personal.get("state") or "",
+            "pincode": personal.get("pincode") or "",
+            "guardianName": personal.get("guardianName") or payload.get("guardianName") or "",
+            "guardianPhone": personal.get("guardianPhone") or payload.get("guardianPhone") or "",
+            "relationship": personal.get("relationship") or payload.get("relationship") or "",
+            "guardianEmail": personal.get("guardianEmail") or payload.get("guardianEmail") or "",
+            "guardianOccupation": personal.get("guardianOccupation") or payload.get("guardianOccupation") or "",
+            "hostelName": payload.get("hostelName") or "",
+            "semester": payload.get("semester") or 1,
+            "roll": payload.get("roll") or payload.get("rollNumber") or payload.get("roll_number") or admission_id,
+            "cgpa": _to_float(payload.get("cgpa"), 0.0),
+            "avatar": personal.get("avatar") or payload.get("avatar") or "",
+            "bloodGroup": personal.get("bloodGroup") or payload.get("bloodGroup") or "",
+            "admissionType": payload.get("admissionType") or "Regular",
+            "section": payload.get("section") or "A",
+            "year": payload.get("year") or "1st Year",
+            "enrollDate": payload.get("enrollDate") or _today_ymd(),
         }
     )
 
@@ -242,7 +337,7 @@ async def create_admission(payload: dict[str, Any]):
         raise HTTPException(status_code=500, detail=f"Error creating admission: {str(e)}")
 
 
-@router.get("/")
+@router.get("")
 async def get_all_admissions():
     admissions_collection = _admissions_collection()
     data: list[dict[str, Any]] = []
@@ -339,6 +434,297 @@ async def purge_invalid_approved():
     }
 
 
+# Helper functions for auto-creation of Student/Faculty from approved admissions
+
+async def _create_student_from_admission(admission: dict[str, Any]) -> bool:
+    """Create a Student record from an approved admission."""
+    try:
+        db = get_db()
+        students_collection = db["students"]
+        
+        # Extract data from admission
+        admission_id = admission.get("id") or admission.get("admission_id")
+        email = admission.get("email") or ""
+        
+        # Check if student already exists by email or admission_id
+        if admission_id:
+            existing = await students_collection.find_one({
+                "$or": [
+                    {"admission_id": admission_id},
+                    {"email": email} if email else {"email": ""}
+                ]
+            })
+            
+            if existing:
+                print(f"[INFO] Student already exists for admission {admission_id}")
+                return False  # Skip duplicate
+        
+        name = admission.get("name") or admission.get("fullName") or ""
+        
+        # Use admission ID as student_id
+        student_id = admission_id
+        
+        # Determine department from admission
+        course_info = admission.get("course_info") or {}
+        department = admission.get("department") or course_info.get("category") or admission.get("courseCategory") or "General"
+
+        # Extract guardian and address fields with fallbacks
+        personal = admission.get("personal") or {}
+        address = admission.get("address") or personal.get("address") or ""
+        city = admission.get("city") or personal.get("city") or ""
+        state = admission.get("state") or personal.get("state") or ""
+        pincode = admission.get("pincode") or personal.get("pincode") or ""
+        
+        guardian = (
+            admission.get("guardianName")
+            or personal.get("guardianName")
+            or admission.get("guardian")
+            or ""
+        )
+        guardian_phone = (
+            admission.get("guardianPhone")
+            or personal.get("guardianPhone")
+            or admission.get("guardian_phone")
+            or ""
+        )
+
+        # Build student data with comprehensive field mappings
+        academic = admission.get("academic") or {}
+        student_data = {
+            # ID Fields (CRITICAL - must have both)
+            "id": student_id,
+            "student_id": student_id,
+            "roll_number": student_id,
+            "rollNumber": student_id,
+            
+            # Personal Information
+            "name": name,
+            "email": email,
+            "password": admission.get("password") or student_id,
+            "phone": admission.get("phone") or "",
+            "gender": admission.get("gender") or "",
+            "bloodGroup": admission.get("bloodGroup") or personal.get("bloodGroup") or "",
+            "dateOfBirth": admission.get("dateOfBirth") or admission.get("dob") or "",
+            "dob": admission.get("dateOfBirth") or admission.get("dob") or "",
+            "address": address,
+            "city": city,
+            "state": state,
+            "pincode": pincode,
+            
+            # Academic Information
+            "department_id": department,
+            "department": department,
+            "year": admission.get("year") or "1st Year",
+            "semester": _to_int(admission.get("semester"), 1),
+            "section": admission.get("section") or "A",
+            
+            # Status and Dates
+            "status": "Active",
+            "created_at": _utc_now_iso(),
+            "enroll_date": admission.get("enrollDate") or admission.get("enroll_date") or _today_ymd(),
+            "enrollDate": admission.get("enrollDate") or admission.get("enroll_date") or _today_ymd(),
+            "admissionType": admission.get("admissionType") or "Regular",
+            
+            # Academic Metrics
+            "cgpa": 0.0,
+            "attendance_pct": 0.0,
+            "attendancePct": 0.0,
+            
+            # Financial Information
+            "fee_status": "Pending",
+            "feeStatus": "Pending",
+            
+            # Guardian Information
+            "guardian": guardian,
+            "guardianName": guardian,
+            "guardian_phone": guardian_phone,
+            "guardianPhone": guardian_phone,
+            "guardianEmail": admission.get("guardianEmail") or personal.get("guardianEmail") or "",
+            "relationship": admission.get("relationship") or personal.get("relationship") or "",
+            "guardianOccupation": admission.get("guardianOccupation") or personal.get("guardianOccupation") or "",
+            
+            # Previous Academics
+            "previousSchool": admission.get("previousSchool") or academic.get("previous_school") or "",
+            "previousInstitution": admission.get("previousSchool") or academic.get("previous_school") or "",
+            "board": admission.get("board") or academic.get("board") or "",
+            "yearOfPassing": admission.get("yearOfPassing") or academic.get("year_of_passing") or 0,
+            "marksPercentage": admission.get("marksPercentage") or academic.get("marks_percentage") or 0.0,
+            
+            # Course category & Quota & Housing
+            "courseCategory": admission.get("courseCategory") or course_info.get("category") or "",
+            "course": admission.get("course") or course_info.get("course") or "",
+            "quota": admission.get("quota") or "",
+            "accommodation": admission.get("accommodation") or "",
+            "roomType": admission.get("roomType") or "",
+            "hostelName": admission.get("hostelName") or "",
+            
+            # Payment information
+            "payment": admission.get("payment") or {},
+            
+            # Appearance
+            "avatar": admission.get("avatar") or personal.get("avatar") or f"https://ui-avatars.com/api/?name={name}&background=1162d4&color=fff",
+            
+            # Initialize empty collections
+            "subjects": [],
+            "fees": [],
+            "documents": admission.get("documents") or [],
+            "attendanceMonthly": []
+        }
+        
+        result = await students_collection.insert_one(student_data)
+        print(f"[SUCCESS] Created student {student_id} from admission {admission_id}")
+        print(f"[SUCCESS] Inserted with MongoDB ID: {result.inserted_id}")
+        
+        # Send welcome email asynchronously
+        try:
+            from backend.utils.mailer import send_email
+            email_to = student_data.get("email")
+            if email_to:
+                subject = "Welcome to CMS"
+                html_body = f"""
+                <html>
+                <body>
+                    <h2>Welcome to CMS!</h2>
+                    <p>Dear {name},</p>
+                    <p>Your student account has been created successfully.</p>
+                    <p>Here are your account details to log in:</p>
+                    <ul>
+                        <li><strong>Role:</strong> Student</li>
+                        <li><strong>Roll Number/Username:</strong> {student_id}</li>
+                        <li><strong>Password:</strong> {student_data.get("password") or student_id}</li>
+                    </ul>
+                    <p>Best regards,<br>College Management System (CMS) Support</p>
+                </body>
+                </html>
+                """
+                import asyncio
+                asyncio.create_task(send_email(email_to, subject, html_body))
+            else:
+                print(f"[EMAIL WARNING] No email address found for student {student_id}, skipping welcome email.")
+        except Exception as email_err:
+            print(f"[EMAIL ERROR] Failed to trigger welcome email for student {student_id}: {str(email_err)}")
+
+        return True
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to create student from admission: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+async def _create_faculty_from_admission(admission: dict[str, Any]) -> bool:
+    """Create a Faculty record from an approved admission."""
+    try:
+        db = get_db()
+        faculty_collection = db["faculty"]
+        
+        # Check if faculty already exists by email or admission_id
+        existing = await faculty_collection.find_one({
+            "$or": [
+                {"email": admission.get("email")},
+                {"admission_id": admission.get("id") or admission.get("admission_id")}
+            ]
+        })
+        
+        if existing:
+            print(f"[INFO] Faculty already exists for admission {admission.get('id')}. Updating status to Active.")
+            faculty_id = existing.get("employee_id") or existing.get("faculty_id") or existing.get("employeeId") or existing.get("id") or admission.get("id")
+            await faculty_collection.update_one(
+                {"_id": existing["_id"]},
+                {
+                    "$set": {
+                        "status": "Active",
+                        "employment_status": "Active",
+                        "employee_id": faculty_id,
+                        "faculty_id": faculty_id,
+                        "qualifications": existing.get("qualifications") or [],
+                        "specializations": existing.get("specializations") or [],
+                        "office_location": existing.get("office_location") or "",
+                        "office_hours": existing.get("office_hours") or [],
+                        "research_interests": existing.get("research_interests") or [],
+                        "join_date": existing.get("join_date") or _today_ymd(),
+                        "publications": existing.get("publications") or [],
+                        "compliance_status": "Compliant"
+                    }
+                }
+            )
+            return True
+        
+        # Extract data from admission
+        admission_id = admission.get("id") or admission.get("admission_id")
+        name = admission.get("name") or admission.get("fullName") or ""
+        
+        # Generate faculty_id/employee_id if not exists
+        faculty_id = admission.get("id") or f"FAC-{int(datetime.now(timezone.utc).timestamp() * 1000) % 10000}"
+        
+        # Determine department from admission
+        course_info = admission.get("course_info") or {}
+        department = admission.get("department") or course_info.get("category") or admission.get("courseCategory") or "General"
+        
+        faculty_data = {
+            "employee_id": faculty_id,
+            "faculty_id": faculty_id,
+            "name": name,
+            "email": admission.get("email") or "",
+            "phone": admission.get("phone") or "",
+            "password": admission.get("password") or faculty_id,
+            "department_id": department,
+            "department": department,
+            "designation": admission.get("designation") or "Assistant Professor",
+            "status": "Active",
+            "employment_status": "Active",
+            "admission_id": admission_id,
+            "created_at": _utc_now_iso(),
+            "qualifications": [],
+            "specializations": [],
+            "office_location": "",
+            "office_hours": [],
+            "research_interests": [],
+            "join_date": _today_ymd(),
+            "publications": [],
+            "compliance_status": "Compliant"
+        }
+        
+        result = await faculty_collection.insert_one(faculty_data)
+        print(f"[SUCCESS] Created faculty {faculty_id} from admission {admission_id}")
+        
+        # Send welcome email asynchronously
+        try:
+            from backend.utils.mailer import send_email
+            email_to = faculty_data.get("email")
+            if email_to:
+                subject = "Welcome to CMS"
+                html_body = f"""
+                <html>
+                <body>
+                    <h2>Welcome to CMS!</h2>
+                    <p>Dear {name},</p>
+                    <p>Your faculty account has been created successfully.</p>
+                    <p>Here are your account details to log in:</p>
+                    <ul>
+                        <li><strong>Role:</strong> Faculty</li>
+                        <li><strong>Employee ID/Username:</strong> {faculty_id}</li>
+                        <li><strong>Password:</strong> {faculty_data.get("password") or faculty_id}</li>
+                    </ul>
+                    <p>Best regards,<br>College Management System (CMS) Support</p>
+                </body>
+                </html>
+                """
+                import asyncio
+                asyncio.create_task(send_email(email_to, subject, html_body))
+            else:
+                print(f"[EMAIL WARNING] No email address found for faculty {faculty_id}, skipping welcome email.")
+        except Exception as email_err:
+            print(f"[EMAIL ERROR] Failed to trigger welcome email for faculty {faculty_id}: {str(email_err)}")
+
+        return True
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to create faculty from admission: {str(e)}")
+        return False
+
+
 @router.put("/approve/{admission_id}")
 async def approve_admission(admission_id: str):
     admissions_collection = _admissions_collection()
@@ -348,18 +734,27 @@ async def approve_admission(admission_id: str):
     if not admission:
         raise HTTPException(status_code=404, detail="Admission not found")
     
-    # Ensure the admission has an ID field (for fee assignment lookup)
+    # Ensure the admission has an ID field (for fee assignment lookup and student creation)
     update_data = {
         "status": "Approved",
         "updated_at": _utc_now_iso()
     }
     
     # If no ID field exists, generate one
-    if not admission.get("id") and not admission.get("admission_id"):
+    current_id = admission.get("id") or admission.get("admission_id")
+    if not current_id:
         new_id = f"STU-{int(datetime.now(timezone.utc).timestamp() * 1000)}"
         update_data["id"] = new_id
         update_data["admission_id"] = new_id
+        current_id = new_id
+    else:
+        # Ensure both id and admission_id are set consistently
+        if not admission.get("id"):
+            update_data["id"] = current_id
+        if not admission.get("admission_id"):
+            update_data["admission_id"] = current_id
     
+    # Update the admission with Approved status
     result = await admissions_collection.update_one(
         _build_lookup_query(admission_id),
         {"$set": update_data},
@@ -367,8 +762,37 @@ async def approve_admission(admission_id: str):
 
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Admission not found")
-
-    return {"message": "Admission approved successfully", "id": admission_id}
+    
+    # Fetch the updated admission record
+    updated_admission = await admissions_collection.find_one(_build_lookup_query(admission_id))
+    
+    if not updated_admission:
+        raise HTTPException(status_code=500, detail="Failed to fetch updated admission")
+    
+    print(f"[APPROVE] Admission {current_id} approved")
+    print(f"[APPROVE] Admission data: {updated_admission}")
+    
+    # Auto-create Student or Faculty record based on type
+    admission_type = updated_admission.get("type") or updated_admission.get("role") or "student"
+    
+    if admission_type.lower() == "student":
+        success = await _create_student_from_admission(updated_admission)
+        if success:
+            print(f"[SUCCESS] Student auto-created for admission {current_id}")
+        else:
+            print(f"[WARNING] Student auto-creation failed or skipped for admission {current_id}")
+    elif admission_type.lower() == "faculty":
+        success = await _create_faculty_from_admission(updated_admission)
+        if success:
+            print(f"[SUCCESS] Faculty auto-created for admission {current_id}")
+        else:
+            print(f"[WARNING] Faculty auto-creation failed or skipped for admission {current_id}")
+    
+    return {
+        "message": "Admission approved successfully",
+        "id": current_id,
+        "status": "Approved"
+    }
 
 
 @router.put("/reject/{admission_id}")
@@ -394,6 +818,46 @@ async def delete_admission(admission_id: str):
         raise HTTPException(status_code=404, detail="Admission not found")
 
     return {"message": "Admission deleted successfully", "id": admission_id}
+
+
+@router.get("/{admission_id}")
+async def get_admission(admission_id: str):
+    admissions_collection = _admissions_collection()
+    doc = await admissions_collection.find_one(_build_lookup_query(admission_id))
+    if not doc:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    return _serialize_admission(doc)
+
+
+@router.put("/{admission_id}/documents")
+async def update_admission_documents(admission_id: str, payload: dict = Body(...)):
+    admissions_collection = _admissions_collection()
+    
+    # Check if admission exists
+    admission = await admissions_collection.find_one(_build_lookup_query(admission_id))
+    if not admission:
+        raise HTTPException(status_code=404, detail="Admission not found")
+        
+    documents = payload.get("documents")
+    if documents is None:
+        raise HTTPException(status_code=400, detail="Missing documents in request body")
+        
+    update_data = {
+        "documents": documents,
+        "updated_at": _utc_now_iso()
+    }
+    if payload.get("status"):
+        update_data["status"] = payload.get("status")
+        
+    result = await admissions_collection.update_one(
+        _build_lookup_query(admission_id),
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Admission not found")
+        
+    return {"message": "Documents updated successfully", "id": admission_id}
 
 
 # -----------------
@@ -474,6 +938,13 @@ async def approve_faculty_admission(faculty_admission_id: str):
     """Approve faculty admission"""
     faculty_admissions_collection = _faculty_admissions_collection()
     
+    # Fetch the admission first
+    admission = await faculty_admissions_collection.find_one(
+        _build_faculty_lookup_query(faculty_admission_id)
+    )
+    if not admission:
+        raise HTTPException(status_code=404, detail="Faculty admission not found")
+    
     result = await faculty_admissions_collection.update_one(
         _build_faculty_lookup_query(faculty_admission_id),
         {"$set": {"status": "Approved", "updated_at": _utc_now_iso()}},
@@ -481,6 +952,14 @@ async def approve_faculty_admission(faculty_admission_id: str):
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Faculty admission not found")
+    
+    # Fetch the updated admission record
+    updated_admission = await faculty_admissions_collection.find_one(
+        _build_faculty_lookup_query(faculty_admission_id)
+    )
+    
+    # Auto-create Faculty record
+    await _create_faculty_from_admission(updated_admission)
     
     return {"message": "Faculty admission approved successfully", "id": faculty_admission_id}
 

@@ -30,7 +30,13 @@ export default function ProfileDropdown({
     if (onClose) {
       onClose();
     }
-    navigate(`/profile?role=${encodeURIComponent(role)}`);
+    if (role === 'student' && userId && userId !== 'N/A') {
+      navigate(`/students/${encodeURIComponent(userId)}`);
+    } else if ((role === 'faculty' || role === 'admin') && userId && userId !== 'N/A') {
+      navigate(`/faculty/${encodeURIComponent(userId)}`);
+    } else {
+      navigate(`/settings`);
+    }
   };
 
   return (
@@ -42,10 +48,18 @@ export default function ProfileDropdown({
         {/* Profile Header Section */}
         <div className="profile-dropdown-header">
           <div className="profile-header-content">
-            <div className="profile-avatar-large">
-              <div className="avatar-initials-large">
-                {user.label?.slice(0, 2).toUpperCase() || 'U'}
-              </div>
+            <div className="profile-avatar-large overflow-hidden">
+              {user.avatar ? (
+                <img 
+                  src={user.avatar} 
+                  alt="Profile" 
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <div className="avatar-initials-large">
+                  {user.name?.slice(0, 2).toUpperCase() || 'U'}
+                </div>
+              )}
             </div>
             <div className="profile-info">
               <h3 className="profile-name">{user.name || 'User'}</h3>
@@ -73,18 +87,22 @@ export default function ProfileDropdown({
 
           {/* Action Buttons */}
           <div className="profile-actions">
-            <button
-              className="profile-action-btn primary"
-              onClick={handlePrimaryClick}
-            >
-              {user.primaryAction || 'View Fees'}
-            </button>
-            <button
-              className="profile-action-btn secondary"
-              onClick={handleSecondaryClick}
-            >
-              {user.secondaryAction || 'Manage Department'}
-            </button>
+            {role !== 'admin' && (
+              <>
+                <button
+                  className="profile-action-btn primary"
+                  onClick={handlePrimaryClick}
+                >
+                  {user.primaryAction || 'View Fees'}
+                </button>
+                <button
+                  className="profile-action-btn secondary"
+                  onClick={handleSecondaryClick}
+                >
+                  {user.secondaryAction || 'Manage Department'}
+                </button>
+              </>
+            )}
             <button
               className="profile-action-btn tertiary"
               onClick={handleViewProfile}

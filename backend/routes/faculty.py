@@ -3,35 +3,47 @@ from typing import List, Optional, Dict, Any
 from bson import ObjectId
 from datetime import datetime
 from pydantic import BaseModel
+from copy import deepcopy
 
 from backend.db import get_db
 from backend.utils.mongo import serialize_doc
 from backend.models.faculty import Faculty
-from backend.models.faculty_activity import CourseAssignment, PerformanceMetric, ProfessionalDevelopment, FacultyMentorship, ResearchProject
+from backend.models.faculty_activity import (
+    CourseAssignment,
+    PerformanceMetric,
+    ProfessionalDevelopment,
+    FacultyMentorship,
+    ResearchProject,
+)
 from backend.models.faculty_leave import FacultyLeave
 from backend.models.faculty_feedback import PeerReview
 from backend.models.faculty_notification import Notification
+from backend.dev_store import DEV_STORE
 
 router = APIRouter(prefix="/api/faculty", tags=["faculty"])
+
 
 # Helper functions
 async def get_faculty_collection():
     db = get_db()
     return db["faculty"]
 
+
 async def get_faculty_activity_collection(collection_name: str):
     db = get_db()
     return db[collection_name]
+
 
 # -----------------
 # Seed Data Route
 # -----------------
 
+
 @router.post("/seed/data")
 async def seed_faculty_data():
     """Seed the database with sample faculty data with detailed metrics"""
     collection = await get_faculty_collection()
-    
+
     # Sample faculty data with detailed information matching analytics
     faculty_data = [
         # Computer Science Department
@@ -644,40 +656,42 @@ async def seed_faculty_data():
             "status": "Good",
             "cgpa": 8.1,
             "office_location": "Building A, Room 309",
-        }
+        },
     ]
-    
+
     try:
         # Delete existing data
         await collection.delete_many({})
-        
+
         # Insert new data
         result = await collection.insert_many(faculty_data)
-        
+
         return {
             "status": "success",
             "message": f"Inserted {len(result.inserted_ids)} faculty members with detailed metrics",
-            "count": len(result.inserted_ids)
+            "count": len(result.inserted_ids),
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # -----------------
 # Faculty CRUD
 # -----------------
+
 
 @router.get("")
 async def list_faculty(
     department_id: Optional[str] = Query(None, alias="departmentId"),
     designation: Optional[str] = None,
     employment_status: Optional[str] = Query(None, alias="employmentStatus"),
-    search: Optional[str] = None
+    search: Optional[str] = None,
 ):
     collection = await get_faculty_collection()
     perf_col = await get_faculty_activity_collection("faculty_performance")
     leave_col = await get_faculty_activity_collection("faculty_leave")
     career_col = await get_faculty_activity_collection("career_pathways")
-    
+
     query = {}
     if department_id:
         query["departmentId"] = department_id
@@ -689,9 +703,9 @@ async def list_faculty(
         query["$or"] = [
             {"name": {"$regex": search, "$options": "i"}},
             {"employeeId": {"$regex": search, "$options": "i"}},
-            {"email": {"$regex": search, "$options": "i"}}
+            {"email": {"$regex": search, "$options": "i"}},
         ]
-        
+
     cursor = collection.find(query)
     faculty_list = []
     async for doc in cursor:
@@ -699,7 +713,9 @@ async def list_faculty(
         emp_id = faculty_doc.get("employeeId")
 
         if emp_id:
-            performance_records = await perf_col.find({"facultyId": emp_id}).to_list(100)
+            performance_records = await perf_col.find({"facultyId": emp_id}).to_list(
+                100
+            )
             leave_records = await leave_col.find({"facultyId": emp_id}).to_list(200)
             career_path = await career_col.find_one(
                 {"faculty_id": emp_id, "status": "Active"}
@@ -716,10 +732,14 @@ async def list_faculty(
                 avg_feedback = round(sum(scored) / len(scored), 2)
 
             approved_leaves = [
-                record for record in leave_records if str(record.get("status", "")).lower() == "approved"
+                record
+                for record in leave_records
+                if str(record.get("status", "")).lower() == "approved"
             ]
             pending_leaves = [
-                record for record in leave_records if str(record.get("status", "")).lower() == "pending"
+                record
+                for record in leave_records
+                if str(record.get("status", "")).lower() == "pending"
             ]
 
             total_leave_days = 0
@@ -727,7 +747,9 @@ async def list_faculty(
                 try:
                     start_date = leave.get("start_date")
                     end_date = leave.get("end_date")
-                    if isinstance(start_date, datetime) and isinstance(end_date, datetime):
+                    if isinstance(start_date, datetime) and isinstance(
+                        end_date, datetime
+                    ):
                         total_leave_days += max((end_date - start_date).days + 1, 0)
                     else:
                         total_leave_days += int(leave.get("number_of_days", 0) or 0)
@@ -773,18 +795,49 @@ async def list_faculty(
         faculty_list.append(faculty_doc)
     return faculty_list
 
+
 @router.post("")
 async def create_faculty(faculty: Faculty):
     collection = await get_faculty_collection()
-    
+
     # Check if employee_id already exists
     existing = await collection.find_one({"employeeId": faculty.employee_id})
     if existing:
         raise HTTPException(status_code=400, detail="Employee ID already exists")
-        
+
     faculty_dict = faculty.dict(by_alias=True)
     result = await collection.insert_one(faculty_dict)
-    
+
+    # Send welcome email asynchronously
+    try:
+        from backend.utils.mailer import send_email
+        email_to = faculty_dict.get("email")
+        if email_to:
+            emp_id = faculty_dict.get("employeeId") or faculty_dict.get("employee_id")
+            subject = "Welcome to CMS"
+            html_body = f"""
+            <html>
+            <body>
+                <h2>Welcome to CMS!</h2>
+                <p>Dear {faculty_dict.get("name", "Faculty Member")},</p>
+                <p>Your faculty account has been created successfully.</p>
+                <p>Here are your account details to log in:</p>
+                <ul>
+                    <li><strong>Role:</strong> Faculty</li>
+                    <li><strong>Employee ID/Username:</strong> {emp_id}</li>
+                    <li><strong>Password:</strong> {faculty_dict.get("password") or emp_id}</li>
+                </ul>
+                <p>Best regards,<br>College Management System (CMS) Support</p>
+            </body>
+            </html>
+            """
+            import asyncio
+            asyncio.create_task(send_email(email_to, subject, html_body))
+        else:
+            print(f"[EMAIL WARNING] No email address found for faculty, skipping welcome email.")
+    except Exception as email_err:
+        print(f"[EMAIL ERROR] Failed to trigger welcome email for faculty: {str(email_err)}")
+
     created_doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(created_doc)
 
@@ -792,19 +845,49 @@ async def create_faculty(faculty: Faculty):
 async def _get_next_faculty_id():
     db = get_db()
     collection = db["faculty"]
-    # Find the highest employeeId with FAC prefix
-    cursor = collection.find({"employeeId": {"$regex": "^FAC"}}, {"employeeId": 1}).sort("employeeId", -1).limit(1)
+    # Scan ALL existing FAC-NNN ids and find the true numeric maximum.
+    # The old code used last_id[3:] which kept the dash → int("-203") = -203,
+    # breaking arithmetic and always falling back to FAC001 (causing duplicates).
+    max_num = 200  # start from FAC-201 for new installs
+    cursor = collection.find(
+        {"employeeId": {"$regex": "^FAC-\\d+$"}}, {"employeeId": 1}
+    )
     async for doc in cursor:
-        last_id = doc.get("employeeId")
-        if last_id and last_id.startswith("FAC"):
-            try:
-                # Extract the number part
-                num_str = last_id[3:]
-                num = int(num_str)
-                return f"FAC{str(num + 1).zfill(3)}"
-            except (ValueError, IndexError):
-                pass
-    return "FAC001"
+        last_id = doc.get("employeeId", "")
+        try:
+            # Format is FAC-NNN; split on dash to get the numeric part
+            num = int(last_id.split("-", 1)[1])
+            if num > max_num:
+                max_num = num
+        except (ValueError, IndexError):
+            pass
+
+    # Loop until we find an ID not already in use (guards against races)
+    candidate_num = max_num + 1
+    while True:
+        candidate = f"FAC-{candidate_num}"
+        existing = await collection.find_one({"employeeId": candidate})
+        if not existing:
+            return candidate
+        candidate_num += 1
+
+
+def get_role_from_designation(designation: str) -> str:
+    """Map designation to system role"""
+    if not designation:
+        return "faculty"
+
+    designation = designation.lower()
+    if any(
+        keyword in designation
+        for keyword in ["admin", "principal", "dean", "registrar"]
+    ):
+        return "admin"
+    if any(keyword in designation for keyword in ["accountant", "finance", "bursar"]):
+        return "finance"
+    if "student" in designation:
+        return "student"
+    return "faculty"
 
 
 @router.post("/admission/submit")
@@ -813,122 +896,127 @@ async def submit_faculty_admission(faculty_data: dict = Body(...)):
     try:
         # Log incoming data
         print(f"📤 [Faculty Admission] Received payload: {faculty_data}")
-        
+
         # Validate required fields
-        required_fields = ["fullName", "name", "email", "phone", "dateOfBirth", "department"]
-        missing_fields = [field for field in required_fields if not faculty_data.get(field)]
-        
+        required_fields = [
+            "fullName",
+            "name",
+            "email",
+            "phone",
+            "dateOfBirth",
+            "department",
+        ]
+        missing_fields = [
+            field for field in required_fields if not faculty_data.get(field)
+        ]
+
         if missing_fields:
             error_msg = f"Missing required fields: {', '.join(missing_fields)}"
             print(f"❌ [Faculty Admission] Validation error: {error_msg}")
-            raise HTTPException(
-                status_code=400,
-                detail=error_msg
-            )
-        
+            raise HTTPException(status_code=400, detail=error_msg)
+
         # Validate email format
         email = faculty_data.get("email", "").strip()
         if "@" not in email or "." not in email.split("@")[-1]:
             error_msg = "Invalid email format"
             print(f"❌ [Faculty Admission] {error_msg}: {email}")
-            raise HTTPException(
-                status_code=400,
-                detail=error_msg
-            )
-        
+            raise HTTPException(status_code=400, detail=error_msg)
+
         # Validate phone (10 digits)
         phone = str(faculty_data.get("phone", "")).replace(" ", "").replace("-", "")
         if not phone.isdigit() or len(phone) != 10:
             error_msg = f"Phone number must be exactly 10 digits (got {len(phone)})"
             print(f"❌ [Faculty Admission] {error_msg}: {faculty_data.get('phone')}")
             raise HTTPException(
-                status_code=400,
-                detail="Phone number must be exactly 10 digits"
+                status_code=400, detail="Phone number must be exactly 10 digits"
             )
-        
+
         collection = await get_faculty_collection()
-        
+
         # Check if email already exists
         existing_email = await collection.find_one({"email": email})
         if existing_email:
-            error_msg = f"Faculty with this email already exists"
+            error_msg = "Faculty with this email already exists"
             print(f"❌ [Faculty Admission] {error_msg}: {email}")
-            raise HTTPException(
-                status_code=400,
-                detail=error_msg
-            )
-        
+            raise HTTPException(status_code=400, detail=error_msg)
+
         # Generate unique employeeId
         employee_id = await _get_next_faculty_id()
         print(f"✅ [Faculty Admission] Generated Employee ID: {employee_id}")
-        
+
+        # Determine role from designation
+        designation = faculty_data.get("designation", "Faculty")
+        role = get_role_from_designation(designation)
+
         # Prepare faculty document
         faculty_doc = {
             **faculty_data,
             "employeeId": employee_id,
             "id": employee_id,
-            "password": employee_id,
+            "password": faculty_data.get("password") or employee_id,
             "created_at": datetime.now(),
             "status": "Pending",
             "type": "faculty",
-            "role": "faculty"
+            "role": role,
         }
-        
+
         # Remove None/empty values for cleaner storage
         faculty_doc = {k: v for k, v in faculty_doc.items() if v is not None}
-        
+
         # Insert into faculty collection
         result = await collection.insert_one(faculty_doc)
-        print(f"✅ [Faculty Admission] Document inserted with MongoDB ID: {result.inserted_id}")
-        
+        print(
+            f"✅ [Faculty Admission] Document inserted with MongoDB ID: {result.inserted_id}"
+        )
+
+        # Send welcome email asynchronously
+        try:
+            from backend.utils.mailer import send_email
+            email_to = faculty_doc.get("email")
+            if email_to:
+                subject = "Welcome to CMS"
+                html_body = f"""
+                <html>
+                <body>
+                    <h2>Welcome to CMS!</h2>
+                    <p>Dear {faculty_doc.get("name") or faculty_doc.get("fullName") or "Faculty Member"},</p>
+                    <p>Your faculty admission/account request has been submitted successfully.</p>
+                    <p>Here are your account details to log in (pending review/activation):</p>
+                    <ul>
+                        <li><strong>Role:</strong> Faculty</li>
+                        <li><strong>Employee ID/Username:</strong> {employee_id}</li>
+                        <li><strong>Password:</strong> {faculty_doc.get("password") or employee_id}</li>
+                    </ul>
+                    <p>Best regards,<br>College Management System (CMS) Support</p>
+                </body>
+                </html>
+                """
+                import asyncio
+                asyncio.create_task(send_email(email_to, subject, html_body))
+            else:
+                print(f"[EMAIL WARNING] No email address found for faculty admission {employee_id}, skipping welcome email.")
+        except Exception as email_err:
+            print(f"[EMAIL ERROR] Failed to trigger welcome email for faculty admission {employee_id}: {str(email_err)}")
+
         created_doc = await collection.find_one({"_id": result.inserted_id})
         response = serialize_doc(created_doc)
-        print(f"✅ [Faculty Admission] Successfully created faculty admission for {email}")
+        print(
+            f"✅ [Faculty Admission] Successfully created faculty admission for {email}"
+        )
         return response
-    
+
     except HTTPException:
         raise
     except Exception as e:
         error_msg = str(e)
         print(f"❌ [Faculty Admission] Unhandled error: {error_msg}")
         import traceback
+
         traceback.print_exc()
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to process faculty admission: {error_msg}"
+            status_code=500, detail=f"Failed to process faculty admission: {error_msg}"
         )
 
-
-@router.post("/login")
-async def login_faculty(credentials: dict = Body(...)):
-    """Simple login for faculty members using Employee ID as username and password"""
-    user_id = credentials.get("userId")
-    password = credentials.get("password")
-    
-    if not user_id or not password:
-        raise HTTPException(status_code=400, detail="Missing credentials")
-        
-    collection = await get_faculty_collection()
-    user = await collection.find_one({
-        "$or": [
-            {"employeeId": user_id},
-            {"email": user_id}
-        ]
-    })
-    
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid Employee ID")
-        
-    # Check password (in this simple implementation, it's stored in the doc)
-    stored_password = user.get("password") or user.get("employeeId")
-    
-    if password != stored_password:
-        raise HTTPException(status_code=401, detail="Invalid password")
-        
-    return {
-        "status": "success",
-        "user": serialize_doc(user)
-    }
 
 @router.get("/{faculty_id}")
 async def get_faculty(faculty_id: str = Path(...)):
@@ -936,16 +1024,70 @@ async def get_faculty(faculty_id: str = Path(...)):
     try:
         obj_id = ObjectId(faculty_id)
         doc = await collection.find_one({"_id": obj_id})
-    except:
+    except Exception:
         doc = await collection.find_one({"employeeId": faculty_id})
-        
+
     if not doc:
-        raise HTTPException(status_code=404, detail="Faculty not found")
-    
+        # Fallback to check admin_users collection if requested ID belongs to an admin
+        db = get_db()
+        doc = await db["admin_users"].find_one(
+            {"$or": [{"userId": faculty_id}, {"id": faculty_id}]}
+        )
+        if not doc:
+            raise HTTPException(status_code=404, detail="Faculty not found")
+
+        # Format admin as a faculty record
+        doc_serialized = serialize_doc(doc)
+        emp_id = doc_serialized.get("userId") or doc_serialized.get("id") or faculty_id
+        doc_serialized["employeeId"] = emp_id
+        doc_serialized["id"] = emp_id
+        doc_serialized["designation"] = "Administrator"
+        doc_serialized["departmentId"] = "Administration"
+        doc_serialized["employment_status"] = "Active"
+        doc_serialized["office_location"] = "Main Block, Room 101"
+
+        # Load additional fields from user_settings if available
+        settings_col = db["user_settings"]
+        settings_doc = await settings_col.find_one({"userId": emp_id})
+        if settings_doc and "profile" in settings_doc:
+            profile = settings_doc["profile"]
+            doc_serialized["phone"] = profile.get(
+                "phone", doc_serialized.get("phone", "")
+            )
+            doc_serialized["bio"] = profile.get("bio", doc_serialized.get("bio", ""))
+            doc_serialized["office_location"] = profile.get(
+                "address", doc_serialized.get("office_location", "Main Block, Room 101")
+            )
+            doc_serialized["qualification"] = profile.get(
+                "qualification", doc_serialized.get("qualification", "")
+            )
+            doc_serialized["gender"] = profile.get(
+                "gender", doc_serialized.get("gender", "")
+            )
+            doc_serialized["dob"] = profile.get("dob", doc_serialized.get("dob", ""))
+            doc_serialized["college"] = profile.get(
+                "college", doc_serialized.get("college", "")
+            )
+            doc_serialized["university"] = profile.get(
+                "university", doc_serialized.get("university", "")
+            )
+            doc_serialized["nationality"] = profile.get(
+                "nationality", doc_serialized.get("nationality", "")
+            )
+
+        doc_serialized["teaching_load"] = []
+        doc_serialized["performance_metrics"] = []
+        doc_serialized["professional_development"] = []
+        doc_serialized["leave_requests"] = []
+        doc_serialized["mentorships"] = []
+        doc_serialized["research_projects"] = []
+        doc_serialized["peer_reviews"] = []
+        return doc_serialized
+
     # Fetch related data
     doc_serialized = serialize_doc(doc)
     emp_id = doc_serialized.get("employeeId")
-    
+
     # Courses
     courses_col = await get_faculty_activity_collection("faculty_courses")
     courses = []
@@ -953,7 +1095,7 @@ async def get_faculty(faculty_id: str = Path(...)):
         async for c in courses_col.find({"facultyId": emp_id}):
             courses.append(serialize_doc(c))
     doc_serialized["teaching_load"] = courses
-    
+
     # Performance
     perf_col = await get_faculty_activity_collection("faculty_performance")
     performance = []
@@ -961,7 +1103,7 @@ async def get_faculty(faculty_id: str = Path(...)):
         async for p in perf_col.find({"facultyId": emp_id}):
             performance.append(serialize_doc(p))
     doc_serialized["performance_metrics"] = performance
-    
+
     # Development
     dev_col = await get_faculty_activity_collection("faculty_development")
     devs = []
@@ -969,31 +1111,35 @@ async def get_faculty(faculty_id: str = Path(...)):
         async for d in dev_col.find({"facultyId": emp_id}):
             devs.append(serialize_doc(d))
     doc_serialized["professional_development"] = devs
-    
+
     # Leave Requests
     leave_col = await get_faculty_activity_collection("faculty_leave")
     leaves = []
     if emp_id:
-        async for l in leave_col.find({"facultyId": emp_id}):
-            leaves.append(serialize_doc(l))
+        async for leave_req in leave_col.find({"facultyId": emp_id}):
+            leaves.append(serialize_doc(leave_req))
     doc_serialized["leave_requests"] = leaves
-    
+
     # Mentorships
     mentor_col = await get_faculty_activity_collection("faculty_mentorship")
     mentorships = []
     if emp_id:
-        async for m in mentor_col.find({"$or": [{"mentorId": emp_id}, {"menteeId": emp_id}]}):
+        async for m in mentor_col.find(
+            {"$or": [{"mentorId": emp_id}, {"menteeId": emp_id}]}
+        ):
             mentorships.append(serialize_doc(m))
     doc_serialized["mentorships"] = mentorships
-    
+
     # Research Projects
     research_col = await get_faculty_activity_collection("faculty_research")
     research = []
     if emp_id:
-        async for r in research_col.find({"$or": [{"leadFacultyId": emp_id}, {"collaboratorIds": emp_id}]}):
+        async for r in research_col.find(
+            {"$or": [{"leadFacultyId": emp_id}, {"collaboratorIds": emp_id}]}
+        ):
             research.append(serialize_doc(r))
     doc_serialized["research_projects"] = research
-    
+
     # Peer Reviews
     review_col = await get_faculty_activity_collection("faculty_peer_reviews")
     reviews = []
@@ -1001,40 +1147,133 @@ async def get_faculty(faculty_id: str = Path(...)):
         async for pr in review_col.find({"revieweeId": emp_id}):
             reviews.append(serialize_doc(pr))
     doc_serialized["peer_reviews"] = reviews
-    
+
     return doc_serialized
+
 
 @router.put("/{faculty_id}")
 async def update_faculty(faculty_id: str, updates: Dict[str, Any] = Body(...)):
     collection = await get_faculty_collection()
     try:
         query = {"_id": ObjectId(faculty_id)}
-    except:
+    except Exception:
         query = {"employeeId": faculty_id}
-        
+
+    db = get_db()
+    is_admin = await db["admin_users"].find_one(
+        {"$or": [{"userId": faculty_id}, {"id": faculty_id}]}
+    )
+
+    if is_admin:
+        # Update admin_users collection
+        await db["admin_users"].update_many(
+            {"$or": [{"userId": faculty_id}, {"id": faculty_id}]},
+            {"$set": {"name": updates.get("name"), "email": updates.get("email")}},
+        )
+        # Update user_settings collection
+        settings_col = db["user_settings"]
+        settings_doc = await settings_col.find_one({"userId": faculty_id})
+        if settings_doc:
+            await settings_col.update_one(
+                {"userId": faculty_id},
+                {
+                    "$set": {
+                        "profile.name": updates.get("name"),
+                        "profile.email": updates.get("email"),
+                        "profile.phone": updates.get("phone", ""),
+                        "profile.bio": updates.get("bio", ""),
+                        "profile.address": updates.get("office_location", ""),
+                        "profile.qualification": updates.get("qualification", ""),
+                        "profile.gender": updates.get("gender", ""),
+                        "profile.dob": updates.get("dob", ""),
+                        "profile.college": updates.get("college", ""),
+                        "profile.university": updates.get("university", ""),
+                        "profile.nationality": updates.get("nationality", ""),
+                    }
+                },
+            )
+        else:
+            # Seed defaults
+            from backend.routes.user_settings import _admin_defaults
+
+            defaults = _admin_defaults()
+            defaults["profile"].update(
+                {
+                    "name": updates.get("name"),
+                    "email": updates.get("email"),
+                    "phone": updates.get("phone", ""),
+                    "bio": updates.get("bio", ""),
+                    "address": updates.get("office_location", ""),
+                    "qualification": updates.get("qualification", ""),
+                    "gender": updates.get("gender", ""),
+                    "dob": updates.get("dob", ""),
+                    "college": updates.get("college", ""),
+                    "university": updates.get("university", ""),
+                    "nationality": updates.get("nationality", ""),
+                }
+            )
+            await settings_col.insert_one(
+                {
+                    "userId": faculty_id,
+                    "role": "admin",
+                    "createdAt": datetime.now().isoformat(),
+                    **defaults,
+                }
+            )
+
+        updated_admin = await db["admin_users"].find_one(
+            {"$or": [{"userId": faculty_id}, {"id": faculty_id}]}
+        )
+        doc_serialized = serialize_doc(updated_admin)
+        emp_id = doc_serialized.get("userId") or doc_serialized.get("id") or faculty_id
+        doc_serialized["employeeId"] = emp_id
+        doc_serialized["id"] = emp_id
+        doc_serialized["designation"] = "Administrator"
+        doc_serialized["departmentId"] = "Administration"
+        doc_serialized["employment_status"] = "Active"
+
+        # Load from settings
+        settings_doc = await settings_col.find_one({"userId": emp_id})
+        if settings_doc and "profile" in settings_doc:
+            profile = settings_doc["profile"]
+            doc_serialized["phone"] = profile.get("phone", "")
+            doc_serialized["bio"] = profile.get("bio", "")
+            doc_serialized["office_location"] = profile.get(
+                "address", "Main Block, Room 101"
+            )
+            doc_serialized["qualification"] = profile.get("qualification", "")
+            doc_serialized["gender"] = profile.get("gender", "")
+            doc_serialized["dob"] = profile.get("dob", "")
+            doc_serialized["college"] = profile.get("college", "")
+            doc_serialized["university"] = profile.get("university", "")
+            doc_serialized["nationality"] = profile.get("nationality", "")
+
+        return doc_serialized
+
     # Prevent updating _id or core immutable fields if needed
     if "_id" in updates:
         del updates["_id"]
-        
+
     result = await collection.update_one(query, {"$set": updates})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Faculty not found")
-        
+
     updated_doc = await collection.find_one(query)
     return serialize_doc(updated_doc)
+
 
 @router.delete("/{faculty_id}")
 async def delete_faculty(faculty_id: str):
     collection = await get_faculty_collection()
     try:
         query = {"_id": ObjectId(faculty_id)}
-    except:
+    except Exception:
         query = {"employeeId": faculty_id}
-        
+
     result = await collection.delete_one(query)
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Faculty not found")
-        
+
     return {"status": "success", "message": "Faculty deleted"}
 
 
@@ -1042,27 +1281,28 @@ async def delete_faculty(faculty_id: str):
 # Faculty Course Mapping
 # -----------------
 
+
 @router.post("/{faculty_id}/courses")
 async def assign_course(faculty_id: str, assignment: CourseAssignment):
     collection = await get_faculty_activity_collection("faculty_courses")
-    
+
     # Validate faculty exists
     fac_col = await get_faculty_collection()
     try:
         query = {"_id": ObjectId(faculty_id)}
-    except:
+    except Exception:
         query = {"employeeId": faculty_id}
     if not await fac_col.find_one(query):
         raise HTTPException(status_code=404, detail="Faculty not found")
-        
+
     # Ensure facultyId matches
     assignment_dict = assignment.dict(by_alias=True)
     if assignment_dict["facultyId"] != faculty_id:
-        if assignment_dict["facultyId"] == "string": # Default swagger value
+        if assignment_dict["facultyId"] == "string":  # Default swagger value
             assignment_dict["facultyId"] = faculty_id
         else:
             raise HTTPException(status_code=400, detail="Faculty ID mismatch")
-            
+
     result = await collection.insert_one(assignment_dict)
     doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(doc)
@@ -1072,17 +1312,18 @@ async def assign_course(faculty_id: str, assignment: CourseAssignment):
 # Faculty Performance
 # -----------------
 
+
 @router.post("/{faculty_id}/performance")
 async def add_performance_metric(faculty_id: str, metric: PerformanceMetric):
     collection = await get_faculty_activity_collection("faculty_performance")
-    
+
     metric_dict = metric.dict(by_alias=True)
     if metric_dict["facultyId"] != faculty_id:
         if metric_dict["facultyId"] == "string":
             metric_dict["facultyId"] = faculty_id
         else:
             raise HTTPException(status_code=400, detail="Faculty ID mismatch")
-            
+
     result = await collection.insert_one(metric_dict)
     doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(doc)
@@ -1092,92 +1333,104 @@ async def add_performance_metric(faculty_id: str, metric: PerformanceMetric):
 # Professional Development
 # -----------------
 
+
 @router.post("/{faculty_id}/development")
 async def add_development_record(faculty_id: str, dev: ProfessionalDevelopment):
     collection = await get_faculty_activity_collection("faculty_development")
-    
+
     dev_dict = dev.dict(by_alias=True)
     if dev_dict["facultyId"] != faculty_id:
-         if dev_dict["facultyId"] == "string":
-             dev_dict["facultyId"] = faculty_id
-         else:
-             raise HTTPException(status_code=400, detail="Faculty ID mismatch")
-             
+        if dev_dict["facultyId"] == "string":
+            dev_dict["facultyId"] = faculty_id
+        else:
+            raise HTTPException(status_code=400, detail="Faculty ID mismatch")
+
     result = await collection.insert_one(dev_dict)
     doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(doc)
+
 
 # -----------------
 # Leave Management
 # -----------------
 
+
 @router.post("/{faculty_id}/leave")
 async def request_leave(faculty_id: str, leave: FacultyLeave):
     collection = await get_faculty_activity_collection("faculty_leave")
-    
+
     leave_dict = leave.dict(by_alias=True)
     if leave_dict["facultyId"] != faculty_id:
         if leave_dict["facultyId"] == "string":
             leave_dict["facultyId"] = faculty_id
         else:
             raise HTTPException(status_code=400, detail="Faculty ID mismatch")
-            
+
     result = await collection.insert_one(leave_dict)
     doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(doc)
 
+
 @router.get("/{faculty_id}/leave")
 async def get_leave_requests(faculty_id: str):
     collection = await get_faculty_activity_collection("faculty_leave")
-    
+
     requests = []
     async for req in collection.find({"facultyId": faculty_id}):
         requests.append(serialize_doc(req))
     return requests
 
+
 @router.put("/leave/{leave_id}")
 async def update_leave_status(leave_id: str, updates: Dict[str, Any] = Body(...)):
     collection = await get_faculty_activity_collection("faculty_leave")
-    
-    result = await collection.update_one(
-        {"_id": ObjectId(leave_id)},
-        {"$set": updates}
-    )
+
+    result = await collection.update_one({"_id": ObjectId(leave_id)}, {"$set": updates})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Leave request not found")
-        
+
     updated_doc = await collection.find_one({"_id": ObjectId(leave_id)})
     return serialize_doc(updated_doc)
+
 
 # -----------------
 # Mentorship
 # -----------------
 
+
 @router.post("/{faculty_id}/mentorship")
 async def add_mentorship(faculty_id: str, mentorship: FacultyMentorship):
     collection = await get_faculty_activity_collection("faculty_mentorship")
     mentorship_dict = mentorship.dict(by_alias=True)
-    if mentorship_dict["mentorId"] != faculty_id and mentorship_dict["menteeId"] != faculty_id:
+    if (
+        mentorship_dict["mentorId"] != faculty_id
+        and mentorship_dict["menteeId"] != faculty_id
+    ):
         if mentorship_dict["mentorId"] == "string":
             mentorship_dict["mentorId"] = faculty_id
         else:
             raise HTTPException(status_code=400, detail="Faculty ID mismatch")
-            
+
     result = await collection.insert_one(mentorship_dict)
     doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(doc)
+
 
 @router.get("/{faculty_id}/mentorship")
 async def get_mentorships(faculty_id: str):
     collection = await get_faculty_activity_collection("faculty_mentorship")
     mentorships = []
-    async for m in collection.find({"$or": [{"mentorId": faculty_id}, {"menteeId": faculty_id}]}):
+    async for m in collection.find(
+        {"$or": [{"mentorId": faculty_id}, {"menteeId": faculty_id}]}
+    ):
         mentorships.append(serialize_doc(m))
     return mentorships
+
 
 # -----------------
 # Research Collaboration
 # -----------------
+
 
 @router.post("/research")
 async def add_research_project(project: ResearchProject):
@@ -1187,31 +1440,40 @@ async def add_research_project(project: ResearchProject):
     doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(doc)
 
+
 @router.get("/{faculty_id}/research")
 async def get_research_projects(faculty_id: str):
     collection = await get_faculty_activity_collection("faculty_research")
     projects = []
-    async for p in collection.find({"$or": [{"leadFacultyId": faculty_id}, {"collaboratorIds": faculty_id}]}):
+    async for p in collection.find(
+        {"$or": [{"leadFacultyId": faculty_id}, {"collaboratorIds": faculty_id}]}
+    ):
         projects.append(serialize_doc(p))
     return projects
+
 
 # -----------------
 # Peer Review
 # -----------------
 
+
 @router.post("/{faculty_id}/peer-review")
 async def add_peer_review(faculty_id: str, review: PeerReview):
     collection = await get_faculty_activity_collection("faculty_peer_reviews")
     review_dict = review.dict(by_alias=True)
-    if review_dict["reviewerId"] != faculty_id and review_dict["revieweeId"] != faculty_id:
+    if (
+        review_dict["reviewerId"] != faculty_id
+        and review_dict["revieweeId"] != faculty_id
+    ):
         if review_dict["reviewerId"] == "string":
-             review_dict["reviewerId"] = faculty_id
+            review_dict["reviewerId"] = faculty_id
         else:
-             raise HTTPException(status_code=400, detail="Faculty ID mismatch")
-             
+            raise HTTPException(status_code=400, detail="Faculty ID mismatch")
+
     result = await collection.insert_one(review_dict)
     doc = await collection.find_one({"_id": result.inserted_id})
     return serialize_doc(doc)
+
 
 @router.get("/{faculty_id}/peer-review")
 async def get_peer_reviews(faculty_id: str):
@@ -1221,9 +1483,11 @@ async def get_peer_reviews(faculty_id: str):
         reviews.append(serialize_doc(r))
     return reviews
 
+
 # -----------------
 # Compliance & Notifications
 # -----------------
+
 
 @router.get("/{faculty_id}/notifications")
 async def get_notifications(faculty_id: str):
@@ -1233,14 +1497,15 @@ async def get_notifications(faculty_id: str):
         notifications.append(serialize_doc(n))
     return notifications
 
+
 @router.post("/check-compliance")
 async def check_compliance():
     faculty_col = await get_faculty_collection()
     notices_col = await get_faculty_activity_collection("faculty_notifications")
-    
+
     current_date = datetime.utcnow()
     count = 0
-    
+
     # Check all active faculty
     async for f in faculty_col.find({"employment_status": "Active"}):
         contract_end = f.get("contract_end_date")
@@ -1249,7 +1514,7 @@ async def check_compliance():
                 # Assuming YYYY-MM-DD
                 end_date = datetime.strptime(contract_end, "%Y-%m-%d")
                 days_left = (end_date - current_date).days
-                
+
                 if days_left <= 30 and days_left > 0:
                     # Create notification if it doesn't exist for this period
                     notif = Notification(
@@ -1257,22 +1522,109 @@ async def check_compliance():
                         recipient_type="faculty",
                         title="Contract Renewal Upcoming",
                         message=f"Your contract will expire in {days_left} days on {contract_end}.",
-                        notification_type="System"
+                        notification_type="System",
                     )
-                    
+
                     # Prevent exact duplicate notification
-                    existing = await notices_col.find_one({
-                        "recipient_id": notif.recipient_id, 
-                        "title": notif.title,
-                        "is_read": False
-                    })
-                    
+                    existing = await notices_col.find_one(
+                        {
+                            "recipient_id": notif.recipient_id,
+                            "title": notif.title,
+                            "is_read": False,
+                        }
+                    )
+
                     if not existing:
                         await notices_col.insert_one(notif.dict())
                         count += 1
-                        
+
             except ValueError:
-                pass # ignore poorly formatted dates
-                
+                pass  # ignore poorly formatted dates
+
     return {"status": "success", "notifications_generated": count}
 
+
+class BulkFacultyImportPayload(BaseModel):
+    faculty: List[dict]
+    defaultPassword: Optional[str] = None
+
+
+@router.post("/bulk-import")
+async def bulk_import_faculty(payload: BulkFacultyImportPayload):
+    try:
+        db = get_db()
+        collection = db["faculty"]
+        use_db = True
+    except HTTPException as error:
+        if error.status_code == 503:
+            use_db = False
+        else:
+            raise
+
+    imported_count = 0
+    records = []
+
+    for index, f in enumerate(payload.faculty):
+        # Generate employeeId/facultyId if not provided
+        timestamp_part = int(datetime.now().timestamp() * 1000) % 10000
+        employee_id = (
+            f.get("employeeId") or f.get("id") or f"FAC-{timestamp_part + index:04d}"
+        )
+
+        # Determine password
+        password = payload.defaultPassword or f.get("password") or employee_id
+
+        # Determine designation and role
+        designation = f.get("designation", f.get("role", "Assistant Professor"))
+        role = get_role_from_designation(designation)
+
+        faculty_doc = {
+            "name": f.get("name") or f.get("fullName") or "",
+            "fullName": f.get("fullName") or f.get("name") or "",
+            "email": f.get("email", ""),
+            "phone": f.get("phone", ""),
+            "dateOfBirth": f.get("dateOfBirth") or f.get("dob") or "",
+            "gender": f.get("gender", "Male"),
+            "role": role,
+            "designation": designation,
+            "department": f.get("department", "Computer Science"),
+            "department_id": f.get("department_id")
+            or f.get("department", "Computer Science"),
+            "departmentId": f.get("departmentId")
+            or f.get("department", "Computer Science"),
+            "yearsOfExperience": int(f.get("yearsOfExperience") or 0),
+            "highestQualification": f.get("highestQualification")
+            or f.get("qualification")
+            or "",
+            "qualification": f.get("qualification")
+            or f.get("highestQualification")
+            or "",
+            "specialization": f.get("specialization", ""),
+            "university": f.get("university", ""),
+            "employmentType": f.get("employmentType", "Full-Time"),
+            "employeeId": employee_id,
+            "id": employee_id,
+            "password": password,
+            "created_at": datetime.now(),
+            "status": "Pending",
+            "type": "faculty",
+        }
+
+        records.append(faculty_doc)
+
+    if use_db:
+        if records:
+            await collection.insert_many(records)
+            imported_count = len(records)
+    else:
+        if "faculty" not in DEV_STORE:
+            DEV_STORE["faculty"] = []
+        for r in records:
+            DEV_STORE["faculty"].insert(0, deepcopy(r))
+        imported_count = len(records)
+
+    return {
+        "status": "success",
+        "message": f"Successfully imported {imported_count} faculty admission requests.",
+        "count": imported_count,
+    }

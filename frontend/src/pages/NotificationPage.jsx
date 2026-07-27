@@ -5,117 +5,78 @@ import { destroyUserSession } from '../auth/sessionController';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const Icon = {
-  Graduation: () => (
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 2.26L19.02 9 12 12.74 4.98 9 12 5.26zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
-    </svg>
-  ),
-  Menu: () => (
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
-    </svg>
-  ),
-  Logout: () => (
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
-    </svg>
-  ),
-  Back: () => (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="#6b7280">
-      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
-    </svg>
-  ),
-  Bell: () => (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-      <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-    </svg>
-  ),
-  Search: () => (
-    <svg viewBox="0 0 24 24" width="17" height="17" fill="#9ca3af">
-      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-    </svg>
-  ),
-  Pin: () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
-    </svg>
-  ),
-  Archive: () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-      <path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z" />
-    </svg>
-  ),
-  Delete: () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-    </svg>
-  ),
-  Check: () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
-    </svg>
-  ),
-  Filter: () => (
-    <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-      <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" />
-    </svg>
-  ),
-  ChevronDown: () => (
-    <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
-      <path d="M7 10l5 5 5-5H7z" />
-    </svg>
-  ),
-  Star: () => (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-    </svg>
-  ),
+  Graduation: () =>(
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zm0 2.26L19.02 9 12 12.74 4.98 9 12 5.26zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" /></svg>),
+  Menu: () =>(
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" /></svg>),
+  Logout: () =>(
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" /></svg>),
+  Back: () =>(
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="#6b7280"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" /></svg>),
+  Bell: () =>(
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" /></svg>),
+  Search: () =>(
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="#9ca3af"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>),
+  Pin: () =>(
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" /></svg>),
+  Archive: () =>(
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z" /></svg>),
+  Delete: () =>(
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" /></svg>),
+  Check: () =>(
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" /></svg>),
+  Filter: () =>(
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" /></svg>),
+  ChevronDown: () =>(
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M7 10l5 5 5-5H7z" /></svg>),
+  Star: () =>(
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>),
 };
 
 // ─── Role-based filter config ─────────────────────────────────────────────────
 const ROLE_FILTERS = {
   student: [
-    { key: 'all',      label: 'All',      emoji: '📋' },
-    { key: 'academic', label: 'Academic', emoji: '📚' },
-    { key: 'finance',  label: 'Finance',  emoji: '💰' },
-    { key: 'events',   label: 'Events',   emoji: '🎉' },
-    { key: 'system',   label: 'System',   emoji: '🔧' },
+    { key: 'all',      label: 'All',      emoji: '' },
+    { key: 'academic', label: 'Academic', emoji: '' },
+    { key: 'finance',  label: 'Finance',  emoji: '' },
+    { key: 'events',   label: 'Events',   emoji: '' },
+    { key: 'system',   label: 'System',   emoji: '' },
   ],
   faculty: [
-    { key: 'all',        label: 'All',        emoji: '📋' },
-    { key: 'department', label: 'Department', emoji: '🏫' },
-    { key: 'academic',   label: 'Academic',   emoji: '📚' },
-    { key: 'meetings',   label: 'Meetings',   emoji: '🤝' },
-    { key: 'system',     label: 'System',     emoji: '🔧' },
+    { key: 'all',        label: 'All',        emoji: '' },
+    { key: 'department', label: 'Department', emoji: '' },
+    { key: 'academic',   label: 'Academic',   emoji: '' },
+    { key: 'meetings',   label: 'Meetings',   emoji: '' },
+    { key: 'system',     label: 'System',     emoji: '' },
   ],
   admin: [
-    { key: 'all',      label: 'All',      emoji: '📋' },
-    { key: 'academic', label: 'Academic', emoji: '📚' },
-    { key: 'finance',  label: 'Finance',  emoji: '💰' },
-    { key: 'staff',    label: 'Staff',    emoji: '👥' },
-    { key: 'system',   label: 'System',   emoji: '🔧' },
+    { key: 'all',      label: 'All',      emoji: '' },
+    { key: 'academic', label: 'Academic', emoji: '' },
+    { key: 'finance',  label: 'Finance',  emoji: '' },
+    { key: 'staff',    label: 'Staff',    emoji: '' },
+    { key: 'system',   label: 'System',   emoji: '' },
   ],
   finance: [
-    { key: 'all',         label: 'All',          emoji: '📋' },
-    { key: 'payments',    label: 'Payments',      emoji: '💳' },
-    { key: 'pending',     label: 'Pending Fees',  emoji: '⏳' },
-    { key: 'scholarship', label: 'Scholarships',  emoji: '🎓' },
-    { key: 'system',      label: 'System',        emoji: '🔧' },
+    { key: 'all',         label: 'All',          emoji: '' },
+    { key: 'payments',    label: 'Payments',      emoji: '' },
+    { key: 'pending',     label: 'Pending Fees',  emoji: '' },
+    { key: 'scholarship', label: 'Scholarships',  emoji: '' },
+    { key: 'system',      label: 'System',        emoji: '' },
   ],
 };
 
 // ─── Category metadata ────────────────────────────────────────────────────────
 const CAT_META = {
-  academic:   { color: '#276221', bg: '#eff6ff', border: '#bfdbfe', emoji: '📚', label: 'Academic'    },
-  finance:    { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', emoji: '💰', label: 'Finance'     },
-  events:     { color: '#d97706', bg: '#fffbeb', border: '#fde68a', emoji: '🎉', label: 'Events'      },
-  system:     { color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb', emoji: '🔧', label: 'System'      },
-  department: { color: '#7c3aed', bg: '#faf5ff', border: '#e9d5ff', emoji: '🏫', label: 'Department'  },
-  meetings:   { color: '#3d8b30', bg: '#ecfeff', border: '#a5f3fc', emoji: '🤝', label: 'Meetings'    },
-  staff:      { color: '#be185d', bg: '#fdf2f8', border: '#fbcfe8', emoji: '👥', label: 'Staff'       },
-  payments:   { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', emoji: '💳', label: 'Payments'    },
-  pending:    { color: '#c2410c', bg: '#fff7ed', border: '#fed7aa', emoji: '⏳', label: 'Pending'     },
-  scholarship:{ color: '#1e4618', bg: '#eff6ff', border: '#bfdbfe', emoji: '🎓', label: 'Scholarship' },
+  academic:   { color: '#4c1d95', bg: '#eff6ff', border: '#bfdbfe', emoji: '', label: 'Academic'},
+  finance:    { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', emoji: '', label: 'Finance'},
+  events:     { color: '#d97706', bg: '#fffbeb', border: '#fde68a', emoji: '', label: 'Events'},
+  system:     { color: '#6b7280', bg: '#f9fafb', border: '#e5e7eb', emoji: '', label: 'System'},
+  department: { color: '#7c3aed', bg: '#faf5ff', border: '#e9d5ff', emoji: '', label: 'Department'},
+  meetings:   { color: '#6d28d9', bg: '#ecfeff', border: '#a5f3fc', emoji: '', label: 'Meetings'},
+  staff:      { color: '#be185d', bg: '#fdf2f8', border: '#fbcfe8', emoji: '', label: 'Staff'},
+  payments:   { color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', emoji: '', label: 'Payments'},
+  pending:    { color: '#c2410c', bg: '#fff7ed', border: '#fed7aa', emoji: '', label: 'Pending'},
+  scholarship:{ color: '#3b0764', bg: '#eff6ff', border: '#bfdbfe', emoji: '', label: 'Scholarship' },
 };
 
 // ─── Sample notifications per role ───────────────────────────────────────────
@@ -176,7 +137,7 @@ function fmtDate(dateStr) {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const pill = (active, color = '#276221') => ({
+const pill = (active, color = '#4c1d95') =>({
   display: 'inline-flex', alignItems: 'center', gap: 5,
   padding: '6px 14px', borderRadius: 999, border: '1.5px solid',
   cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.15s',
@@ -203,9 +164,8 @@ export default function NotificationsPage({ role: propRole }) {
   const filters    = ROLE_FILTERS[role] || ROLE_FILTERS.student;
 
   // ── State
-  const [notifications, setNotifications] = useState(() =>
-    [...(SAMPLE_NOTIFICATIONS[role] || SAMPLE_NOTIFICATIONS.student)].sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
+  const [notifications, setNotifications] = useState(() =>[...(SAMPLE_NOTIFICATIONS[role] || SAMPLE_NOTIFICATIONS.student)].sort(
+      (a, b) =>new Date(b.date) - new Date(a.date)
     )
   );
   const [activeFilter, setActiveFilter]   = useState('all');
@@ -216,7 +176,7 @@ export default function NotificationsPage({ role: propRole }) {
   const [toastMsg, setToastMsg]           = useState('');
   const [justMarked, setJustMarked]       = useState(null); // for micro-animation
 
-  useEffect(() => {
+  useEffect(() =>{
     document.title = `MIT Connect – Notifications`;
     localStorage.setItem('cmsRole', role);
   }, [role]);
@@ -227,18 +187,17 @@ export default function NotificationsPage({ role: propRole }) {
   }
 
   // ── Derived
-  const unreadCount = notifications.filter(n => !n.read && !n.archived).length;
+  const unreadCount = notifications.filter(n =>!n.read && !n.archived).length;
   localStorage.setItem("cmsUnreadCount", unreadCount);
 
-  const visible = useMemo(() => {
-    let list = notifications.filter(n => showArchived ? n.archived : !n.archived);
-    if (activeFilter !== 'all') list = list.filter(n => n.category === activeFilter);
-    if (statusFilter === 'unread') list = list.filter(n => !n.read);
-    if (statusFilter === 'read')   list = list.filter(n => n.read);
+  const visible = useMemo(() =>{
+    let list = notifications.filter(n =>showArchived ? n.archived : !n.archived);
+    if (activeFilter !== 'all') list = list.filter(n =>n.category === activeFilter);
+    if (statusFilter === 'unread') list = list.filter(n =>!n.read);
+    if (statusFilter === 'read')   list = list.filter(n =>n.read);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(n =>
-        n.title.toLowerCase().includes(q) ||
+      list = list.filter(n =>n.title.toLowerCase().includes(q) ||
         n.message.toLowerCase().includes(q) ||
         n.sender.toLowerCase().includes(q) ||
         n.category.toLowerCase().includes(q)
@@ -247,47 +206,47 @@ export default function NotificationsPage({ role: propRole }) {
     return list;
   }, [notifications, activeFilter, statusFilter, searchQuery, showArchived]);
 
-  const pinnedVisible   = visible.filter(n => n.pinned);
-  const unpinnedVisible = visible.filter(n => !n.pinned);
+  const pinnedVisible   = visible.filter(n =>n.pinned);
+  const unpinnedVisible = visible.filter(n =>!n.pinned);
 
   // ── Actions
   function toast(msg) {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 2400);
+    setTimeout(() =>setToastMsg(''), 2400);
   }
 
   function markRead(id) {
     setJustMarked(id);
-    setTimeout(() => setJustMarked(null), 500);
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setTimeout(() =>setJustMarked(null), 500);
+    setNotifications(prev =>prev.map(n =>n.id === id ? { ...n, read: true } : n));
     toast('Marked as read');
   }
 
   function markAllRead() {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications(prev =>prev.map(n =>({ ...n, read: true })));
     toast('All notifications marked as read');
   }
 
   function togglePin(id) {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, pinned: !n.pinned } : n));
+    setNotifications(prev =>prev.map(n =>n.id === id ? { ...n, pinned: !n.pinned } : n));
   }
 
   function archiveNotif(id) {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, archived: true, read: true } : n));
+    setNotifications(prev =>prev.map(n =>n.id === id ? { ...n, archived: true, read: true } : n));
     if (expandedId === id) setExpandedId(null);
     toast('Notification archived');
   }
 
   function deleteNotif(id) {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications(prev =>prev.filter(n =>n.id !== id));
     if (expandedId === id) setExpandedId(null);
     toast('Notification deleted');
   }
 
   function handleCardClick(id) {
-    const n = notifications.find(x => x.id === id);
+    const n = notifications.find(x =>x.id === id);
     if (!n.read) markRead(id);
-    setExpandedId(prev => prev === id ? null : id);
+    setExpandedId(prev =>prev === id ? null : id);
   }
 
   // ── Notification card ─────────────────────────────────────────────────────
@@ -298,11 +257,11 @@ export default function NotificationsPage({ role: propRole }) {
 
     return (
       <div
-        onClick={() => handleCardClick(n.id)}
+        onClick={() =>handleCardClick(n.id)}
         style={{
           position: 'relative',
           background: n.read ? '#fff' : '#f8faff',
-          border: `1.5px solid ${isExp ? '#276221' : n.read ? '#f3f4f6' : '#bfdbfe'}`,
+          border: `1.5px solid ${isExp ? '#4c1d95' : n.read ? '#f3f4f6' : '#bfdbfe'}`,
           borderRadius: 14,
           padding: '16px 18px',
           cursor: 'pointer',
@@ -310,8 +269,7 @@ export default function NotificationsPage({ role: propRole }) {
           boxShadow: isExp ? '0 4px 16px rgba(37,99,235,0.12)' : n.read ? 'none' : '0 2px 8px rgba(37,99,235,0.07)',
           opacity: isNew ? 0.6 : 1,
         }}
-      >
-        {/* Unread dot */}
+      >{/* Unread dot */}
         {!n.read && (
           <span style={{
             position: 'absolute', top: 18, right: 18,
@@ -319,89 +277,52 @@ export default function NotificationsPage({ role: propRole }) {
             background: '#ef4444',
             boxShadow: '0 0 0 3px #fee2e2',
             animation: 'pulse-dot 2s infinite',
-          }} />
-        )}
+          }} />)}
 
         {/* Pinned badge */}
         {n.pinned && (
           <span style={{
             position: 'absolute', top: -1, left: 18,
             fontSize: 10, fontWeight: 700,
-            background: '#276221', color: '#fff',
+            background: '#4c1d95', color: '#fff',
             padding: '2px 8px', borderRadius: '0 0 8px 8px',
             letterSpacing: 0.4,
-          }}>📌 PINNED</span>
-        )}
+          }}>PINNED</span>)}
 
-        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginTop: n.pinned ? 8 : 0 }}>
-          {/* Category icon bubble */}
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginTop: n.pinned ? 8 : 0 }}>{/* Category icon bubble */}
           <div style={{
             width: 42, height: 42, borderRadius: 12, flexShrink: 0,
             background: cat.bg, border: `1.5px solid ${cat.border}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 20,
-          }}>
-            {cat.emoji}
-          </div>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            {/* Top row */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-              <div style={{ fontWeight: n.read ? 500 : 700, fontSize: 14, color: '#111827', lineHeight: 1.4, flex: 1 }}>
-                {n.title}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <span style={{
+          }}>{cat.emoji}
+          </div><div style={{ flex: 1, minWidth: 0 }}>{/* Top row */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}><div style={{ fontWeight: n.read ? 500 : 700, fontSize: 14, color: '#111827', lineHeight: 1.4, flex: 1 }}>{n.title}
+              </div><div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}><span style={{
                   fontSize: 11, fontWeight: 700,
                   padding: '2px 9px', borderRadius: 999,
                   background: cat.bg, color: cat.color, border: `1px solid ${cat.border}`,
-                }}>{cat.label}</span>
-                <span style={{ fontSize: 11, color: '#9ca3af', whiteSpace: 'nowrap' }}>{timeAgo(n.date)}</span>
-              </div>
-            </div>
-
-            {/* Sender */}
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3 }}>
-              <span style={{ fontWeight: 600, color: '#374151' }}>{n.sender}</span>
-              {' · '}
-              <span>{fmtDate(n.date)}</span>
-            </div>
-
-            {/* Message preview */}
+                }}>{cat.label}</span><span style={{ fontSize: 11, color: '#9ca3af', whiteSpace: 'nowrap' }}>{timeAgo(n.date)}</span></div></div>{/* Sender */}
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3 }}><span style={{ fontWeight: 600, color: '#374151' }}>{n.sender}</span>{' · '}
+              <span>{fmtDate(n.date)}</span></div>{/* Message preview */}
             <div style={{
               fontSize: 13, color: '#6b7280', marginTop: 6, lineHeight: 1.6,
               display: '-webkit-box', WebkitLineClamp: isExp ? 99 : 2,
               WebkitBoxOrient: 'vertical', overflow: 'hidden',
-            }}>
-              {n.message}
-            </div>
-
-            {/* Expanded action row */}
+            }}>{n.message}
+            </div>{/* Expanded action row */}
             {isExp && (
               <div
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) =>e.stopPropagation()}
                 style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}
-              >
-                {!n.read && (
-                  <button type="button" onClick={() => markRead(n.id)} style={actionBtn('#276221')}>
-                    <Icon.Check /> Mark as Read
-                  </button>
-                )}
-                <button type="button" onClick={() => togglePin(n.id)} style={actionBtn('#7c3aed')}>
-                  <Icon.Pin /> {n.pinned ? 'Unpin' : 'Pin'}
-                </button>
-                <button type="button" onClick={() => archiveNotif(n.id)} style={actionBtn('#6b7280')}>
-                  <Icon.Archive /> Archive
-                </button>
-                <button type="button" onClick={() => deleteNotif(n.id)} style={actionBtn('#b91c1c', '#fef2f2')}>
-                  <Icon.Delete /> Delete
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+              >{!n.read && (
+                  <button type="button" onClick={() =>markRead(n.id)} style={actionBtn('#4c1d95')}><Icon.Check />Mark as Read
+                  </button>)}
+                <button type="button" onClick={() =>togglePin(n.id)} style={actionBtn('#7c3aed')}><Icon.Pin />{n.pinned ? 'Unpin' : 'Pin'}
+                </button><button type="button" onClick={() =>archiveNotif(n.id)} style={actionBtn('#6b7280')}><Icon.Archive />Archive
+                </button><button type="button" onClick={() =>deleteNotif(n.id)} style={actionBtn('#b91c1c', '#fef2f2')}><Icon.Delete />Delete
+                </button></div>)}
+          </div></div></div>);
   }
 
   function actionBtn(color, bg = '#f9fafb') {
@@ -415,8 +336,7 @@ export default function NotificationsPage({ role: propRole }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <>
-      <style>{`
+    <><style>{`
         @keyframes pulse-dot {
           0%, 100% { box-shadow: 0 0 0 3px #fee2e2; }
           50%       { box-shadow: 0 0 0 6px #fecaca; }
@@ -430,9 +350,7 @@ export default function NotificationsPage({ role: propRole }) {
           to   { opacity: 1; transform: translateY(0);   }
         }
         .notif-card-enter { animation: fade-in-card 0.25s ease forwards; }
-      `}</style>
-
-      {/* Toast */}
+      `}</style>{/* Toast */}
       {toastMsg && (
         <div style={{
           position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
@@ -440,55 +358,31 @@ export default function NotificationsPage({ role: propRole }) {
           borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999,
           boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
           animation: 'slide-in-toast 0.25s ease',
-        }}>
-          ✓ {toastMsg}
-        </div>
-      )}
+        }}>{toastMsg}
+        </div>)}
 
       {!isSidebarVisible && (
         <button
           type="button"
           className="sidebar-desktop-toggle"
-          onClick={() => setIsSidebarVisible(true)}
+          onClick={() =>setIsSidebarVisible(true)}
           aria-label="Show sidebar"
           title="Show sidebar"
-        >
-          <Icon.Menu />
-        </button>
-      )}
+        ><Icon.Menu /></button>)}
 
-      <div className={`sidebar-overlay${sidebarOpen ? ' active' : ''}`} onClick={() => setSidebarOpen(false)} aria-hidden="true" />
-
-      <div className="dashboard-wrapper role-layout">
-        {/* ── Sidebar ── */}
-        <aside className={`sidebar${sidebarOpen ? ' open' : ''}${isSidebarVisible ? '' : ' hidden-desktop'}`} id="sidebar">
-          <div className="sidebar-logo">
-            <div className="logo-mark"><Icon.Graduation /></div>
-            <div className="logo-text-wrap">
-              <div className="logo-title">MIT Connect</div>
-              <div className="logo-sub">{data.label} Portal</div>
-            </div>
-            <button
+      <div className={`sidebar-overlay${sidebarOpen ? ' active' : ''}`} onClick={() =>setSidebarOpen(false)} aria-hidden="true" /><div className="dashboard-wrapper role-layout">{/* ── Sidebar ── */}
+        <aside className={`sidebar${sidebarOpen ? ' open' : ''}${isSidebarVisible ? '' : ' hidden-desktop'}`} id="sidebar"><div className="sidebar-logo"><div className="logo-mark"><Icon.Graduation /></div><div className="logo-text-wrap"><div className="logo-title">MIT Connect</div><div className="logo-sub">{data.label} Portal</div></div><button
               type="button"
               className="sidebar-toggle-btn"
-              onClick={() => setIsSidebarVisible(false)}
+              onClick={() =>setIsSidebarVisible(false)}
               aria-label="Hide sidebar"
               title="Hide sidebar"
-            >
-              <Icon.Menu />
-            </button>
-          </div>
-          <nav className="sidebar-nav">
-            {menuGroups.map((group, gi) => (
-              <div key={group.title}>
-                <div className="nav-section-label">{group.title}</div>
-                <ul>
-  {group.items.map((item) => (
-  <li key={item}>
-    <a
+            ><Icon.Menu /></button></div><nav className="sidebar-nav">{menuGroups.map((group, gi) =>(
+              <div key={group.title}><div className="nav-section-label">{group.title}</div><ul>{group.items.map((item) =>(
+  <li key={item}><a
       href="#"
       className={item === "Notifications" ? "active" : ""}
-      onClick={(e) => {
+      onClick={(e) =>{
         e.preventDefault();
 
         if (item === "Notifications") {
@@ -498,10 +392,9 @@ export default function NotificationsPage({ role: propRole }) {
         }
       }}
       style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-    >
-      {item}
+    >{item}
 
-      {item === "Notifications" && unreadCount > 0 && (
+      {item === "Notifications" && unreadCount >0 && (
         <span
           style={{
             background: "#ef4444",
@@ -511,39 +404,15 @@ export default function NotificationsPage({ role: propRole }) {
             padding: "2px 7px",
             borderRadius: "50%",
           }}
-        >
-          {unreadCount}
-        </span>
-      )}
-    </a>
-  </li>
-))}
-                </ul>
-              </div>
-            ))}
-          </nav>
-          <div className="sidebar-footer">
-            <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>
-              <Icon.Logout /> Logout
-            </a>
-          </div>
-        </aside>
-
-        {/* ── Main ── */}
-        <main className={`main-content${isSidebarVisible ? '' : ' sidebar-hidden'}`}>
-
-          {/* Topbar */}
-          <div className="topbar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button className="mobile-menu-btn" onClick={() => { setIsSidebarVisible(true); setSidebarOpen(true); }} aria-label="Toggle menu"><Icon.Menu /></button>
-              <button type="button" onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0 12px', height: 36, fontSize: 13, fontWeight: 500, color: '#6b7280', cursor: 'pointer' }}>
-                <Icon.Back /> Back
-              </button>
-              <div className="topbar-left">
-                <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ position: 'relative', display: 'inline-flex' }}>
-                    <Icon.Bell />
-                    {unreadCount > 0 && (
+        >{unreadCount}
+        </span>)}
+    </a></li>))}
+                </ul></div>))}
+          </nav><div className="sidebar-footer"><a href="#" onClick={(e) =>{ e.preventDefault(); handleLogout(); }}><Icon.Logout />Logout
+            </a></div></aside>{/* ── Main ── */}
+        <main className={`main-content${isSidebarVisible ? '' : ' sidebar-hidden'} min-w-0 w-full overflow-x-hidden`}>{/* Topbar */}
+          <div className="topbar"><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><button className="mobile-menu-btn" onClick={() =>{ setIsSidebarVisible(true); setSidebarOpen(true); }} aria-label="Toggle menu"><Icon.Menu /></button><button type="button" onClick={() =>navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0 12px', height: 36, fontSize: 13, fontWeight: 500, color: '#6b7280', cursor: 'pointer' }}><Icon.Back />Back
+              </button><div className="topbar-left"><h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}><span style={{ position: 'relative', display: 'inline-flex' }}><Icon.Bell />{unreadCount >0 && (
                       <span style={{
                         position: 'absolute', top: -6, right: -8,
                         background: '#ef4444', color: '#fff',
@@ -551,35 +420,18 @@ export default function NotificationsPage({ role: propRole }) {
                         width: 18, height: 18, borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         border: '2px solid #fff',
-                      }}>{unreadCount}</span>
-                    )}
-                  </span>
-                  Notifications
-                  {unreadCount > 0 && (
-                    <span style={{ fontSize: 13, fontWeight: 500, color: '#ef4444', background: '#fef2f2', padding: '2px 10px', borderRadius: 999 }}>
-                      {unreadCount} unread
-                    </span>
-                  )}
-                </h2>
-                <p>All your alerts, reminders, and updates</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Control bar ── */}
-          <div className="content-card" style={{ marginBottom: 20, padding: '14px 18px' }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-
-              {/* Search */}
-              <div style={{ position: 'relative', flex: 1, minWidth: 220 }}>
-                <span style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)' }}>
-                  <Icon.Search />
-                </span>
-                <input
+                      }}>{unreadCount}</span>)}
+                  </span>Notifications
+                  {unreadCount >0 && (
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#ef4444', background: '#fef2f2', padding: '2px 10px', borderRadius: 999 }}>{unreadCount} unread
+                    </span>)}
+                </h2><p>All your alerts, reminders, and updates</p></div></div></div>{/* ── Control bar ── */}
+          <div className="content-card" style={{ marginBottom: 20, padding: '14px 18px' }}><div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>{/* Search */}
+              <div style={{ position: 'relative', flex: 1, minWidth: 220 }}><span style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)' }}><Icon.Search /></span><input
                   ref={searchRef}
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) =>setSearchQuery(e.target.value)}
                   placeholder="Search notifications by title, message, or sender…"
                   style={{
                     width: '100%', height: 42, borderRadius: 10,
@@ -587,32 +439,26 @@ export default function NotificationsPage({ role: propRole }) {
                     fontSize: 13, color: '#1f2937', outline: 'none',
                     background: '#f9fafb', transition: 'border 0.15s',
                   }}
-                  onFocus={(e) => (e.target.style.borderColor = '#276221')}
-                  onBlur={(e)  => (e.target.style.borderColor = '#e5e7eb')}
-                />
-                {searchQuery && (
-                  <button type="button" onClick={() => setSearchQuery('')} style={{
+                  onFocus={(e) =>(e.target.style.borderColor = '#4c1d95')}
+                  onBlur={(e)  =>(e.target.style.borderColor = '#e5e7eb')}
+                />{searchQuery && (
+                  <button type="button" onClick={() =>setSearchQuery('')} style={{
                     position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 16,
-                  }}>×</button>
-                )}
-              </div>
-
-              {/* Mark all read */}
-              {unreadCount > 0 && (
+                  }}>×</button>)}
+              </div>{/* Mark all read */}
+              {unreadCount >0 && (
                 <button type="button" onClick={markAllRead} style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   height: 42, padding: '0 16px', borderRadius: 10,
                   border: '1.5px solid #bfdbfe', background: '#eff6ff',
-                  color: '#276221', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  color: '#4c1d95', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                   whiteSpace: 'nowrap', transition: 'all 0.15s',
-                }}>
-                  <Icon.Check /> Mark All as Read
-                </button>
-              )}
+                }}><Icon.Check />Mark All as Read
+                </button>)}
 
               {/* Archive toggle */}
-              <button type="button" onClick={() => setShowArchived(!showArchived)} style={{
+              <button type="button" onClick={() =>setShowArchived(!showArchived)} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 height: 42, padding: '0 14px', borderRadius: 10,
                 border: `1.5px solid ${showArchived ? '#6b7280' : '#e5e7eb'}`,
@@ -620,65 +466,40 @@ export default function NotificationsPage({ role: propRole }) {
                 color: showArchived ? '#374151' : '#9ca3af',
                 fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 transition: 'all 0.15s',
-              }}>
-                <Icon.Archive /> {showArchived ? 'Show Active' : 'Archived'}
-              </button>
-            </div>
-
-            {/* Divider */}
-            <div style={{ height: 1, background: '#f3f4f6', margin: '12px 0 0' }} />
-
-            {/* Single row — Filter + Status */}
-            <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-
-              {/* Category filter pills */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: 0.5, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                  <Icon.Filter /> Filter:
-                </span>
-                {filters.map(f => (
-                  <button key={f.key} type="button" onClick={() => setActiveFilter(f.key)} style={pill(activeFilter === f.key)}>
-                    <span>{f.emoji}</span>
-                    {f.label}
+              }}><Icon.Archive />{showArchived ? 'Show Active' : 'Archived'}
+              </button></div>{/* Divider */}
+            <div style={{ height: 1, background: '#f3f4f6', margin: '12px 0 0' }} />{/* Single row — Filter + Status */}
+            <div style={{ display: 'flex', gap: 12, marginTop: 12, alignItems: 'center', flexWrap: 'wrap' }}>{/* Category filter pills */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 }}><span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: 0.5, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><Icon.Filter />Filter:
+                </span>{filters.map(f =>(
+                  <button key={f.key} type="button" onClick={() =>setActiveFilter(f.key)} style={pill(activeFilter === f.key)}><span>{f.emoji}</span>{f.label}
                     {f.key !== 'all' && (
                       <span style={{
                         marginLeft: 2, fontSize: 10, fontWeight: 800,
                         background: activeFilter === f.key ? 'rgba(255,255,255,0.25)' : '#f3f4f6',
                         color: activeFilter === f.key ? '#fff' : '#9ca3af',
                         padding: '1px 5px', borderRadius: 999,
-                      }}>
-                        {notifications.filter(n => !n.archived && n.category === f.key).length}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* Divider between filter and status */}
-              <div style={{ width: 1, height: 28, background: '#e5e7eb', flexShrink: 0 }} />
-
-              {/* Status segmented control */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 }}>
-                  Status:
-                </span>
-                <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 10, padding: 3, gap: 2 }}>
-                  {(() => {
+                      }}>{notifications.filter(n =>!n.archived && n.category === f.key).length}
+                      </span>)}
+                  </button>))}
+              </div>{/* Divider between filter and status */}
+              <div style={{ width: 1, height: 28, background: '#e5e7eb', flexShrink: 0 }} />{/* Status segmented control */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}><span style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 }}>Status:
+                </span><div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 10, padding: 3, gap: 2 }}>{(() =>{
                     // Scope status counts to whatever category is active
-                    const scoped = notifications.filter(n =>
-                      !n.archived &&
+                    const scoped = notifications.filter(n =>!n.archived &&
                       (activeFilter === 'all' || n.category === activeFilter)
                     );
                     return [
                       { key: 'all',    label: 'All',    count: scoped.length,                        dot: null      },
-                      { key: 'unread', label: 'Unread', count: scoped.filter(n => !n.read).length,   dot: '#ef4444' },
-                      { key: 'read',   label: 'Read',   count: scoped.filter(n =>  n.read).length,   dot: '#22c55e' },
+                      { key: 'unread', label: 'Unread', count: scoped.filter(n =>!n.read).length,   dot: '#ef4444' },
+                      { key: 'read',   label: 'Read',   count: scoped.filter(n =>n.read).length,   dot: '#22c55e' },
                     ];
-                  })().map(({ key, label, count, dot }) => (
+                  })().map(({ key, label, count, dot }) =>(
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setStatusFilter(key)}
+                      onClick={() =>setStatusFilter(key)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 5,
                         padding: '5px 12px', borderRadius: 7, border: 'none', cursor: 'pointer',
@@ -687,116 +508,60 @@ export default function NotificationsPage({ role: propRole }) {
                         color:      statusFilter === key ? '#1f2937' : '#9ca3af',
                         boxShadow:  statusFilter === key ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
                       }}
-                    >
-                      {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, display: 'inline-block', flexShrink: 0 }} />}
+                    >{dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, display: 'inline-block', flexShrink: 0 }} />}
                       {label}
-                      <span style={{ fontSize: 10, fontWeight: 800, background: statusFilter === key ? '#f3f4f6' : 'transparent', color: '#9ca3af', padding: '1px 5px', borderRadius: 999 }}>
-                        {count}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Context label — tells user what the status counts are scoped to */}
+                      <span style={{ fontSize: 10, fontWeight: 800, background: statusFilter === key ? '#f3f4f6' : 'transparent', color: '#9ca3af', padding: '1px 5px', borderRadius: 999 }}>{count}
+                      </span></button>))}
+                </div></div>{/* Context label — tells user what the status counts are scoped to */}
               {activeFilter !== 'all' && (
-                <div style={{ width: '100%', marginTop: 6 }}>
-                  <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                    Status counts scoped to: <strong style={{ color: '#374151' }}>
-                      {filters.find(f => f.key === activeFilter)?.emoji} {filters.find(f => f.key === activeFilter)?.label}
-                    </strong>
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Results summary ── */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 13, color: '#6b7280' }}>
-              {searchQuery
+                <div style={{ width: '100%', marginTop: 6 }}><span style={{ fontSize: 11, color: '#9ca3af' }}>Status counts scoped to: <strong style={{ color: '#374151' }}>{filters.find(f =>f.key === activeFilter)?.emoji} {filters.find(f =>f.key === activeFilter)?.label}
+                    </strong></span></div>)}
+            </div></div>{/* ── Results summary ── */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}><span style={{ fontSize: 13, color: '#6b7280' }}>{searchQuery
                 ? `${visible.length} result${visible.length !== 1 ? 's' : ''} for "${searchQuery}"`
                 : `Showing ${visible.length} notification${visible.length !== 1 ? 's' : ''}${showArchived ? ' (archived)' : ''}`
               }
-            </span>
-            {unreadCount > 0 && !showArchived && (
-              <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>
-                🔴 {unreadCount} unread
-              </span>
-            )}
-          </div>
-
-          {/* ── Empty state ── */}
+            </span>{unreadCount >0 && !showArchived && (
+              <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>{unreadCount} unread
+              </span>)}
+          </div>{/* ── Empty state ── */}
           {visible.length === 0 && (
-            <div className="content-card" style={{ textAlign: 'center', padding: '60px 24px' }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>
-                {searchQuery ? '🔍' : showArchived ? '📂' : '🔔'}
-              </div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#1f2937', marginBottom: 8 }}>
-                {searchQuery ? 'No matching notifications' : showArchived ? 'No archived notifications' : 'All caught up!'}
-              </div>
-              <div style={{ fontSize: 14, color: '#9ca3af' }}>
-                {searchQuery
+            <div className="content-card" style={{ textAlign: 'center', padding: '60px 24px' }}><div style={{ fontSize: 48, marginBottom: 16 }}>{searchQuery ? '' : showArchived ? '' : ''}
+              </div><div style={{ fontSize: 16, fontWeight: 600, color: '#1f2937', marginBottom: 8 }}>{searchQuery ? 'No matching notifications' : showArchived ? 'No archived notifications' : 'All caught up!'}
+              </div><div style={{ fontSize: 14, color: '#9ca3af' }}>{searchQuery
                   ? `No notifications match "${searchQuery}". Try a different keyword.`
                   : showArchived
                   ? 'Archived notifications will appear here.'
                   : 'You have no notifications in this category.'}
-              </div>
-              {searchQuery && (
-                <button type="button" onClick={() => setSearchQuery('')} style={{ marginTop: 16, ...actionBtn('#276221', '#eff6ff'), fontSize: 13 }}>
-                  Clear Search
-                </button>
-              )}
-            </div>
-          )}
+              </div>{searchQuery && (
+                <button type="button" onClick={() =>setSearchQuery('')} style={{ marginTop: 16, ...actionBtn('#4c1d95', '#eff6ff'), fontSize: 13 }}>Clear Search
+                </button>)}
+            </div>)}
 
           {/* ── Pinned section ── */}
-          {pinnedVisible.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon.Pin /> Pinned
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {pinnedVisible.map(n => <NotifCard key={n.id} n={n} />)}
-              </div>
-            </div>
-          )}
+          {pinnedVisible.length >0 && (
+            <div style={{ marginBottom: 20 }}><div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><Icon.Pin />Pinned
+              </div><div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{pinnedVisible.map(n =><NotifCard key={n.id} n={n} />)}
+              </div></div>)}
 
           {/* ── Main list ── */}
-          {unpinnedVisible.length > 0 && (
-            <div>
-              {pinnedVisible.length > 0 && (
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>
-                  All Notifications
-                </div>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {unpinnedVisible.map(n => <NotifCard key={n.id} n={n} />)}
-              </div>
-            </div>
-          )}
+          {unpinnedVisible.length >0 && (
+            <div>{pinnedVisible.length >0 && (
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>All Notifications
+                </div>)}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>{unpinnedVisible.map(n =><NotifCard key={n.id} n={n} />)}
+              </div></div>)}
 
           {/* ── Footer legend ── */}
-          {visible.length > 0 && (
-            <div style={{ marginTop: 28, padding: '14px 18px', background: '#f9fafb', borderRadius: 12, border: '1px solid #f3f4f6', display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 600 }}>LEGEND:</span>
-              {[
+          {visible.length >0 && (
+            <div style={{ marginTop: 28, padding: '14px 18px', background: '#f9fafb', borderRadius: 12, border: '1px solid #f3f4f6', display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}><span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 600 }}>LEGEND:</span>{[
                 { dot: '#ef4444', label: 'Unread' },
-                { dot: '#22c55e', label: 'Read'   },
-                { dot: '#276221', label: 'Pinned' },
-              ].map(({ dot, label }) => (
-                <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#6b7280' }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block' }} />
-                  {label}
-                </span>
-              ))}
-              <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9ca3af' }}>
-                Click any card to expand · Click again to collapse
-              </span>
-            </div>
-          )}
-        </main>
-      </div>
-    </>
-  );
+                { dot: '#22c55e', label: 'Read'},
+                { dot: '#4c1d95', label: 'Pinned' },
+              ].map(({ dot, label }) =>(
+                <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#6b7280' }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: dot, display: 'inline-block' }} />{label}
+                </span>))}
+              <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9ca3af' }}>Click any card to expand · Click again to collapse
+              </span></div>)}
+        </main></div></>);
 }

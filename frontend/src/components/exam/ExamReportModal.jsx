@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import KpiCard from '../KpiCard';
 import KpiGrid from '../KpiGrid';
-import { listRegistrations, listMarks, publishExamResults } from '../../api/examsApi';
+import { listEnrolledStudents, listMarks, publishExamResults } from '../../api/examsApi';
+import { getUserSession } from '../../auth/sessionController';
 
 export default function ExamReportModal({ isOpen, onClose, exam }) {
   const [registrations, setRegistrations] = useState([]);
@@ -17,12 +18,12 @@ export default function ExamReportModal({ isOpen, onClose, exam }) {
   const loadReportData = async () => {
     try {
       const examId = exam._id || exam.id;
-      const [regs, examMarks] = await Promise.all([
-        listRegistrations({ examId }),
+      const [enrolled, examMarks] = await Promise.all([
+        listEnrolledStudents(examId),
         listMarks({ examId }),
       ]);
 
-      setRegistrations(regs);
+      setRegistrations(enrolled);
       setMarks(examMarks);
 
       // Calculate statistics
@@ -38,9 +39,9 @@ export default function ExamReportModal({ isOpen, onClose, exam }) {
         }, {});
 
         setStats({
-          totalRegistered: regs.length,
+          totalRegistered: enrolled.length,
           totalEvaluated: examMarks.length,
-          pending: regs.length - examMarks.length,
+          pending: enrolled.length - examMarks.length,
           average: avgMarks.toFixed(2),
           highest: maxMarks,
           lowest: minMarks,
@@ -49,9 +50,9 @@ export default function ExamReportModal({ isOpen, onClose, exam }) {
         });
       } else {
         setStats({
-          totalRegistered: regs.length,
+          totalRegistered: enrolled.length,
           totalEvaluated: 0,
-          pending: regs.length,
+          pending: enrolled.length,
           average: 0,
           highest: 0,
           lowest: 0,
@@ -107,7 +108,7 @@ export default function ExamReportModal({ isOpen, onClose, exam }) {
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Summary Stats */}
           <KpiGrid>
             <KpiCard
@@ -228,22 +229,38 @@ export default function ExamReportModal({ isOpen, onClose, exam }) {
           </div>
         </div>
 
-        <div className="p-6 border-t border-slate-200 flex justify-between">
+        <div className="p-6 border-t border-slate-200 flex justify-between items-center">
           <button
             onClick={onClose}
             className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-semibold"
           >
             Close
           </button>
-          {!exam.resultsPublished && (
-            <button
-              onClick={handlePublishResults}
-              disabled={stats.pending > 0}
-              className="px-4 py-2 bg-[#276221] text-white rounded-lg hover:bg-[#1e4618] transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Publish Results
-            </button>
-          )}
+          {!exam.resultsPublished && (() => {
+            const session = getUserSession();
+            const isAdmin = session?.role === 'admin';
+            const isFaculty = session?.role === 'faculty';
+            const isEndSem = exam.type === 'End-Sem';
+            const canPublish = isAdmin || (isFaculty && !isEndSem);
+
+            if (!canPublish) {
+              return (
+                <span className="text-xs text-amber-600 font-semibold italic">
+                  End-Sem results must be published by Admin
+                </span>
+              );
+            }
+
+            return (
+              <button
+                onClick={handlePublishResults}
+                disabled={stats.pending > 0}
+                className="px-4 py-2 bg-[#4c1d95] text-white rounded-lg hover:bg-[#3b0764] transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Publish Results
+              </button>
+            );
+          })()}
         </div>
       </div>
     </div>

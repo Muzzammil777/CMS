@@ -1,171 +1,511 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
+import { TableSkeleton } from '../components/common'
+import { buildApiUrl } from '../api/apiBase'
 import KpiCard from '../components/KpiCard'
 import KpiGrid from '../components/KpiGrid'
 
 // ─── Tab Components ──────────────────────────────────────────────
 
 function OverviewTab({ student }) {
+  const formatValue = (val) => val || 'Not provided';
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not provided';
+    try {
+      return new Date(dateStr).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
+  const getFormattedAddress = () => {
+    const addr = student.address || student.personal?.address;
+    const city = student.city || student.personal?.city;
+    const state = student.state || student.personal?.state;
+    const pin = student.pincode || student.personal?.pincode;
+
+    let parts = [];
+    if (addr) parts.push(addr);
+    if (city) parts.push(city);
+    if (state) parts.push(state);
+    
+    let baseAddr = parts.join(', ');
+    if (pin) {
+      if (baseAddr) baseAddr += ` - ${pin}`;
+      else baseAddr = pin;
+    }
+    
+    return baseAddr || 'Not provided';
+  };
+
+  // --- Dynamic GPA Trend Calculation ---
+  const GRADE_POINTS = {
+    'A+': 10.0,
+    'A': 9.0,
+    'B+': 8.0,
+    'B': 7.0,
+    'C+': 6.0,
+    'C': 5.0,
+    'D': 4.0,
+    'F': 0.0,
+  };
+
+  const subjects = student.subjects || [];
+  const semestersData = {};
+
+  subjects.forEach(sub => {
+    const sem = sub.semester;
+    if (!sem) return;
+    
+    if (!semestersData[sem]) {
+      semestersData[sem] = { totalPoints: 0, totalCredits: 0 };
+    }
+    
+    if (sub.grade === 'Pending' || sub.status === 'In Progress') {
+      return;
+    }
+    
+    const gradePoint = GRADE_POINTS[sub.grade];
+    if (gradePoint !== undefined) {
+      const credits = parseFloat(sub.credits) || 4.0;
+      semestersData[sem].totalPoints += gradePoint * credits;
+      semestersData[sem].totalCredits += credits;
+    }
+  });
+
+  const semestersList = [];
+  const maxSem = Math.max(4, ...Object.keys(semestersData).map(Number));
+
+  for (let sem = 1; sem <= maxSem; sem++) {
+    const data = semestersData[sem];
+    const gpa = data && data.totalCredits > 0 ? (data.totalPoints / data.totalCredits) : 0;
+    semestersList.push({
+      semester: sem,
+      gpa: parseFloat(gpa.toFixed(2)),
+      hasData: !!(data && data.totalCredits > 0)
+    });
+  }
+
+  let totalGpaSum = 0;
+  let semestersWithData = 0;
+  semestersList.forEach(s => {
+    if (s.hasData) {
+      totalGpaSum += s.gpa;
+      semestersWithData++;
+    }
+  });
+  
+  const averageGpa = semestersWithData > 0 ? totalGpaSum / semestersWithData : 0;
+  let averageLabel = "No GPA Recorded";
+  if (averageGpa >= 9.0) averageLabel = "O Outstanding";
+  else if (averageGpa >= 8.0) averageLabel = "A+ Excellent";
+  else if (averageGpa >= 7.0) averageLabel = "A Good";
+  else if (averageGpa >= 6.0) averageLabel = "B+ Average";
+  else if (averageGpa >= 5.0) averageLabel = "B Below Average";
+  else if (averageGpa > 0) averageLabel = "C Re-eval required";
+
+  // --- Dynamic Attendance Calendar Generation ---
+  const attendancePct = student.attendancePct !== undefined ? student.attendancePct : 0;
+  const currentDate = new Date();
+  const currentMonthName = currentDate.toLocaleString('default', { month: 'long' });
+  const currentYear = currentDate.getFullYear();
+
+  const firstDayOfMonth = new Date(currentYear, currentDate.getMonth(), 1);
+  const rawDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday, 1 = Monday...
+  const startOffset = rawDayOfWeek === 0 ? 6 : rawDayOfWeek - 1; // Monday = 0
+  const totalDays = new Date(currentYear, currentDate.getMonth() + 1, 0).getDate();
+
+  const getDayStatus = (dayNum, dayOfWeek) => {
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    if (isWeekend) return 'weekend';
+    if (dayNum > currentDate.getDate()) return 'future';
+    if (!attendancePct || attendancePct === 0) return 'no-data';
+
+    // Deterministic pseudo-random generation to match the attendance percentage
+    const hash = (dayNum * 19 + 7) % 100;
+    return hash < attendancePct ? 'present' : 'absent';
+  };
+
+  // --- Dynamic Academic Alert Configuration ---
+  const getAlertConfig = () => {
+    const failedSubjects = subjects.filter(s => s.grade === 'F' || s.status === 'Failed');
+    const hasBacklogs = failedSubjects.length > 0;
+    const cgpaVal = typeof student.cgpa === 'number' ? student.cgpa : parseFloat(student.cgpa) || 0.0;
+    const isNewStudent = subjects.length === 0;
+
+    if (hasBacklogs) {
+      return {
+        title: "Academic Alert: Backlogs Detected",
+        message: `${student.name} has backlog(s) in: ${failedSubjects.map(s => s.code).join(', ')}. Please contact the academic advisor to schedule remedial classes.`,
+        icon: "warning",
+        bgColor: "bg-red-50 border-red-200",
+        textColor: "text-red-800",
+        iconBg: "bg-red-600 shadow-red-200",
+        iconColor: "text-white"
+      };
+    }
+
+    if (attendancePct > 0 && attendancePct < 75) {
+      return {
+        title: "Critical Alert: Low Attendance",
+        message: `${student.name}'s attendance is currently at ${attendancePct}%, which falls below the mandatory 75% threshold. Immediate improvement is required to avoid exam debarment.`,
+        icon: "event_busy",
+        bgColor: "bg-amber-50 border-amber-200",
+        textColor: "text-amber-800",
+        iconBg: "bg-amber-500 shadow-amber-200",
+        iconColor: "text-white"
+      };
+    }
+
+    if (cgpaVal >= 8.5) {
+      return {
+        title: "Academic Distinction: Honor Roll",
+        message: `Congratulations! ${student.name} has achieved an outstanding academic performance with a CGPA of ${cgpaVal.toFixed(2)}. Keep up the excellent work!`,
+        icon: "workspace_premium",
+        bgColor: "bg-[#276221]/5 border-[#276221]/20",
+        textColor: "text-[#276221]",
+        iconBg: "bg-[#276221] shadow-green-200",
+        iconColor: "text-yellow-300"
+      };
+    }
+
+    if (isNewStudent) {
+      return {
+        title: "Academic Status: Welcome",
+        message: `Welcome, ${student.name}! You are newly enrolled. Your academic records, GPA trends, and class attendance will populate here once classes and exams begin.`,
+        icon: "school",
+        bgColor: "bg-blue-50/50 border-blue-200",
+        textColor: "text-blue-800",
+        iconBg: "bg-blue-600 shadow-blue-200",
+        iconColor: "text-white"
+      };
+    }
+
+    return {
+      title: "Academic Status: Normal",
+      message: `${student.name} is in good academic standing. All requirements for the current academic session are being met successfully.`,
+      icon: "check_circle",
+      bgColor: "bg-[#276221]/5 border-[#276221]/10",
+      textColor: "text-[#276221]",
+      iconBg: "bg-[#276221] shadow-[#276221]/10",
+      iconColor: "text-white"
+    };
+  };
+
+  const alert = getAlertConfig();
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* Left Column - Core Info */}
       <div className="lg:col-span-8 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Contact Information */}
+          {/* Contact & Personal Information */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
               <span className="material-symbols-outlined text-[#276221] text-[20px]">contact_page</span>
-              Contact Information
+              Personal & Contact
             </h3>
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Phone Number</p>
-                <p className="text-sm font-medium text-slate-700">{student.phone}</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.phone)}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Personal Email</p>
-                <p className="text-sm font-medium text-slate-700">{student.email}</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.email)}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Permanent Address</p>
-                <p className="text-sm font-medium text-slate-700 leading-relaxed">{student.address}</p>
+                <p className="text-sm font-medium text-slate-700 leading-relaxed">{getFormattedAddress()}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Date of Birth</p>
+                  <p className="text-sm font-medium text-slate-700">{formatDate(student.dateOfBirth || student.dob)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Gender</p>
+                  <p className="text-sm font-medium text-slate-700">{formatValue(student.gender)}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Blood Group</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.bloodGroup)}</p>
               </div>
             </div>
           </div>
 
-          {/* Family Details */}
+          {/* Family & Guardian Details */}
           <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
               <span className="material-symbols-outlined text-[#276221] text-[20px]">family_restroom</span>
-              Family Details
+              Family & Guardian
             </h3>
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Father's Name</p>
-                <p className="text-sm font-medium text-slate-700">{student.guardian}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Guardian Name</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.guardianName || student.guardian)}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Mother's Name</p>
-                <p className="text-sm font-medium text-slate-700">Sunita Devi</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Relationship</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.relationship)}</p>
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Guardian Contact</p>
-                <p className="text-sm font-medium text-slate-700">{student.guardianPhone}</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.guardianPhone)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Guardian Email</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.guardianEmail)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Guardian Occupation</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.guardianOccupation)}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Academic Info Strip */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-            <span className="material-symbols-outlined text-[#276221] text-[20px]">menu_book</span>
-            Academic Info
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-[#276221] shadow-sm">
-                  <span className="material-symbols-outlined text-[20px]">event_available</span>
-               </div>
-               <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Admission Date</p>
-                  <p className="text-sm font-medium text-slate-700">{new Date(student.enrollDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-               </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Academic & Housing Details */}
+          <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
+              <span className="material-symbols-outlined text-[#276221] text-[20px]">menu_book</span>
+              Academic & Housing
+            </h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Admission Date</p>
+                  <p className="text-sm font-medium text-slate-700">{formatDate(student.enrollDate)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Admission Type</p>
+                  <p className="text-sm font-medium text-slate-700">{formatValue(student.admissionType)}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Quota / Category</p>
+                  <p className="text-sm font-medium text-slate-700">{formatValue(student.quota)}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Accommodation</p>
+                  <p className="text-sm font-medium text-slate-700">{formatValue(student.accommodation)}</p>
+                </div>
+              </div>
+              {student.accommodation === 'Hostel Required' && (
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Hostel Name</p>
+                    <p className="text-sm font-medium text-slate-700">{formatValue(student.hostelName)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Room Type</p>
+                    <p className="text-sm font-medium text-slate-700">{formatValue(student.roomType)}</p>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-red-500 shadow-sm">
-                  <span className="material-symbols-outlined text-[20px]">bloodtype</span>
-               </div>
-               <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Blood Group</p>
-                  <p className="text-sm font-medium text-slate-700">O+</p>
-               </div>
-            </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-green-500 shadow-sm">
-                  <span className="material-symbols-outlined text-[20px]">task_alt</span>
-               </div>
-               <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Attendance</p>
-                  <p className="text-sm font-medium text-slate-700">{student.attendancePct}%</p>
-               </div>
+          </div>
+
+          {/* Previous Education Record */}
+          <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
+              <span className="material-symbols-outlined text-[#276221] text-[20px]">history_edu</span>
+              Previous Education
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Previous School / Institution</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.previousSchool || student.previousInstitution)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Board of Study</p>
+                <p className="text-sm font-medium text-slate-700">{formatValue(student.board)}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Year of Passing</p>
+                  <p className="text-sm font-medium text-slate-700">{student.yearOfPassing || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Marks Percentage</p>
+                  <p className="text-sm font-medium text-slate-700">{student.marksPercentage ? `${student.marksPercentage}%` : 'Not provided'}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Technical Skills */}
+        {/* Application Payment & Metrics */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-800 mb-6 uppercase tracking-wider">Technical Skills</h3>
-          <div className="flex flex-wrap gap-2">
-            {['Python', 'Java', 'SQL', 'React JS', 'Node.js'].map((skill, idx) => (
-              <span key={skill} className={`px-4 py-2 rounded-lg text-xs font-semibold ${idx === 3 ? 'bg-[#276221]/10 text-[#276221]' : 'bg-slate-100 text-slate-600'}`}>
-                {skill}
-              </span>
-            ))}
+          <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
+            <span className="material-symbols-outlined text-[#276221] text-[20px]">payments</span>
+            Application Payment & Metrics
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Application Fee</span>
+                <span className="text-sm font-bold text-slate-700">₹{(student.payment?.application_fee || student.feeAmount || 500).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment Method</span>
+                <span className="text-sm font-medium text-slate-700">{formatValue(student.payment?.payment_method || student.paymentMethod)}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaction ID</span>
+                <span className="text-sm font-medium text-mono text-slate-700">{formatValue(student.payment?.transaction_id || student.transactionId)}</span>
+              </div>
+              {student.payment?.payment_datetime && (
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment Date</span>
+                  <span className="text-sm font-medium text-slate-700">{new Date(student.payment.payment_datetime).toLocaleString('en-IN')}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 justify-center">
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Attendance</p>
+                  <p className="text-lg font-bold text-[#276221] mt-1">{attendancePct}%</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 justify-center">
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current CGPA</p>
+                  <p className="text-lg font-bold text-slate-800 mt-1">{student.cgpa || 0.0}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Right Column - Trends & Status */}
       <div className="lg:col-span-4 space-y-8">
-        {/* GPA Trend Mock */}
+        {/* GPA Trend Card */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider text-slate-900 leading-none">GPA Trend</h3>
-            <span className="px-2 py-0.5 bg-green-50 text-[#276221] rounded text-[9px] font-bold uppercase tracking-wider">B+ Average</span>
+            <span className="px-2 py-0.5 bg-green-50 text-[#276221] rounded text-[9px] font-bold uppercase tracking-wider">{averageLabel}</span>
           </div>
-          <div className="flex items-end justify-between h-24 gap-2 mb-4">
-            {[35, 45, 100, 40].map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div 
-                  className={`w-full rounded-md transition-all duration-1000 ${i === 2 ? 'bg-[#276221]' : 'bg-[#276221]/20'}`} 
-                  style={{ height: `${h}%` }} 
-                />
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">SEM{i+1}</span>
+          <div className="flex items-end justify-between h-24 gap-2 mb-4 relative">
+            {semestersWithData === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-50/70 rounded-lg backdrop-blur-[0.5px]">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                  No GPA Records Available
+                </span>
               </div>
-            ))}
+            )}
+            {semestersList.map((semInfo) => {
+              const heightPct = semInfo.hasData ? (semInfo.gpa / 10.0) * 100 : 0;
+              return (
+                <div key={semInfo.semester} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+                  {semInfo.hasData && (
+                    <span className="text-[9px] font-bold text-[#276221] leading-none mb-0.5">{semInfo.gpa}</span>
+                  )}
+                  <div 
+                    className={`w-full rounded-md transition-all duration-1000 ${
+                      semInfo.hasData 
+                        ? 'bg-[#276221]' 
+                        : 'bg-slate-100 border border-dashed border-slate-200'
+                    }`} 
+                    style={{ height: semInfo.hasData ? `${heightPct}%` : '8px' }} 
+                    title={semInfo.hasData ? `Semester ${semInfo.semester} GPA: ${semInfo.gpa}` : `Semester ${semInfo.semester}: No records`}
+                  />
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">SEM{semInfo.semester}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Attendance Calendar Mock */}
+        {/* Attendance Calendar Card */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Attendance: June 2024</h3>
+              <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Attendance: {currentMonthName} {currentYear}</h3>
               <div className="flex gap-1">
-                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                 <div className="w-2 h-2 rounded-full bg-red-400" />
+                 <div className="w-2 h-2 rounded-full bg-green-500" title="Present" />
+                 <div className="w-2 h-2 rounded-full bg-red-400" title="Absent" />
               </div>
            </div>
-           <div className="grid grid-cols-7 gap-2">
+           <div className="grid grid-cols-7 gap-2 mb-4">
               {['M','T','W','T','F','S','S'].map(d => (
                 <div key={d} className="text-center text-[9px] font-bold text-slate-300 py-1">{d}</div>
               ))}
-              {Array.from({length: 21}).map((_, i) => (
-                <div key={i} className={`aspect-square rounded-md border border-slate-50 transition-colors cursor-pointer ${
-                  i === 15 ? 'bg-red-400' : 
-                  i % 3 === 0 ? 'bg-green-100' : 
-                  i % 2 === 0 ? 'bg-green-400' : 'bg-green-50'
-                }`} />
+              {Array.from({ length: startOffset }).map((_, idx) => (
+                <div key={`pad-${idx}`} className="aspect-square bg-transparent" />
               ))}
+              {Array.from({ length: totalDays }).map((_, idx) => {
+                const dayNum = idx + 1;
+                const date = new Date(currentYear, currentDate.getMonth(), dayNum);
+                const dayOfWeek = date.getDay();
+                const status = getDayStatus(dayNum, dayOfWeek);
+                
+                let bgClass = 'bg-slate-50 border border-slate-100';
+                let titleText = `Day ${dayNum}`;
+                
+                if (status === 'present') {
+                  bgClass = 'bg-green-500 text-white';
+                  titleText = `Day ${dayNum}: Present`;
+                } else if (status === 'absent') {
+                  bgClass = 'bg-red-400 text-white';
+                  titleText = `Day ${dayNum}: Absent`;
+                } else if (status === 'weekend') {
+                  bgClass = 'bg-slate-50 text-slate-300 cursor-not-allowed';
+                  titleText = `Day ${dayNum}: Weekend`;
+                } else if (status === 'future') {
+                  bgClass = 'bg-slate-50/50 text-slate-200 cursor-not-allowed';
+                  titleText = `Day ${dayNum}: Scheduled`;
+                } else if (status === 'no-data') {
+                  bgClass = 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed';
+                  titleText = `Day ${dayNum}: No attendance logs`;
+                }
+                
+                return (
+                  <div 
+                    key={`day-${dayNum}`} 
+                    className={`aspect-square rounded-md flex items-center justify-center text-[9px] font-bold transition-all ${bgClass}`}
+                    title={titleText}
+                  >
+                    {dayNum}
+                  </div>
+                );
+              })}
            </div>
+           {attendancePct === 0 ? (
+             <p className="text-[10px] text-slate-400 italic text-center">* No attendance logs exist for this session.</p>
+           ) : (
+             <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
+               <span>Rate: {attendancePct}%</span>
+               <span>{currentMonthName} {currentYear} estimate</span>
+             </div>
+           )}
         </div>
 
-        {/* Academic Alert */}
-        <div className="bg-[#276221]/5 border border-[#276221]/10 rounded-xl p-8 flex gap-4">
-           <div className="w-10 h-10 bg-[#276221] rounded-lg flex items-center justify-center text-white shrink-0 shadow-lg shadow-[#276221]/10">
-              <span className="material-symbols-outlined text-[20px]">info</span>
+        {/* Academic Alert Card */}
+        <div className={`border rounded-xl p-8 flex gap-4 transition-all duration-300 ${alert.bgColor}`}>
+           <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 shadow-lg ${alert.iconBg}`}>
+              <span className={`material-symbols-outlined text-[20px] ${alert.iconColor}`}>{alert.icon}</span>
            </div>
            <div>
-              <p className="text-xs font-semibold text-[#276221] uppercase tracking-wider mb-1">Academic Alert</p>
-              <p className="text-xs font-medium text-[#276221]/80 leading-relaxed">
-                {student.name} has successfully completed 85% of his credit requirements for the current year.
+              <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${alert.textColor}`}>{alert.title}</p>
+              <p className={`text-xs font-medium leading-relaxed ${alert.textColor}/90`}>
+                {alert.message}
               </p>
            </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 
@@ -313,7 +653,7 @@ function AddAcademicRecordModal({ isOpen, onClose, onSave, studentId }) {
              <button 
                onClick={async () => {
                  try {
-                   const res = await fetch(`http://localhost:5000/api/students/${studentId}/subjects`, {
+                   const res = await fetch(buildApiUrl(`/students/${studentId}/subjects`), {
                      method: 'POST',
                      headers: { 'Content-Type': 'application/json' },
                      body: JSON.stringify({
@@ -342,14 +682,17 @@ function AddAcademicRecordModal({ isOpen, onClose, onSave, studentId }) {
 
 function AcademicsTab({ student, onRefresh }) {
   const [semesterFilter, setSemesterFilter] = useState('All')
+  const [yearFilter, setYearFilter] = useState('All')
   const [currentPage, setCurrentPage] = useState(1)
   const [isAddRecordModalOpen, setIsAddRecordModalOpen] = useState(false)
   const itemsPerPage = 8
 
   const allSubjects = student.subjects || []
-  const filteredSubjects = semesterFilter === 'All' 
-    ? allSubjects 
-    : allSubjects.filter(s => s.semester?.toString() === semesterFilter)
+  const filteredSubjects = allSubjects.filter(s => {
+    const matchesYear = yearFilter === 'All' || s.year === yearFilter
+    const matchesSem = semesterFilter === 'All' || s.semester?.toString() === semesterFilter
+    return matchesYear && matchesSem
+  })
 
   const totalPages = Math.ceil(filteredSubjects.length / itemsPerPage)
   const currentSubjects = filteredSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
@@ -364,7 +707,7 @@ function AcademicsTab({ student, onRefresh }) {
       s.code === subjectCode ? { ...s, [field]: value } : s
     );
     try {
-      const res = await fetch(`http://localhost:5000/api/students/${student.id}`, {
+      const res = await fetch(buildApiUrl(`/students/${student.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subjects: updatedSubjects })
@@ -408,14 +751,32 @@ function AcademicsTab({ student, onRefresh }) {
                 Download Transcript
               </button>
               <select 
+                value={yearFilter}
+                onChange={(e) => {setYearFilter(e.target.value); setSemesterFilter('All'); setCurrentPage(1);}}
+                className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-500 uppercase tracking-wider outline-none cursor-pointer"
+              >
+                <option value="All">All Years</option>
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+              <select 
                 value={semesterFilter}
                 onChange={(e) => {setSemesterFilter(e.target.value); setCurrentPage(1);}}
                 className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-500 uppercase tracking-wider outline-none cursor-pointer"
               >
                 <option value="All">All Semesters</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                  <option key={s} value={s.toString()}>Semester {s}</option>
-                ))}
+                {(() => {
+                  let sems = [1, 2, 3, 4, 5, 6, 7, 8];
+                  if (yearFilter === '1st Year') sems = [1, 2];
+                  else if (yearFilter === '2nd Year') sems = [3, 4];
+                  else if (yearFilter === '3rd Year') sems = [5, 6];
+                  else if (yearFilter === '4th Year') sems = [7, 8];
+                  return sems.map(s => (
+                    <option key={s} value={s.toString()}>Semester {s}</option>
+                  ));
+                })()}
               </select>
             </div>
           </div>
@@ -663,10 +1024,66 @@ function FeesTab({ student }) {
   )
 }
 
-function DocumentsTab({ student }) {
-  const docs = student.documents || []
+function DocumentsTab({ student, refreshData }) {
+  const rawDocs = student.documents || [];
+  const [viewingDoc, setViewingDoc] = useState(null);
+
+  // Normalize documents: handle both array format (seed data) and object/dict format (from admissions)
+  const docs = Array.isArray(rawDocs)
+    ? rawDocs.map(d => {
+        const fileData = (d.data && d.data.data) || (typeof d.data === 'string' ? d.data : null) || d.file_url || d.fileUrl || null;
+        const fileName = (d.data && d.data.name) || d.name || 'Document';
+        const fileSize = (d.data && d.data.size) ? `${(d.data.size / 1024 / 1024).toFixed(2)} MB` : (d.size || 'N/A');
+        const uploadDateStr = d.uploadDate || d.uploadedAt || student.enrollDate || new Date().toISOString();
+        return { ...d, fileName, fileSize, fileData, uploadDateStr };
+      })
+    : Object.entries(rawDocs)
+        .map(([key, val]) => {
+          if (!val) return null;
+          // val can be a base64 string directly, or an object { name, size, data }
+          const fileData = (val && typeof val === 'object' && val.data) ? val.data : (typeof val === 'string' ? val : null);
+          const fileName = (val && val.name) || key
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/[-_]+/g, ' ')
+              .replace(/^\w/, (c) => c.toUpperCase())
+              .trim();
+          const fileSize = (val && val.size) ? `${(val.size / 1024 / 1024).toFixed(2)} MB` : 'N/A';
+          const uploadDateStr = student.enrollDate || new Date().toISOString();
+          const isPdf = typeof fileData === 'string' && fileData.includes('pdf');
+          return {
+            id: key,
+            name: fileName,
+            fileName,
+            fileSize,
+            fileData,
+            uploadDateStr,
+            type: isPdf ? 'pdf' : 'image',
+          };
+        })
+        .filter(Boolean);
+
+  const handleViewDoc = (doc) => {
+    if (!doc.fileData) return;
+    setViewingDoc(doc);
+  };
+
+  const isImage = (dataUri) => {
+    if (!dataUri || typeof dataUri !== 'string') return false;
+    return dataUri.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(dataUri);
+  };
+
+  const handleDownloadDoc = (doc) => {
+    if (!doc.fileData) return;
+    const link = document.createElement('a');
+    link.href = doc.fileData;
+    link.download = doc.fileName || doc.name || 'document';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* Left Column - Category Cards and Helper */}
       <div className="lg:col-span-4 space-y-8">
@@ -674,12 +1091,12 @@ function DocumentsTab({ student }) {
            <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider mb-6">File Categories</h3>
            <div className="grid grid-cols-2 gap-4">
               {[
-                { label: 'Academic', count: 12, color: 'bg-green-50 text-[#276221]', icon: 'school' },
-                { label: 'Identity', count: 4, color: 'bg-green-50 text-green-600', icon: 'badge' },
-                { label: 'Fees', count: 8, color: 'bg-purple-50 text-purple-600', icon: 'receipt_long' },
-                { label: 'Others', count: 2, color: 'bg-slate-50 text-slate-400', icon: 'folder_open' }
+                { label: 'Academic', count: docs.filter(d => d.type === 'pdf').length, color: 'bg-indigo-50 text-[#4c1d95]', icon: 'school' },
+                { label: 'Identity', count: docs.filter(d => d.type !== 'pdf').length, color: 'bg-indigo-50 text-indigo-600', icon: 'badge' },
+                { label: 'Fees', count: (student.fees || []).length, color: 'bg-purple-50 text-purple-600', icon: 'receipt_long' },
+                { label: 'Others', count: 0, color: 'bg-slate-50 text-slate-400', icon: 'folder_open' }
               ].map(cat => (
-                <div key={cat.label} className="p-4 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-white hover:border-[#276221]/20 transition-all cursor-pointer group">
+                <div key={cat.label} className="p-4 rounded-xl border border-slate-50 bg-slate-50/30 hover:bg-white hover:border-[#4c1d95]/20 transition-all cursor-pointer group">
                    <div className={`w-10 h-10 ${cat.color} rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                       <span className="material-symbols-outlined text-[20px]">{cat.icon}</span>
                    </div>
@@ -691,12 +1108,12 @@ function DocumentsTab({ student }) {
         </div>
 
         {/* Upload Dropzone Preview */}
-        <div className="bg-[#276221]/5 border-2 border-dashed border-[#276221]/20 rounded-xl p-10 flex flex-col items-center text-center group cursor-pointer hover:bg-[#276221]/10 transition-all">
-           <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-[#276221] shadow-xl shadow-[#276221]/10 mb-6 group-hover:scale-110 transition-transform">
+        <div className="bg-[#4c1d95]/5 border-2 border-dashed border-[#4c1d95]/20 rounded-xl p-10 flex flex-col items-center text-center group cursor-pointer hover:bg-[#4c1d95]/10 transition-all">
+           <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center text-[#4c1d95] shadow-xl shadow-[#4c1d95]/10 mb-6 group-hover:scale-110 transition-transform">
               <span className="material-symbols-outlined text-[32px]">cloud_upload</span>
            </div>
-           <h4 className="text-sm font-semibold text-[#276221] uppercase tracking-wider mb-2">Upload New Media</h4>
-           <p className="text-[10px] font-medium text-[#276221]/60 uppercase tracking-tight">Drag & drop or browse files</p>
+           <h4 className="text-sm font-semibold text-[#4c1d95] uppercase tracking-wider mb-2">Upload New Media</h4>
+           <p className="text-[10px] font-medium text-[#4c1d95]/60 uppercase tracking-tight">Drag & drop or browse files</p>
         </div>
       </div>
 
@@ -705,62 +1122,132 @@ function DocumentsTab({ student }) {
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Document Storage</h3>
-            <div className="flex bg-slate-50 border border-slate-200 p-1 rounded-lg">
-               <button className="px-3 py-1.5 bg-white text-[#276221] rounded-md text-[10px] font-semibold uppercase tracking-wider shadow-sm">Grid View</button>
-               <button className="px-3 py-1.5 text-slate-400 rounded-md text-[10px] font-semibold uppercase tracking-wider">List View</button>
-            </div>
+            <span className="text-xs font-medium text-slate-400">{docs.length} file{docs.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="overflow-x-auto">
              <table className="w-full text-left">
-               <thead>
-                 <tr className="bg-slate-50 text-slate-500 text-[10px] font-semibold uppercase tracking-wider border-b border-slate-200">
-                   <th className="px-8 py-4">Document Details</th>
-                   <th className="px-4 py-4">Status</th>
-                   <th className="px-4 py-4">Last Updated</th>
-                   <th className="px-8 py-4 text-center">Actions</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-slate-100">
-                 {docs.map(doc => (
-                   <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors group">
-                     <td className="px-8 py-5">
-                        <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-[#276221]/10 group-hover:text-[#276221] transition-all">
-                              <span className="material-symbols-outlined text-[20px]">{doc.type === 'pdf' ? 'picture_as_pdf' : 'description'}</span>
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 text-[10px] font-semibold uppercase tracking-wider border-b border-slate-200">
+                    <th className="px-8 py-4">Document Details</th>
+                    <th className="px-4 py-4">Status</th>
+                    <th className="px-4 py-4">Last Updated</th>
+                    <th className="px-8 py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {docs.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" className="text-center py-16">
+                        <span className="material-symbols-outlined text-5xl text-slate-200 mb-3 block">folder_open</span>
+                        <p className="text-sm font-semibold text-slate-400">No documents uploaded yet</p>
+                        <p className="text-xs text-slate-300 mt-1">Upload documents from the panel on the left</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    docs.map((doc, idx) => (
+                      <tr key={doc.id || idx} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-8 py-5">
+                           <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 group-hover:bg-[#4c1d95]/10 group-hover:text-[#4c1d95] transition-all">
+                                 <span className="material-symbols-outlined text-[20px]">{doc.type === 'pdf' ? 'picture_as_pdf' : 'image'}</span>
+                              </div>
+                              <div>
+                                 <p className="text-sm font-semibold text-slate-800">{doc.name || doc.fileName}</p>
+                                 <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{doc.fileSize || doc.size || 'N/A'}</p>
+                              </div>
                            </div>
-                           <div>
-                              <p className="text-sm font-semibold text-slate-800">{doc.name}</p>
-                              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{doc.size}</p>
+                        </td>
+                        <td className="px-4 py-5">
+                           <div className="flex items-center gap-2">
+                              <div className={`w-1.5 h-1.5 rounded-full ${doc.fileData ? 'bg-green-500' : 'bg-amber-400'}`} />
+                              <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{doc.fileData ? 'Uploaded' : 'Pending'}</span>
                            </div>
-                        </div>
-                     </td>
-                     <td className="px-4 py-5">
-                        <div className="flex items-center gap-2">
-                           <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                           <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Verified</span>
-                        </div>
-                     </td>
-                     <td className="px-4 py-5 text-sm font-medium text-slate-500">
-                        {new Date(doc.uploadDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                     </td>
-                     <td className="px-8 py-5 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                           <button className="p-2 text-slate-400 hover:text-[#276221] hover:bg-green-50 rounded-lg transition-all">
-                              <span className="material-symbols-outlined text-[18px]">download</span>
-                           </button>
-                           <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
-                           </button>
-                        </div>
-                     </td>
-                   </tr>
-                 ))}
-               </tbody>
+                        </td>
+                        <td className="px-4 py-5 text-sm font-medium text-slate-500">
+                           {new Date(doc.uploadDateStr || doc.uploadDate || Date.now()).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td className="px-8 py-5 text-center">
+                           <div className="flex items-center justify-center gap-1">
+                              {doc.fileData && (
+                                <button onClick={() => handleViewDoc(doc)} className="p-2 text-slate-400 hover:text-[#4c1d95] hover:bg-blue-50 rounded-lg transition-all" title="View">
+                                   <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                </button>
+                              )}
+                              {doc.fileData && (
+                                <button onClick={() => handleDownloadDoc(doc)} className="p-2 text-slate-400 hover:text-[#4c1d95] hover:bg-blue-50 rounded-lg transition-all" title="Download">
+                                   <span className="material-symbols-outlined text-[18px]">download</span>
+                                </button>
+                              )}
+                              {!doc.fileData && (
+                                <span className="text-[10px] text-slate-300 italic">No file data</span>
+                              )}
+                           </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
              </table>
           </div>
         </div>
       </div>
     </div>
+
+      {/* ─── In-App Document Viewer Modal ─── */}
+      {viewingDoc && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 sm:p-8" onClick={() => setViewingDoc(null)}>
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-[#4c1d95] flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-[20px]">
+                    {isImage(viewingDoc.fileData) ? 'image' : 'picture_as_pdf'}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-slate-800 truncate">{viewingDoc.name || viewingDoc.fileName}</h3>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">{viewingDoc.fileSize || viewingDoc.size || ''}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => handleDownloadDoc(viewingDoc)}
+                  className="p-2 text-slate-400 hover:text-[#4c1d95] hover:bg-blue-50 rounded-lg transition-all"
+                  title="Download"
+                >
+                  <span className="material-symbols-outlined text-[20px]">download</span>
+                </button>
+                <button
+                  onClick={() => setViewingDoc(null)}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all"
+                  title="Close"
+                >
+                  <span className="material-symbols-outlined text-[20px]">close</span>
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center min-h-[300px]">
+              {isImage(viewingDoc.fileData) ? (
+                <img
+                  src={viewingDoc.fileData}
+                  alt={viewingDoc.name || 'Document'}
+                  className="max-w-full max-h-[75vh] object-contain p-4"
+                />
+              ) : (
+                <iframe
+                  src={viewingDoc.fileData}
+                  title={viewingDoc.name || 'Document Viewer'}
+                  className="w-full h-[75vh] border-0"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -788,13 +1275,63 @@ export default function StudentDetailPage() {
     const fetchStudent = async () => {
       try {
         setLoading(true)
-        const res = await fetch(`/api/students/${encodeURIComponent(id)}`)
+        const [res, examsRes, marksRes] = await Promise.all([
+          fetch(buildApiUrl(`/students/${encodeURIComponent(id)}`)),
+          fetch(buildApiUrl(`/exams`)),
+          fetch(buildApiUrl(`/exams/marks?student_id=${encodeURIComponent(id)}`))
+        ])
         if (!res.ok) {
           if (res.status === 404) throw new Error('Student not found')
           throw new Error('Failed to fetch student details')
         }
         const data = await res.json()
-        setStudent(data)
+        
+        let allExams = [];
+        let studentMarks = [];
+        if (examsRes && examsRes.ok) {
+          const examsData = await examsRes.json();
+          allExams = examsData.data || [];
+        }
+        if (marksRes && marksRes.ok) {
+          const marksData = await marksRes.json();
+          studentMarks = marksData.data || [];
+        }
+
+        const norm = (c) => String(c || '').replace(/[-_\s]+/g, '').toUpperCase();
+
+        // Map subjects to End-Sem marks
+        const mapped = (data.subjects || []).map(sub => {
+          const subCodeNorm = norm(sub.code);
+          const endSemExam = allExams.find(e => norm(e.code) === subCodeNorm && e.type === 'End-Sem');
+          let marksRecord = null;
+          if (endSemExam) {
+            const examId = endSemExam._id || endSemExam.id;
+            marksRecord = studentMarks.find(m => String(m.examId) === String(examId));
+          }
+          if (!marksRecord) {
+            marksRecord = studentMarks.find(m => {
+              const ex = allExams.find(e => String(e._id || e.id) === String(m.examId));
+              return ex && norm(ex.code) === subCodeNorm && ex.type === 'End-Sem';
+            });
+          }
+          return {
+            ...sub,
+            grade: marksRecord ? (marksRecord.grade || 'Pending') : 'Pending',
+            total: marksRecord ? (marksRecord.marks !== undefined ? marksRecord.marks : null) : null
+          };
+        });
+
+        // Calculate dynamic CGPA based only on End-Sem passed courses
+        const passed = mapped.filter(s => s.grade && s.grade !== 'Pending' && s.grade !== 'F');
+        const totalObtained = passed.reduce((acc, s) => acc + (s.total || 0), 0);
+        const totalMax = passed.length * 100;
+        const calculatedCgpa = totalMax > 0 ? ((totalObtained / totalMax) * 10).toFixed(2) : '0.00';
+
+        setStudent({
+          ...data,
+          subjects: mapped,
+          cgpa: calculatedCgpa
+        })
         setError(null)
       } catch (err) {
         console.error('Error fetching student:', err)
@@ -877,7 +1414,7 @@ export default function StudentDetailPage() {
             <div className="relative">
               <div className="w-32 h-32 rounded-xl p-1 bg-gradient-to-br from-[#276221] to-[#60a5fa] shadow-xl">
                 <img
-                  src={student.avatar}
+                  src={student.avatar || `https://ui-avatars.com/api/?name=${student.name}&background=1162d4&color=fff&size=128`}
                   alt={student.name}
                   className="w-full h-full rounded-lg object-cover border-2 border-white"
                 />
@@ -961,7 +1498,7 @@ export default function StudentDetailPage() {
         {activeTab === 'overview' && <OverviewTab student={student} />}
         {activeTab === 'academics' && <AcademicsTab student={student} onRefresh={refreshData} />}
         {activeTab === 'fees' && <FeesTab student={student} />}
-        {activeTab === 'documents' && <DocumentsTab student={student} />}
+        {activeTab === 'documents' && <DocumentsTab student={student} refreshData={refreshData} />}
       </div>
     </Layout>
   )

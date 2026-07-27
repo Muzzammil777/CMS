@@ -9,7 +9,7 @@ export default function DataTable({ columns, rows, actions, emptyMessage = "No d
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm min-w-[600px]">
         <thead>
           <tr className="border-b-2 border-gray-200">
             {columns.map((col) => (

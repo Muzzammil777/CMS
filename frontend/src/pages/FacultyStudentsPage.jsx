@@ -4,19 +4,30 @@ import Layout from '../components/Layout';
 import KpiCard from '../components/KpiCard';
 import KpiGrid from '../components/KpiGrid';
 import { Users, Search, Filter, BookOpen, Mail, Phone, Plus, X } from 'lucide-react';
+import { API_BASE } from '../api/apiBase';
+import { settingsApi } from '../api/settingsApi';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = API_BASE;
 
 // Add Student Modal Component
-function AddStudentModal({ isOpen, onClose, onAdd }) {
+function AddStudentModal({ isOpen, onClose, onAdd, departments }) {
   const [formData, setFormData] = useState({
     name: '',
     rollNumber: '',
     email: '',
     phone: '',
-    department: 'Computer Science',
+    department: '',
     section: 'A'
   });
+
+  useEffect(() => {
+    if (isOpen && departments && departments.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        department: prev.department || departments[0].name
+      }));
+    }
+  }, [isOpen, departments]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,7 +42,7 @@ function AddStudentModal({ isOpen, onClose, onAdd }) {
         rollNumber: '',
         email: '',
         phone: '',
-        department: 'Computer Science',
+        department: departments && departments.length > 0 ? departments[0].name : '',
         section: 'A'
       });
       alert('Student added to class successfully!');
@@ -171,6 +182,33 @@ function AddStudentModal({ isOpen, onClose, onAdd }) {
 
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
+              Department
+            </label>
+            <select
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                outline: 'none',
+                cursor: 'pointer',
+                boxSizing: 'border-box'
+              }}
+            >
+              {(departments || []).map((dept) => (
+                <option key={dept.id || dept.code} value={dept.name}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
               Section
             </label>
             <select
@@ -218,7 +256,7 @@ function AddStudentModal({ isOpen, onClose, onAdd }) {
             onClick={handleSubmit}
             style={{
               padding: '8px 16px',
-              background: '#276221',
+              background: '#4c1d95',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -227,8 +265,8 @@ function AddStudentModal({ isOpen, onClose, onAdd }) {
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#1e4618'}
-            onMouseLeave={(e) => e.target.style.background = '#276221'}
+            onMouseEnter={(e) => e.target.style.background = '#3b0764'}
+            onMouseLeave={(e) => e.target.style.background = '#4c1d95'}
           >
             Add Student
           </button>
@@ -295,7 +333,7 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
               width: '48px',
               height: '48px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #276221 0%, #3d8b30 100%)',
+              background: 'linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -318,7 +356,7 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
           <div style={{ background: '#eff6ff', padding: '12px', borderRadius: '8px' }}>
-            <p style={{ fontSize: '11px', fontWeight: '600', color: '#276221', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0, marginBottom: '4px' }}>
+            <p style={{ fontSize: '11px', fontWeight: '600', color: '#4c1d95', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0, marginBottom: '4px' }}>
               Department
             </p>
             <p style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937', margin: 0 }}>
@@ -348,7 +386,7 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
         {student.phone && (
           <div style={{ background: '#f0f9ff', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
-              <Phone size={16} color="#3d8b30" />
+              <Phone size={16} color="#6d28d9" />
               <span style={{ fontSize: '13px', fontWeight: '600', color: '#374151' }}>Phone</span>
             </div>
             <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
@@ -362,7 +400,7 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
             onClick={onClose}
             style={{
               padding: '8px 16px',
-              background: '#276221',
+              background: '#4c1d95',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -371,8 +409,8 @@ function StudentDetailsModal({ student, isOpen, onClose }) {
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#1e4618'}
-            onMouseLeave={(e) => e.target.style.background = '#276221'}
+            onMouseEnter={(e) => e.target.style.background = '#3b0764'}
+            onMouseLeave={(e) => e.target.style.background = '#4c1d95'}
           >
             Close
           </button>
@@ -392,6 +430,19 @@ export default function FacultyStudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const navigate = useNavigate();
+  const [departments, setDepartments] = useState([]);
+
+  useEffect(() => {
+    const fetchDepts = async () => {
+      try {
+        const data = await settingsApi.getDepartments();
+        setDepartments(data || []);
+      } catch (err) {
+        console.error('Error fetching departments:', err);
+      }
+    };
+    fetchDepts();
+  }, []);
 
   useEffect(() => {
     fetchStudents();
@@ -446,40 +497,6 @@ export default function FacultyStudentsPage() {
   return (
     <Layout title="Students">
       <div style={{ paddingBottom: '40px' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1f2937', margin: '0 0 8px 0' }}>
-              Students
-            </h1>
-            <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-              Manage and monitor student records mapped to your courses
-            </p>
-          </div>
-          <button
-            onClick={() => setIsAddStudentOpen(true)}
-            style={{
-              padding: '10px 16px',
-              background: '#276221',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#1e4618'}
-            onMouseLeave={(e) => e.target.style.background = '#276221'}
-          >
-            <Plus size={18} />
-            Add Student
-          </button>
-        </div>
 
         {/* Stats Grid */}
         <KpiGrid>
@@ -548,9 +565,9 @@ export default function FacultyStudentsPage() {
             onClick={() => setFilterOpen(!filterOpen)}
             style={{
               padding: '8px 16px',
-              background: filterOpen ? '#276221' : '#f3f4f6',
+              background: filterOpen ? '#4c1d95' : '#f3f4f6',
               color: filterOpen ? 'white' : '#374151',
-              border: `1px solid ${filterOpen ? '#276221' : '#e5e7eb'}`,
+              border: `1px solid ${filterOpen ? '#4c1d95' : '#e5e7eb'}`,
               borderRadius: '8px',
               cursor: 'pointer',
               display: 'flex',
@@ -600,10 +617,11 @@ export default function FacultyStudentsPage() {
                 }}
               >
                 <option value="">All Departments</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Electrical Engineering">Electrical Engineering</option>
-                <option value="Mechanical Engineering">Mechanical Engineering</option>
-                <option value="Civil Engineering">Civil Engineering</option>
+                {(departments || []).map((dept) => (
+                  <option key={dept.id || dept.code} value={dept.name}>
+                    {dept.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -705,7 +723,7 @@ export default function FacultyStudentsPage() {
                             cursor: 'pointer',
                             transition: 'all 0.2s'
                           }}
-                          onMouseEnter={(e) => e.target.style.background = '#3d8b30'}
+                          onMouseEnter={(e) => e.target.style.background = '#6d28d9'}
                           onMouseLeave={(e) => e.target.style.background = '#06b6d4'}
                           title="View student details"
                         >
@@ -721,7 +739,7 @@ export default function FacultyStudentsPage() {
                           }}
                           style={{
                             padding: '6px 10px',
-                            background: student._id && student._id.startsWith('student-') ? '#a0aec0' : '#276221',
+                            background: student._id && student._id.startsWith('student-') ? '#a0aec0' : '#4c1d95',
                             color: 'white',
                             border: 'none',
                             borderRadius: '6px',
@@ -732,12 +750,12 @@ export default function FacultyStudentsPage() {
                           }}
                           onMouseEnter={(e) => {
                             if (!student._id || !student._id.startsWith('student-')) {
-                              e.target.style.background = '#1e4618';
+                              e.target.style.background = '#3b0764';
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!student._id || !student._id.startsWith('student-')) {
-                              e.target.style.background = '#276221';
+                              e.target.style.background = '#4c1d95';
                             }
                           }}
                           title={student._id && student._id.startsWith('student-') ? 'Newly added students must be saved first' : 'View full student profile'}
@@ -769,6 +787,7 @@ export default function FacultyStudentsPage() {
           isOpen={isAddStudentOpen}
           onClose={() => setIsAddStudentOpen(false)}
           onAdd={handleAddStudent}
+          departments={departments}
         />
 
         <StudentDetailsModal

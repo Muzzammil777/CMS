@@ -3,12 +3,14 @@ from typing import List, Optional, Dict, Any
 from bson import ObjectId
 from datetime import datetime, timedelta
 from pydantic import BaseModel
+from uuid import uuid4
 
 from backend.db import get_db
 from backend.utils.mongo import serialize_doc
 from backend.models.faculty_leave import LeaveRequest, LeaveBalance
 from backend.models.faculty_evaluation import PerformanceEvaluation, EvaluationTemplate
 from backend.models.faculty_notification import FacultyWorkload, WorkloadAlert, Notification
+from backend.dev_store import DEV_STORE, create_notification
 
 router = APIRouter(prefix="/api/faculty", tags=["faculty-management"])
 
@@ -26,21 +28,54 @@ async def get_faculty_leaves(
     year: Optional[str] = Query(None)
 ):
     """Get all leave requests for a faculty member"""
-    collection = await get_collection("faculty_leaves")
-    
+    try:
+        db = get_db()
+        use_db = True
+    except HTTPException as error:
+        if error.status_code == 503:
+            use_db = False
+        else:
+            raise
+
     query = {"facultyId": faculty_id}
     if status:
         query["status"] = status
-    if year:
-        query["requested_date"] = {
-            "$gte": datetime(int(year), 1, 1),
-            "$lt": datetime(int(year) + 1, 1, 1)
-        }
-    
-    leaves = []
-    async for doc in collection.find(query).sort("requested_date", -1):
-        leaves.append(serialize_doc(doc))
-    return leaves
+
+    if use_db:
+        collection = db["faculty_leaves"]
+        if year:
+            query["$or"] = [
+                {
+                    "requested_date": {
+                        "$gte": datetime(int(year), 1, 1),
+                        "$lt": datetime(int(year) + 1, 1, 1)
+                    }
+                },
+                {
+                    "appliedOn": {
+                        "$gte": datetime(int(year), 1, 1).isoformat(),
+                        "$lt": datetime(int(year) + 1, 1, 1).isoformat()
+                    }
+                }
+            ]
+        
+        leaves = []
+        async for doc in collection.find(query).sort("appliedOn", -1):
+            leaves.append(serialize_doc(doc))
+        return leaves
+    else:
+        leaves = DEV_STORE.setdefault("faculty_leaves", [])
+        filtered_leaves = [l for l in leaves if l.get("facultyId") == faculty_id]
+        if status:
+            filtered_leaves = [l for l in filtered_leaves if l.get("status") == status]
+        if year:
+            filtered_leaves = [
+                l for l in filtered_leaves 
+                if str(l.get("startDate", l.get("appliedOn", ""))).startswith(year)
+            ]
+        filtered_leaves = sorted(filtered_leaves, key=lambda l: l.get("appliedOn", ""), reverse=True)
+        return filtered_leaves
+
 
 @router.post("/{faculty_id}/leaves")
 async def request_leave(
@@ -48,8 +83,6 @@ async def request_leave(
     leave_request: LeaveRequest = Body(...)
 ):
     """Request a new leave"""
-    collection = await get_collection("faculty_leaves")
-    
     # Calculate days
     start = datetime.fromisoformat(leave_request.start_date)
     end = datetime.fromisoformat(leave_request.end_date)
@@ -63,23 +96,58 @@ async def request_leave(
     leave_dict["facultyId"] = faculty_id
     leave_dict["no_of_days"] = days
     
-    result = await collection.insert_one(leave_dict)
-    created = await collection.find_one({"_id": result.inserted_id})
-    
-    # Create notification
-    notif_collection = await get_collection("notifications")
-    await notif_collection.insert_one({
-        "recipient_id": faculty_id,
-        "recipient_type": "faculty",
-        "title": "Leave Request Submitted",
-        "message": f"Your {leave_request.leave_type} leave request for {days} days has been submitted",
-        "notification_type": "LeaveApproval",
-        "reference_id": str(result.inserted_id),
-        "is_read": False,
-        "created_date": datetime.utcnow()
-    })
-    
-    return serialize_doc(created)
+    # Ensure appliedOn is a string ISO timestamp
+    if isinstance(leave_dict.get("appliedOn"), datetime):
+        leave_dict["appliedOn"] = leave_dict["appliedOn"].isoformat()
+    elif not leave_dict.get("appliedOn"):
+        leave_dict["appliedOn"] = datetime.utcnow().isoformat()
+        
+    try:
+        db = get_db()
+        use_db = True
+    except HTTPException as error:
+        if error.status_code == 503:
+            use_db = False
+        else:
+            raise
+
+    if use_db:
+        collection = db["faculty_leaves"]
+        result = await collection.insert_one(leave_dict)
+        created = await collection.find_one({"_id": result.inserted_id})
+        
+        # Create notification
+        notif_collection = db["notifications"]
+        await notif_collection.insert_one({
+            "recipient_id": faculty_id,
+            "recipient_type": "faculty",
+            "title": "Leave Request Submitted",
+            "message": f"Your {leave_request.leave_type} leave request for {days} days has been submitted",
+            "notification_type": "LeaveApproval",
+            "reference_id": str(result.inserted_id),
+            "is_read": False,
+            "created_date": datetime.utcnow()
+        })
+        return serialize_doc(created)
+    else:
+        leave_id = f"leave_{uuid4().hex[:12]}"
+        leave_dict["id"] = leave_id
+        leave_dict["_id"] = leave_id
+        DEV_STORE.setdefault("faculty_leaves", []).append(leave_dict)
+        
+        # Create notification
+        create_notification({
+            "title": "Leave Request Submitted",
+            "message": f"Your {leave_request.leave_type} leave request for {days} days has been submitted",
+            "senderRole": "system",
+            "receiverRole": "faculty",
+            "module": "Academic",
+            "priority": "Medium",
+            "status": "unread",
+            "createdAt": datetime.utcnow().isoformat() + "Z"
+        })
+        return leave_dict
+
 
 @router.put("/{faculty_id}/leaves/{leave_id}")
 async def update_leave_status(
@@ -88,39 +156,68 @@ async def update_leave_status(
     updates: Dict[str, Any] = Body(...)
 ):
     """Update leave request status (admin only)"""
-    collection = await get_collection("faculty_leaves")
-    
     try:
-        query = {"_id": ObjectId(leave_id), "facultyId": faculty_id}
-    except:
-        query = {"_id": leave_id, "facultyId": faculty_id}
-    
+        db = get_db()
+        use_db = True
+    except HTTPException as error:
+        if error.status_code == 503:
+            use_db = False
+        else:
+            raise
+
     if "_id" in updates:
         del updates["_id"]
     
-    updates["approval_date"] = datetime.utcnow()
-    result = await collection.update_one(query, {"$set": updates})
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Leave request not found")
-    
-    updated = await collection.find_one(query)
-    
-    # Create notification
-    notif_collection = await get_collection("notifications")
+    updates["approval_date"] = datetime.utcnow().isoformat()
     status_msg = "approved" if updates.get("status") == "Approved" else "rejected"
-    await notif_collection.insert_one({
-        "recipient_id": faculty_id,
-        "recipient_type": "faculty",
-        "title": f"Leave Request {status_msg.title()}",
-        "message": f"Your leave request has been {status_msg}",
-        "notification_type": "LeaveApproval",
-        "reference_id": str(updated["_id"]),
-        "is_read": False,
-        "created_date": datetime.utcnow()
-    })
-    
-    return serialize_doc(updated)
+
+    if use_db:
+        collection = db["faculty_leaves"]
+        try:
+            query = {"_id": ObjectId(leave_id), "facultyId": faculty_id}
+        except:
+            query = {"_id": leave_id, "facultyId": faculty_id}
+            
+        result = await collection.update_one(query, {"$set": updates})
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Leave request not found")
+        
+        updated = await collection.find_one(query)
+        
+        # Create notification
+        notif_collection = db["notifications"]
+        await notif_collection.insert_one({
+            "recipient_id": faculty_id,
+            "recipient_type": "faculty",
+            "title": f"Leave Request {status_msg.title()}",
+            "message": f"Your leave request has been {status_msg}",
+            "notification_type": "LeaveApproval",
+            "reference_id": str(updated["_id"]),
+            "is_read": False,
+            "created_date": datetime.utcnow()
+        })
+        return serialize_doc(updated)
+    else:
+        leaves = DEV_STORE.setdefault("faculty_leaves", [])
+        leave_req = next((l for l in leaves if (l.get("id") == leave_id or l.get("_id") == leave_id) and l.get("facultyId") == faculty_id), None)
+        if not leave_req:
+            raise HTTPException(status_code=404, detail="Leave request not found")
+        
+        leave_req.update(updates)
+        
+        # Create notification
+        create_notification({
+            "title": f"Leave Request {status_msg.title()}",
+            "message": f"Your leave request has been {status_msg}",
+            "senderRole": "admin",
+            "receiverRole": "faculty",
+            "module": "Academic",
+            "priority": "High",
+            "status": "unread",
+            "createdAt": datetime.utcnow().isoformat() + "Z"
+        })
+        return leave_req
+
 
 @router.get("/{faculty_id}/leave-balance")
 async def get_leave_balance(
@@ -128,31 +225,44 @@ async def get_leave_balance(
     academic_year: str = Query(...)
 ):
     """Get leave balance for a faculty member"""
-    collection = await get_collection("faculty_leave_balance")
-    
-    balance = await collection.find_one({
+    try:
+        db = get_db()
+        use_db = True
+    except HTTPException as error:
+        if error.status_code == 503:
+            use_db = False
+        else:
+            raise
+
+    default_balance = {
         "facultyId": faculty_id,
-        "academic_year": academic_year
-    })
-    
-    if not balance:
-        # Create default balance
-        default_balance = {
+        "academic_year": academic_year,
+        "sick_leave": 10,
+        "casual_leave": 15,
+        "academic_leave": 5,
+        "maternity_leave": 90,
+        "used_sick": 0,
+        "used_casual": 0,
+        "used_academic": 0,
+        "used_maternity": 0
+    }
+
+    if use_db:
+        collection = db["faculty_leave_balance"]
+        balance = await collection.find_one({
             "facultyId": faculty_id,
-            "academic_year": academic_year,
-            "sick_leave": 10,
-            "casual_leave": 15,
-            "academic_leave": 5,
-            "maternity_leave": 90,
-            "used_sick": 0,
-            "used_casual": 0,
-            "used_academic": 0,
-            "used_maternity": 0
-        }
-        result = await collection.insert_one(default_balance)
-        balance = await collection.find_one({"_id": result.inserted_id})
-    
-    return serialize_doc(balance)
+            "academic_year": academic_year
+        })
+        if not balance:
+            result = await collection.insert_one(default_balance)
+            balance = await collection.find_one({"_id": result.inserted_id})
+        return serialize_doc(balance)
+    else:
+        balances = DEV_STORE.setdefault("faculty_leave_balance", {})
+        key = f"{faculty_id}::{academic_year}"
+        if key not in balances:
+            balances[key] = default_balance
+        return balances[key]
 
 # ===== PERFORMANCE EVALUATION =====
 

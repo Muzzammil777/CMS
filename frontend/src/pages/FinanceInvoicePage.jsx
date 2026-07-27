@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/Layout';
-import { PageContainer, StatsSection } from '../components/common';
+import { PageContainer, StatsSection, TableSkeleton } from '../components/common';
 import { API_BASE } from '../api/apiBase';
 
 export default function FinanceInvoicePage() {
@@ -125,29 +125,28 @@ export default function FinanceInvoicePage() {
                 </div>
 
                 {/* Invoices Table */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-slate-50/50 border-b border-slate-100">
-                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Invoice ID</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Staff Details</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pay Period</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan="6" className="px-6 py-12 text-center text-slate-400">Loading invoices...</td>
+                {loading ? (
+                    <TableSkeleton cols={6} rows={8} />
+                ) : (
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Invoice ID</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Staff Details</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pay Period</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
                                     </tr>
-                                ) : filteredInvoices.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="6" className="px-6 py-12 text-center text-slate-400">No invoices found.</td>
-                                    </tr>
-                                ) : (
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {filteredInvoices.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="6" className="px-6 py-12 text-center text-slate-400">No invoices found.</td>
+                                        </tr>
+                                    ) : (
                                     filteredInvoices.map((invoice) => (
                                         <tr key={invoice.id} className="hover:bg-slate-50/50 transition-colors">
                                             <td className="px-6 py-4">
@@ -212,6 +211,7 @@ export default function FinanceInvoicePage() {
                         </table>
                     </div>
                 </div>
+                )}
             </PageContainer>
         </Layout>
     );

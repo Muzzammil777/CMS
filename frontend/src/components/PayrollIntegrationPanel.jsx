@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Download, TrendingUp, Calendar } from 'lucide-react';
+import { buildApiUrl } from '../api/apiBase';
 
 export default function PayrollIntegrationPanel({ facultyId, semester, academicYear }) {
   const [payroll, setPayroll] = useState(null);
@@ -15,7 +16,7 @@ export default function PayrollIntegrationPanel({ facultyId, semester, academicY
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/faculty/${facultyId}/payroll?semester=${semester}&academic_year=${academicYear}`
+        buildApiUrl(`/faculty/${facultyId}/payroll?semester=${semester}&academic_year=${academicYear}`)
       );
       
       if (!response.ok) {
@@ -34,7 +35,7 @@ export default function PayrollIntegrationPanel({ facultyId, semester, academicY
   const handleDownloadPayslip = async () => {
     try {
       const response = await fetch(
-        `/api/faculty/${facultyId}/payroll/payslip?semester=${semester}&academic_year=${academicYear}`
+        buildApiUrl(`/faculty/${facultyId}/payroll/payslip?semester=${semester}&academic_year=${academicYear}`)
       );
       
       if (!response.ok) {

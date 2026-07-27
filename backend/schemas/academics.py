@@ -1,10 +1,12 @@
 from datetime import date
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExamBase(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     code: str
     name: str
     date: str
@@ -22,6 +24,8 @@ class ExamCreate(ExamBase):
 
 
 class ExamUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+
     code: Optional[str] = None
     name: Optional[str] = None
     date: Optional[str] = None
@@ -91,9 +95,28 @@ class AttendanceMarkRecord(BaseModel):
     classLabel: str = ""
     date: str
     hour: str
+    subjectCode: str = ""
+    subjectName: str = ""
     markedBy: str = ""
     markedAt: Optional[str] = None
     entries: List[AttendanceMarkEntry] = Field(default_factory=list)
+    locked: bool = False
+
+
+class FacultyAttendanceMarkEntry(BaseModel):
+    facultyId: str
+    name: str
+    department: str = ""
+    designation: str = ""
+    status: str = "Present"
+    remarks: str = ""
+
+
+class FacultyAttendanceMarkRecord(BaseModel):
+    date: str
+    markedBy: str = "admin"
+    markedAt: Optional[str] = None
+    entries: List[FacultyAttendanceMarkEntry] = Field(default_factory=list)
 
 
 class OdRequestPayload(BaseModel):

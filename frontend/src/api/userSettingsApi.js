@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+import { API_BASE } from './apiBase';
+
 const REQUEST_TIMEOUT_MS = 8000;
 
 function resolveRoleAndUserId(roleOrUserId, maybeUserId) {
@@ -7,7 +8,8 @@ function resolveRoleAndUserId(roleOrUserId, maybeUserId) {
       ? roleOrUserId.toLowerCase()
       : '';
 
-  if ((normalizedRole === 'student' || normalizedRole === 'faculty') && typeof maybeUserId === 'string') {
+  const validRoles = ['student', 'faculty', 'admin', 'finance'];
+  if (validRoles.includes(normalizedRole) && typeof maybeUserId === 'string') {
     return {
       role: roleOrUserId,
       userId: maybeUserId,
@@ -22,10 +24,10 @@ function resolveRoleAndUserId(roleOrUserId, maybeUserId) {
 
 function buildSettingsPath(role, userId, section) {
   if (role) {
-    return `/api/settings/${role}/${userId}/${section}`;
+    return `${API_BASE}/settings/${role}/${userId}/${section}`;
   }
 
-  return `/api/settings/${userId}/${section}`;
+  return `${API_BASE}/settings/${userId}/${section}`;
 }
 
 async function request(path, options = {}) {
@@ -34,7 +36,9 @@ async function request(path, options = {}) {
   const timeoutId = globalThis.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    // If path already starts with API_BASE, use it directly; otherwise prepend nothing
+    const url = path.startsWith('http') ? path : path;
+    const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
         ...(fetchOptions.headers || {}),
@@ -66,36 +70,36 @@ async function request(path, options = {}) {
 
 export const userSettingsApi = {
   getProfile(role, userId) {
-    return request(`/api/settings/${role}/${userId}/profile`);
+    return request(`${API_BASE}/settings/${role}/${userId}/profile`);
   },
 
   updateProfile(role, userId, data) {
-    return request(`/api/settings/${role}/${userId}/profile`, {
+    return request(`${API_BASE}/settings/${role}/${userId}/profile`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
 
   changePassword(userId, oldPassword, newPassword) {
-    return request('/api/settings/change-password', {
+    return request(`${API_BASE}/settings/change-password`, {
       method: 'POST',
       body: JSON.stringify({ userId, oldPassword, newPassword }),
     });
   },
 
   updateEmail(role, userId, email) {
-    return request('/api/settings/email', {
+    return request(`${API_BASE}/settings/email`, {
       method: 'PUT',
       body: JSON.stringify({ role, userId, email }),
     });
   },
 
   getNotifications(role, userId) {
-    return request(`/api/settings/${role}/${userId}/notifications`);
+    return request(`${API_BASE}/settings/${role}/${userId}/notifications`);
   },
 
   updateNotifications(role, userId, data) {
-    return request(`/api/settings/${role}/${userId}/notifications`, {
+    return request(`${API_BASE}/settings/${role}/${userId}/notifications`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -108,7 +112,7 @@ export const userSettingsApi = {
 
   logoutAllDevices(roleOrUserId, maybeUserId) {
     const { role, userId } = resolveRoleAndUserId(roleOrUserId, maybeUserId);
-    return request('/api/settings/logout-all', {
+    return request(`${API_BASE}/settings/logout-all`, {
       method: 'POST',
       body: JSON.stringify(role ? { role, userId } : { userId }),
     });
@@ -180,11 +184,11 @@ export const userSettingsApi = {
   },
 
   getTeachingPreferences(userId) {
-    return request(`/api/settings/faculty/${userId}/teaching`);
+    return request(`${API_BASE}/settings/faculty/${userId}/teaching`);
   },
 
   updateTeachingPreferences(userId, data) {
-    return request(`/api/settings/faculty/${userId}/teaching`, {
+    return request(`${API_BASE}/settings/faculty/${userId}/teaching`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });

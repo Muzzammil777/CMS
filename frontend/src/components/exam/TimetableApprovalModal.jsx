@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listTimetableDrafts, updateTimetableDraftStatus } from '../../api/examsApi';
+import { createExam, listTimetableDrafts, updateTimetableDraftStatus } from '../../api/examsApi';
 import { getUserSession } from '../../auth/sessionController';
 
 export default function TimetableApprovalModal({ onClose, onApprove }) {
@@ -30,6 +30,15 @@ export default function TimetableApprovalModal({ onClose, onApprove }) {
 
     const status = action === 'approve' ? 'Approved' : 'Rejected';
     try {
+      if (action === 'approve') {
+        const draft = drafts.find((item) => item.id === draftId);
+        if (draft?.exams?.length) {
+          await Promise.all(
+            draft.exams.map((exam) => createExam(buildExamPayload(exam, session)))
+          );
+        }
+      }
+
       await updateTimetableDraftStatus(draftId, {
         status,
         reviewedBy: session?.userId || session?.username || '',
@@ -49,17 +58,46 @@ export default function TimetableApprovalModal({ onClose, onApprove }) {
   const getStatusColor = (status) => {
     switch (status) {
       case 'Draft': return 'bg-slate-100 text-slate-700';
-      case 'Submitted': return 'bg-[#276221]/10 text-[#276221]';
+      case 'Submitted': return 'bg-[#4c1d95]/10 text-[#4c1d95]';
       case 'Approved': return 'bg-emerald-100 text-emerald-700';
       case 'Rejected': return 'bg-red-100 text-red-700';
       default: return 'bg-slate-100 text-slate-700';
     }
   };
 
+  const parseTimeToMinutes = (value) => {
+    if (!value) return null;
+    const [hours, minutes] = String(value).split(':').map(Number);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+    return hours * 60 + minutes;
+  };
+
+  const buildExamPayload = (exam, currentSession) => {
+    const startMinutes = parseTimeToMinutes(exam?.startTime);
+    const endMinutes = parseTimeToMinutes(exam?.endTime);
+    const durationMinutes =
+      startMinutes !== null && endMinutes !== null && endMinutes > startMinutes
+        ? String(endMinutes - startMinutes)
+        : '';
+
+    return {
+      code: exam?.subjectCode || '',
+      name: exam?.subject || '',
+      date: exam?.date || '',
+      time: exam?.startTime || '',
+      room: exam?.room || '',
+      type: 'Mid-Sem',
+      status: 'Upcoming',
+      duration: durationMinutes,
+      maxMarks: '',
+      senderRole: currentSession?.role || 'admin',
+    };
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        <div className="bg-[#276221] text-white px-6 py-4">
+        <div className="bg-[#4c1d95] text-white px-6 py-4">
           <h2 className="text-xl font-semibold flex items-center">
             <span className="material-symbols-outlined mr-2">approval</span>
             Timetable Approval Management
@@ -97,7 +135,7 @@ export default function TimetableApprovalModal({ onClose, onApprove }) {
                       <div className="flex gap-2">
                         <button
                           onClick={() => setSelectedDraft(draft.id)}
-                          className="px-4 py-2 bg-[#276221] text-white rounded-lg hover:bg-[#276221]/90 text-sm flex items-center gap-1"
+                          className="px-4 py-2 bg-[#4c1d95] text-white rounded-lg hover:bg-[#4c1d95]/90 text-sm flex items-center gap-1"
                         >
                           <span className="material-symbols-outlined text-sm">visibility</span>
                           Review
@@ -140,7 +178,7 @@ export default function TimetableApprovalModal({ onClose, onApprove }) {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleAction(draft.id, 'approve')}
-                          className="px-4 py-2 bg-[#276221] text-white rounded-lg hover:bg-[#276221]/90 flex items-center gap-2"
+                          className="px-4 py-2 bg-[#4c1d95] text-white rounded-lg hover:bg-[#4c1d95]/90 flex items-center gap-2"
                         >
                           <span className="material-symbols-outlined text-sm">check_circle</span>
                           Approve

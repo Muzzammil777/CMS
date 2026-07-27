@@ -1,5 +1,5 @@
 const colorMap = {
-  blue: { bg: 'bg-[#276221]/10', text: 'text-[#276221]', iconBg: 'bg-[#276221]/10' },
+  blue: { bg: 'bg-[#4c1d95]/10', text: 'text-[#4c1d95]', iconBg: 'bg-[#4c1d95]/10' },
   green: { bg: 'bg-emerald-100', text: 'text-emerald-600', iconBg: 'bg-emerald-100' },
   purple: { bg: 'bg-purple-100', text: 'text-purple-600', iconBg: 'bg-purple-100' },
   orange: { bg: 'bg-orange-100', text: 'text-orange-600', iconBg: 'bg-orange-100' },

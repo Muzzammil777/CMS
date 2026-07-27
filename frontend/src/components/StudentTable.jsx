@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 
-export default function StudentTable({ students, onEdit, onDelete }) {
+export default function StudentTable({ students, onEdit, onDelete, hideActions }) {
   const navigate = useNavigate()
 
   const statusStyles = {
@@ -18,8 +18,8 @@ export default function StudentTable({ students, onEdit, onDelete }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-      <table className="w-full text-left">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm overflow-x-auto">
+      <table className="w-full text-left min-w-[700px]">
         <thead>
           <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
             <th className="px-6 py-4">Student Information</th>
@@ -27,13 +27,13 @@ export default function StudentTable({ students, onEdit, onDelete }) {
             <th className="px-6 py-4">Semester</th>
             <th className="px-6 py-4">Status</th>
             <th className="px-6 py-4">Fee Status</th>
-            <th className="px-6 py-4 text-right">Actions</th>
+            {!hideActions && <th className="px-6 py-4 text-right">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-50">
           {students.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-10 py-24 text-center text-slate-400 bg-slate-50/30">
+              <td colSpan={hideActions ? 5 : 6} className="px-10 py-24 text-center text-slate-400 bg-slate-50/30">
                 <div className="flex flex-col items-center">
                   <span className="material-symbols-outlined text-6xl mb-4 opacity-10 text-slate-900">group_off</span>
                   <p className="text-base font-bold text-slate-500">No students found matching your search</p>
@@ -42,24 +42,27 @@ export default function StudentTable({ students, onEdit, onDelete }) {
               </td>
             </tr>
           ) : (
-            students.map((s) => (
+            students.map((s) => {
+              // Use student_id, id, or rollNumber - fallback to _id
+              const studentId = s.student_id || s.id || s.rollNumber || s._id;
+              return (
               <tr
                 key={s.rollNumber || s._id}
                 className="hover:bg-slate-50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/students/${encodeURIComponent(s.rollNumber || s._id)}`)}
+                onClick={() => studentId && navigate(`/students/${encodeURIComponent(studentId)}`)}
               >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0">
                       <img
-                        src={s.avatar || `https://ui-avatars.com/api/?name=${s.name}&background=1162d4&color=fff`}
+                        src={s.avatar || `https://ui-avatars.com/api/?name=${s.name}&background=00236f&color=fff`}
                         alt={s.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{s.name}</p>
-                      <p className="text-xs text-slate-500">{s.rollNumber || s.id}</p>
+                      <p className="text-xs text-slate-500">{s.student_id || s.rollNumber || s.id}</p>
                     </div>
                   </div>
                 </td>
@@ -78,26 +81,29 @@ export default function StudentTable({ students, onEdit, onDelete }) {
                     {s.feeStatus || 'PENDING'}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-end gap-2">
-                    <button 
-                      onClick={() => onEdit && onEdit(s)}
-                      className="p-1.5 text-slate-400 hover:text-[#276221] hover:bg-[#276221]/10 rounded-lg transition-colors"
-                      title="Edit Student"
-                    >
-                      <span className="material-symbols-outlined text-lg">edit</span>
-                    </button>
-                    <button 
-                      onClick={() => onDelete && onDelete(s)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete Student"
-                    >
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                    </button>
-                  </div>
-                </td>
+                {!hideActions && (
+                  <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => onEdit && onEdit(s)}
+                        className="p-1.5 text-slate-400 hover:text-[#4c1d95] hover:bg-[#4c1d95]/10 rounded-lg transition-colors"
+                        title="Edit Student"
+                      >
+                        <span className="material-symbols-outlined text-lg">edit</span>
+                      </button>
+                      <button 
+                        onClick={() => onDelete && onDelete(s)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete Student"
+                      >
+                        <span className="material-symbols-outlined text-lg">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
-            ))
+              );
+            })
           )}
         </tbody>
       </table>

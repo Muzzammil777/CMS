@@ -4,7 +4,7 @@ setlocal EnableDelayedExpansion
 set "ROOT_DIR=%~dp0"
 set "BACKEND_DIR=%ROOT_DIR%backend"
 set "FRONTEND_DIR=%ROOT_DIR%frontend"
-
+  
 echo =============================================
 echo MIT Connect startup script
 echo =============================================
@@ -31,11 +31,19 @@ if errorlevel 1 (
 
 if exist "%BACKEND_DIR%\requirements.txt" (
   echo [2/5] Backend will run with FastAPI Python stack.
-  where py >nul 2>nul
-  if !errorlevel! EQU 0 (
-    echo [3/5] Installing backend Python dependencies...
+  rem Prefer `python` on PATH, otherwise fall back to `py -3` launcher if available
+  set "PY_CMD=python"
+  where python >nul 2>nul
+  if !errorlevel! NEQ 0 (
+    where py >nul 2>nul
+    if !errorlevel! EQU 0 (
+      set "PY_CMD=py -3"
+    )
+  )
+  if defined PY_CMD (
+    echo [3/5] Installing backend Python dependencies using %PY_CMD%...
     cd /d "%BACKEND_DIR%"
-    python -m pip install -r requirements.txt
+    %PY_CMD% -m pip install -r requirements.txt
   ) else (
     echo [3/5] Python launcher not found. Skipping Python dependency install.
   )
@@ -46,7 +54,11 @@ if exist "%BACKEND_DIR%\requirements.txt" (
 echo [4/5] Starting backend server...
 
 if exist "%BACKEND_DIR%\main.py" (
-  start "MIT Connect Backend (FastAPI)" cmd /k "cd /d ""%ROOT_DIR%"" && python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 5000"
+  if defined PY_CMD (
+    start "MIT Connect Backend (FastAPI)" cmd /k "cd /d ""%ROOT_DIR%"" && %PY_CMD% -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 5000"
+  ) else (
+    start "MIT Connect Backend (FastAPI)" cmd /k "cd /d ""%ROOT_DIR%"" && python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 5000"
+  )
 ) else (
   echo backend\main.py not found. FastAPI backend was not started.
 )

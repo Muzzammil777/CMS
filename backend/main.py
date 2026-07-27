@@ -24,10 +24,10 @@ from backend.routes.academics.facility import router as facility_router
 from backend.routes.academics.placement import router as placement_router
 from backend.routes.academics.timetable import router as timetable_router
 from backend.routes.analytics import router as analytics_router
+from backend.routes.dashboard_summary import router as dashboard_router
 from backend.routes.notifications import router as notifications_router
 from backend.routes.payroll import router as payroll_router
 from backend.routes.payroll_and_development import router as payroll_dev_router
-from backend.routes.settings import router as settings_router
 from backend.routes.staff import router as staff_router
 from backend.routes.faculty import router as faculty_router
 from backend.routes.faculty_management import router as faculty_mgmt_router
@@ -42,6 +42,9 @@ from backend.routes.students import router as students_router
 from backend.routes.administration.admissions import router as admissions_router
 from backend.routes.administration.fees import router as fees_router
 from backend.routes.administration.invoices import router as invoices_router
+from backend.routes.user_settings import router as user_settings_router
+from backend.routes.auth import router as auth_router
+from backend.routes.newsletters import router as newsletters_router
 PORT = int(os.getenv("PORT", 5000))
 
 app = FastAPI(title="CMS API", lifespan=lifespan)
@@ -55,6 +58,8 @@ def _parse_origins(value: Optional[str]):
 
 configured_origins = _parse_origins(os.getenv("CORS_ORIGINS"))
 default_origins = [
+    "https://cms-main-nv6w.onrender.com",
+    "https://cms-main-88k8.onrender.com",
     "https://cms1-weof.onrender.com",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
@@ -81,6 +86,29 @@ DIST_INDEX_FILE = DIST_DIR / "index.html"
 # Only mount static assets if dist folder exists (production build)
 if DIST_ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(DIST_ASSETS_DIR)), name="assets")
+
+# Mount static uploads directory
+class SafeStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        try:
+            response = await super().get_response(path, scope)
+            if response.status_code == 404:
+                default_logo = Path(self.directory) / "logo.jpeg"
+                if default_logo.exists():
+                    return FileResponse(str(default_logo))
+            return response
+        except Exception as ex:
+            if getattr(ex, "status_code", None) == 404:
+                default_logo = Path(self.directory) / "logo.jpeg"
+                if default_logo.exists():
+                    return FileResponse(str(default_logo))
+            raise ex
+
+
+
+uploads_dir = BASE_DIR / "backend" / "static" / "uploads"
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", SafeStaticFiles(directory=str(uploads_dir)), name="uploads")
 
 # Helper function to create dev mode guidance HTML
 def get_dev_mode_html():
@@ -223,6 +251,7 @@ app.include_router(faculty_okr_router)
 app.include_router(faculty_publications_router)
 app.include_router(payroll_router)
 app.include_router(payroll_dev_router)
+app.include_router(dashboard_router)
 app.include_router(analytics_router)
 app.include_router(exams_router)
 app.include_router(timetable_router)
@@ -230,12 +259,13 @@ app.include_router(attendance_router)
 app.include_router(placement_router)
 app.include_router(facility_router)
 app.include_router(notifications_router)
-app.include_router(settings_router)
 app.include_router(students_router)
 app.include_router(admissions_router)
-app.include_router(admissions_router, prefix="/api")
 app.include_router(fees_router)
 app.include_router(invoices_router)
+app.include_router(user_settings_router)
+app.include_router(auth_router)
+app.include_router(newsletters_router)
 
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):

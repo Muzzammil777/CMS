@@ -1,21 +1,31 @@
-export function getSettingsMenu(role) {
-  const baseItems = [
-    { id: 'profile', label: 'Profile' },
-    { id: 'account', label: 'Account' },
-    { id: 'notifications', label: 'Notifications' },
-    { id: 'security', label: 'Security' },
-    { id: 'appearance', label: 'Appearance' },
-    { id: 'language', label: 'Language & Region' },
-    { id: 'privacy', label: 'Privacy' },
-    { id: 'accessibility', label: 'Accessibility' },
-  ];
+// Simplified menu for Student, Faculty, and Finance roles.
+// Only actionable, role-relevant settings are exposed.
 
-  if (role === 'faculty') {
-    baseItems.push({ id: 'teaching-preferences', label: 'Teaching Preferences' });
+export function getSettingsMenu(role) {
+  if (role === 'student') {
+    return [
+      { id: 'profile',        label: 'My Profile',         icon: 'person' },
+      { id: 'notifications',  label: 'Notification Alerts', icon: 'notifications' },
+      { id: 'security',       label: 'Password & Security', icon: 'lock' },
+    ];
   }
 
-  baseItems.push({ id: 'account-management', label: 'Account Management' });
-  baseItems.push({ id: 'dashboard', label: 'Dashboard' });
+  if (role === 'faculty') {
+    return [
+      { id: 'profile',              label: 'My Profile',          icon: 'person' },
+      { id: 'teaching-preferences', label: 'Teaching Preferences', icon: 'school' },
+      { id: 'notifications',        label: 'Notification Alerts',  icon: 'notifications' },
+      { id: 'security',             label: 'Password & Security',  icon: 'lock' },
+    ];
+  }
 
-  return baseItems;
+  if (role === 'finance') {
+    return [
+      { id: 'profile',       label: 'My Profile',         icon: 'person' },
+      { id: 'notifications', label: 'Notification Alerts', icon: 'notifications' },
+      { id: 'security',      label: 'Password & Security', icon: 'lock' },
+    ];
+  }
+
+  return [];
 }

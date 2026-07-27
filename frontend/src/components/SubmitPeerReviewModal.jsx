@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { buildApiUrl } from '../api/apiBase';
 
 export default function SubmitPeerReviewModal({ isOpen, onClose, onSuccess, revieweeId }) {
   const [formData, setFormData] = useState({
@@ -34,7 +35,7 @@ export default function SubmitPeerReviewModal({ isOpen, onClose, onSuccess, revi
     };
     
     try {
-      const response = await fetch(`/api/faculty/${revieweeId}/peer-review`, {
+      const response = await fetch(buildApiUrl(`/faculty/${revieweeId}/peer-review`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData)

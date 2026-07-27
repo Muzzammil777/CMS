@@ -3,11 +3,13 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
-dotenv_path = os.path.join(os.path.dirname(__file__), 'backend', '.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
 def seed():
-    uri = "mongodb+srv://priyadharshini:Ezhilithanya@cluster0.crvutrr.mongodb.net/College_db"
+    uri = os.getenv("MONGODB_URI")
+    if not uri:
+        raise RuntimeError("MONGODB_URI environment variable is not set. Please set it in your .env file.")
     print(f"Connecting to Atlas...")
     client = MongoClient(uri, serverSelectionTimeoutMS=30000)
     db = client["College_db"]

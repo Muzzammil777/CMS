@@ -17,10 +17,9 @@ def _student_seed(overrides: Optional[dict] = None) -> dict:
             "address": "Chennai",
         },
         "notifications": {
-            "email": True,
-            "sms": False,
-            "examReminder": True,
+            "odStatusUpdate": True,
             "feeReminder": True,
+            "internalMarks": True,
         },
         "appearance": {
             "theme": "dark",
@@ -61,10 +60,9 @@ def _faculty_seed(overrides: Optional[dict] = None) -> dict:
             "bio": "Associate Professor - Distributed Systems",
         },
         "notifications": {
-            "assignmentAlerts": True,
-            "studentMessages": True,
-            "email": True,
-            "sms": False,
+            "salaryCredit": True,
+            "odRequests": True,
+            "placementAlerts": True,
         },
         "appearance": {
             "theme": "light",
@@ -93,6 +91,88 @@ def _faculty_seed(overrides: Optional[dict] = None) -> dict:
             "preferredMode": "Hybrid",
             "officeHours": "10 AM - 12 PM",
             "autoPublishGrades": False,
+        },
+    }
+    if overrides:
+        data.update(overrides)
+    return data
+
+
+def _finance_seed(overrides: Optional[dict] = None) -> dict:
+    data = {
+        "profile": {
+            "name": "Finance Officer",
+            "email": "finance@mit.edu",
+            "department": "Finance",
+            "phone": "",
+            "bio": "Finance Department",
+        },
+        "notifications": {
+            "feePayments": True,
+        },
+        "appearance": {
+            "theme": "light",
+            "fontSize": "medium",
+            "accentColor": "blue",
+            "layoutDensity": "comfortable",
+        },
+        "language": {
+            "language": "English",
+            "region": "India",
+            "timezone": "Asia/Kolkata",
+            "dateFormat": "DD/MM/YYYY",
+        },
+        "privacy": {
+            "profileVisible": True,
+            "searchable": True,
+            "allowDirectMessages": True,
+        },
+        "accessibility": {
+            "highContrast": False,
+            "reduceMotion": False,
+            "textToSpeech": False,
+            "largeClickTargets": False,
+        },
+    }
+    if overrides:
+        data.update(overrides)
+    return data
+
+def _admin_seed(overrides: Optional[dict] = None) -> dict:
+    data = {
+        "profile": {
+            "name": "Admin",
+            "email": "admin@mit.edu",
+            "department": "Administration",
+            "phone": "",
+            "bio": "System Administrator",
+        },
+        "notifications": {
+            "feePayments": True,
+            "placementAlerts": True,
+        },
+        "appearance": {
+            "theme": "light",
+            "fontSize": "medium",
+            "accentColor": "blue",
+            "layoutDensity": "comfortable",
+        },
+        "language": {
+            "language": "English",
+            "region": "India",
+            "timezone": "Asia/Kolkata",
+            "dateFormat": "DD/MM/YYYY",
+        },
+        "privacy": {
+            "profileVisible": True,
+            "searchable": True,
+            "allowDirectMessages": True,
+        },
+        "accessibility": {
+            "highContrast": False,
+            "reduceMotion": False,
+            "textToSpeech": False,
+            "largeClickTargets": False,
         },
     }
     if overrides:
@@ -135,6 +215,14 @@ SETTINGS_DB = {
                 },
             }
         ),
+    },
+    "finance": {
+        "FIN-880": _finance_seed(),
+        "fin_001": _finance_seed(),  # legacy alias
+    },
+    "admin": {
+        "ADM-0001": _admin_seed(),
+        "admin_001": _admin_seed(),  # legacy alias
     },
     "credentials": {
         "stu_101": "student123",
@@ -188,6 +276,8 @@ def normalize_role(role: Optional[str]) -> Optional[str]:
         return "student"
     if lowered == "faculty":
         return "faculty"
+    if lowered in {"finance", "admin"}:
+        return lowered
     return None
 
 
@@ -196,6 +286,10 @@ def infer_role_by_user_id(user_id: str) -> Optional[str]:
         return "student"
     if user_id in SETTINGS_DB["faculty"]:
         return "faculty"
+    if user_id in SETTINGS_DB.get("finance", {}):
+        return "finance"
+    if user_id in SETTINGS_DB.get("admin", {}):
+        return "admin"
     return None
 
 
@@ -203,10 +297,28 @@ def get_user_record(role: Optional[str], user_id: str) -> Optional[dict]:
     resolved_role = normalize_role(role) or infer_role_by_user_id(user_id)
     if not resolved_role:
         return None
-    bucket = SETTINGS_DB["faculty"] if resolved_role == "faculty" else SETTINGS_DB["students"]
+    if resolved_role == "faculty":
+        bucket = SETTINGS_DB["faculty"]
+    elif resolved_role == "finance":
+        bucket = SETTINGS_DB.setdefault("finance", {})
+    elif resolved_role == "admin":
+        bucket = SETTINGS_DB.setdefault("admin", {})
+    else:
+        bucket = SETTINGS_DB["students"]
     record = bucket.get(user_id)
     if not record:
-        return None
+        # Auto-create default settings for unknown user
+        if resolved_role == "student":
+            bucket[user_id] = _student_seed()
+        elif resolved_role == "faculty":
+            bucket[user_id] = _faculty_seed()
+        elif resolved_role == "finance":
+            bucket[user_id] = _finance_seed()
+        elif resolved_role == "admin":
+            bucket[user_id] = _admin_seed()
+        else:
+            return None
+        record = bucket[user_id]
     return {"role": resolved_role, "record": record}
 
 
@@ -226,6 +338,12 @@ def update_section(role: Optional[str], user_id: str, section: str, payload: dic
     merged = {**current, **(payload or {})}
     user["record"][section] = merged
     return deepcopy(merged)
+
+
+def get_notification_prefs(role: str, user_id: str) -> dict:
+    """Return notification preferences for a user. Falls back to empty dict (all enabled)."""
+    prefs = get_section(role, user_id, "notifications")
+    return prefs or {}
 
 
 def get_credential(user_id: str) -> Optional[str]:

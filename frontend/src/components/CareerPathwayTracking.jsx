@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Target, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
+import { buildApiUrl } from '../api/apiBase';
 
 export default function CareerPathwayTracking({ facultyId }) {
   const [pathway, setPathway] = useState(null);
@@ -25,7 +26,7 @@ export default function CareerPathwayTracking({ facultyId }) {
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/faculty/${facultyId}/career-pathway`
+        buildApiUrl(`/faculty/${facultyId}/career-pathway`)
       );
       
       if (response.status === 404) {
@@ -49,7 +50,7 @@ export default function CareerPathwayTracking({ facultyId }) {
     
     try {
       const response = await fetch(
-        `/api/faculty/${facultyId}/career-pathway`,
+        buildApiUrl(`/faculty/${facultyId}/career-pathway`),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -77,7 +78,7 @@ export default function CareerPathwayTracking({ facultyId }) {
     
     try {
       const response = await fetch(
-        `/api/faculty/${facultyId}/career-pathway/${pathway._id}`,
+        buildApiUrl(`/faculty/${facultyId}/career-pathway/${pathway._id}`),
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

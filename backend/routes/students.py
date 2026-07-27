@@ -1,4 +1,7 @@
 from copy import deepcopy
+from typing import List, Optional
+from datetime import datetime, timezone
+from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException
 from pymongo import ReturnDocument
@@ -7,6 +10,7 @@ from backend.db import get_db
 from backend.dev_store import DEV_STORE
 from backend.schemas.common import StudentRecord
 from backend.utils.mongo import serialize_doc
+from backend.utils.attendance_utils import compute_student_attendance_stats
 
 router = APIRouter(prefix="/api/students", tags=["students"])
 
@@ -35,13 +39,7 @@ def _seed_dev_students() -> None:
             "guardian": "Michael Anderson",
             "guardianPhone": "+91 90123 45000",
             "avatar": "https://ui-avatars.com/api/?name=John+Anderson&background=2563eb&color=fff&size=128",
-            "subjects": [
-                {"code": "CS301", "name": "Data Structures", "grade": "A", "total": 86},
-                {"code": "CS302", "name": "Operating Systems", "grade": "A", "total": 82},
-                {"code": "CS303", "name": "Database Systems", "grade": "A", "total": 86},
-                {"code": "CS304", "name": "Computer Networks", "grade": "B+", "total": 72},
-                {"code": "MA301", "name": "Discrete Mathematics", "grade": "A", "total": 84},
-            ],
+            "subjects": [],
             "fees": [
                 {"id": "FEE-101", "type": "Tuition Fee", "amount": 75000, "paid": 75000, "due": 0, "date": "2024-07-15", "status": "Paid"},
                 {"id": "FEE-102", "type": "Hostel Fee", "amount": 45000, "paid": 30000, "due": 15000, "date": "2024-07-20", "status": "Partial"},
@@ -78,7 +76,7 @@ def _seed_dev_students() -> None:
             "guardianPhone": "+91 98765 43200",
             "avatar": "https://ui-avatars.com/api/?name=Aarav+Kumar&background=2563eb&color=fff&size=128",
             "subjects": [
-                {"code": "CS301", "name": "Data Structures", "grade": "A+", "total": 90},
+                {"code": "CS301", "name": "Data Structures", "grade": "A+", "total": 90, "semester": 3, "year": "2nd Year"},
             ],
             "fees": [
                 {"id": "FEE-001", "type": "Tuition Fee", "amount": 75000, "paid": 75000, "due": 0, "date": "2024-07-15", "status": "Paid"},
@@ -110,7 +108,7 @@ def _seed_dev_students() -> None:
             "guardianPhone": "+91 87654 32100",
             "avatar": "https://ui-avatars.com/api/?name=Priya+Sharma&background=7c3aed&color=fff&size=128",
             "subjects": [
-                {"code": "CS301", "name": "Data Structures", "grade": "A+", "total": 94},
+                {"code": "CS301", "name": "Data Structures", "grade": "A+", "total": 94, "semester": 3, "year": "2nd Year"},
             ],
             "fees": [],
             "documents": [],
@@ -136,7 +134,7 @@ def _seed_dev_students() -> None:
             "guardianPhone": "+91 76543 21000",
             "avatar": "https://ui-avatars.com/api/?name=Vikram+Singh&background=ea580c&color=fff&size=128",
             "subjects": [
-                {"code": "ME201", "name": "Thermodynamics", "grade": "B", "total": 65},
+                {"code": "ME201", "name": "Thermodynamics", "grade": "B", "total": 65, "semester": 3, "year": "2nd Year"},
             ],
             "fees": [],
             "documents": [],
@@ -317,15 +315,47 @@ def _seed_dev_students() -> None:
 async def list_students():
     try:
         db = get_db()
+        use_db = True
     except HTTPException as error:
         if error.status_code == 503:
             _seed_dev_students()
-            return deepcopy(DEV_STORE["students"])
-        raise
+            use_db = False
+        else:
+            raise
+
+    if not use_db:
+        students = deepcopy(DEV_STORE["students"])
+        for s in students:
+            present, total, pct = await compute_student_attendance_stats(s, db=None)
+            s["attendancePct"] = pct
+            s["attendance_present"] = present
+            s["attendance_total"] = total
+        return students
 
     rows = []
     async for row in db["students"].find().sort("_id", -1):
-        rows.append(serialize_doc(row))
+        serialized = serialize_doc(row)
+        
+        # Ensure student_id is always present
+        if not serialized.get("student_id"):
+            serialized["student_id"] = serialized.get("id") or serialized.get("rollNumber") or str(serialized.get("_id"))
+        
+        # Ensure id field is present
+        if not serialized.get("id"):
+            serialized["id"] = serialized.get("student_id") or serialized.get("rollNumber")
+        
+        # Ensure rollNumber is present
+        if not serialized.get("rollNumber"):
+            serialized["rollNumber"] = serialized.get("student_id") or serialized.get("id")
+        
+        # Calculate dynamic attendance stats
+        present, total, pct = await compute_student_attendance_stats(serialized, db=db)
+        serialized["attendancePct"] = pct
+        serialized["attendance_present"] = present
+        serialized["attendance_total"] = total
+        
+        rows.append(serialized)
+    
     return rows
 
 
@@ -333,29 +363,115 @@ async def list_students():
 async def get_student(student_id: str):
     try:
         db = get_db()
+        use_db = True
     except HTTPException as error:
         if error.status_code == 503:
             _seed_dev_students()
-            row = next(
-                (
-                    item
-                    for item in DEV_STORE["students"]
-                    if item.get("id") == student_id or item.get("rollNumber") == student_id
-                ),
-                None,
-            )
-            if not row:
-                raise HTTPException(status_code=404, detail="Student not found")
-            return deepcopy(row)
-        raise
+            use_db = False
+        else:
+            raise
 
+    if not use_db:
+        row = next(
+            (
+                item
+                for item in DEV_STORE["students"]
+                if item.get("id") == student_id or item.get("rollNumber") == student_id or item.get("student_id") == student_id
+            ),
+            None,
+        )
+        if not row:
+            raise HTTPException(status_code=404, detail="Student not found")
+        res = deepcopy(row)
+        present, total, pct = await compute_student_attendance_stats(res, db=None)
+        res["attendancePct"] = pct
+        res["attendance_present"] = present
+        res["attendance_total"] = total
+        return res
+
+    # Try multiple lookup strategies
     row = await db["students"].find_one(
-        {"$or": [{"id": student_id}, {"rollNumber": student_id}]}
+        {"$or": [
+            {"id": student_id}, 
+            {"rollNumber": student_id},
+            {"student_id": student_id}
+        ]}
     )
+    
+    # If not found by string ID, try as MongoDB ObjectId
+    if not row:
+        try:
+            from bson import ObjectId
+            if ObjectId.is_valid(student_id):
+                row = await db["students"].find_one({"_id": ObjectId(student_id)})
+        except:
+            pass
+    
     if not row:
         raise HTTPException(status_code=404, detail="Student not found")
-    return serialize_doc(row)
+    
+    serialized = serialize_doc(row)
+    
+    # Calculate dynamic attendance stats
+    present, total, pct = await compute_student_attendance_stats(serialized, db=db)
+    serialized["attendancePct"] = pct
+    serialized["attendance_present"] = present
+    serialized["attendance_total"] = total
 
+    # Fetch and attach fees for this student
+    try:
+        fees_collection = db["fees_structure"]
+        fees = []
+        async for fee in fees_collection.find({"student_id": student_id}):
+            serialized_fee = serialize_doc(fee)
+            
+            # Map MongoDB keys to frontend expected keys
+            status = serialized_fee.get("payment_status") or serialized_fee.get("status") or "Pending"
+            amount = serialized_fee.get("total_fee") or serialized_fee.get("amount") or 0
+            
+            paid = serialized_fee.get("paid")
+            if paid is None:
+                paid = amount if status.lower() == "paid" else (amount // 2 if status.lower() == "partial" else 0)
+                
+            due = serialized_fee.get("due")
+            if due is None:
+                due = amount - paid
+                
+            fee_type = serialized_fee.get("type")
+            if not fee_type:
+                course_name = serialized_fee.get("course") or "Academic"
+                sem = serialized_fee.get("semester")
+                fee_type = f"{course_name} Sem {sem} Fee" if sem else f"{course_name} general Fee"
+                
+            serialized_fee["status"] = status
+            serialized_fee["amount"] = amount
+            serialized_fee["paid"] = paid
+            serialized_fee["due"] = due
+            serialized_fee["type"] = fee_type
+            
+            fees.append(serialized_fee)
+        
+        if fees:
+            serialized["fees"] = fees
+            # Calculate fee status based on payments
+            total_fee = sum(fee.get("amount", 0) for fee in fees)
+            total_paid = sum(fee.get("paid", 0) for fee in fees)
+            
+            if total_paid == 0:
+                serialized["feeStatus"] = "Pending"
+                serialized["fee_status"] = "Pending"
+            elif total_paid < total_fee:
+                serialized["feeStatus"] = "Partial"
+                serialized["fee_status"] = "Partial"
+            else:
+                serialized["feeStatus"] = "Paid"
+                serialized["fee_status"] = "Paid"
+    except Exception as e:
+        print(f"[INFO] Could not fetch fees for student {student_id}: {str(e)}")
+        # Don't fail if fees collection doesn't exist or is empty
+        pass
+    
+    return serialized
 
 @router.post("", status_code=201)
 async def create_student(payload: StudentRecord):
@@ -363,6 +479,13 @@ async def create_student(payload: StudentRecord):
 
     if not data.get("rollNumber"):
         data["rollNumber"] = data["id"]
+        
+    # Auto-assign password as rollNumber
+    if not data.get("password"):
+        data["password"] = data["rollNumber"]
+    
+    # Ensure role is set
+    data["role"] = "student"
 
     try:
         db = get_db()
@@ -398,31 +521,63 @@ async def create_student(payload: StudentRecord):
 async def update_student(student_id: str, payload: dict):
     try:
         db = get_db()
+        use_db = True
     except HTTPException as error:
         if error.status_code == 503:
             _seed_dev_students()
-            target = next(
-                (
-                    item
-                    for item in DEV_STORE["students"]
-                    if item.get("id") == student_id or item.get("rollNumber") == student_id
-                ),
-                None,
-            )
-            if not target:
-                raise HTTPException(status_code=404, detail="Student not found")
-            target.update(payload)
-            return deepcopy(target)
-        raise
+            use_db = False
+        else:
+            raise
+
+    if not use_db:
+        target = next(
+            (
+                item
+                for item in DEV_STORE["students"]
+                if item.get("id") == student_id or item.get("rollNumber") == student_id or item.get("student_id") == student_id
+            ),
+            None,
+        )
+        if not target:
+            raise HTTPException(status_code=404, detail="Student not found")
+        target.update(payload)
+        res = deepcopy(target)
+        present, total, pct = await compute_student_attendance_stats(res, db=None)
+        res["attendancePct"] = pct
+        res["attendance_present"] = present
+        res["attendance_total"] = total
+        return res
+
+    # Build lookup query with multiple strategies
+    lookup_query = {
+        "$or": [
+            {"id": student_id},
+            {"rollNumber": student_id},
+            {"student_id": student_id}
+        ]
+    }
+    
+    # Try by ObjectId if not found by string
+    try:
+        from bson import ObjectId
+        if ObjectId.is_valid(student_id):
+            lookup_query["$or"].append({"_id": ObjectId(student_id)})
+    except:
+        pass
 
     result = await db["students"].find_one_and_update(
-        {"$or": [{"id": student_id}, {"rollNumber": student_id}]},
+        lookup_query,
         {"$set": payload},
         return_document=ReturnDocument.AFTER,
     )
     if not result:
         raise HTTPException(status_code=404, detail="Student not found")
-    return serialize_doc(result)
+    serialized = serialize_doc(result)
+    present, total, pct = await compute_student_attendance_stats(serialized, db=db)
+    serialized["attendancePct"] = pct
+    serialized["attendance_present"] = present
+    serialized["attendance_total"] = total
+    return serialized
 
 
 @router.delete("/{student_id}")
@@ -436,16 +591,31 @@ async def delete_student(student_id: str):
             DEV_STORE["students"] = [
                 item
                 for item in DEV_STORE["students"]
-                if item.get("id") != student_id and item.get("rollNumber") != student_id
+                if item.get("id") != student_id and item.get("rollNumber") != student_id and item.get("student_id") != student_id
             ]
             if len(DEV_STORE["students"]) == before:
                 raise HTTPException(status_code=404, detail="Student not found")
             return {"message": "Student deleted"}
         raise
 
-    result = await db["students"].delete_one(
-        {"$or": [{"id": student_id}, {"rollNumber": student_id}]}
-    )
+    # Build lookup query with multiple strategies
+    lookup_query = {
+        "$or": [
+            {"id": student_id},
+            {"rollNumber": student_id},
+            {"student_id": student_id}
+        ]
+    }
+    
+    # Try by ObjectId if not found by string
+    try:
+        from bson import ObjectId
+        if ObjectId.is_valid(student_id):
+            lookup_query["$or"].append({"_id": ObjectId(student_id)})
+    except:
+        pass
+
+    result = await db["students"].delete_one(lookup_query)
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Student not found")
     return {"message": "Student deleted"}
@@ -460,7 +630,7 @@ async def add_student_subject(student_id: str, subject: dict):
             _seed_dev_students()
             target = next(
                 (item for item in DEV_STORE["students"] 
-                 if item.get("id") == student_id or item.get("rollNumber") == student_id),
+                 if item.get("id") == student_id or item.get("rollNumber") == student_id or item.get("student_id") == student_id),
                 None
             )
             if not target:
@@ -471,11 +641,152 @@ async def add_student_subject(student_id: str, subject: dict):
             return subject
         raise
 
+    # Build lookup query with multiple strategies
+    lookup_query = {
+        "$or": [
+            {"id": student_id},
+            {"rollNumber": student_id},
+            {"student_id": student_id}
+        ]
+    }
+    
+    # Try by ObjectId if not found by string
+    try:
+        from bson import ObjectId
+        if ObjectId.is_valid(student_id):
+            lookup_query["$or"].append({"_id": ObjectId(student_id)})
+    except:
+        pass
+
     result = await db["students"].find_one_and_update(
-        {"$or": [{"id": student_id}, {"rollNumber": student_id}]},
+        lookup_query,
         {"$push": {"subjects": subject}},
         return_document=ReturnDocument.AFTER
     )
     if not result:
         raise HTTPException(status_code=404, detail="Student not found")
     return subject
+
+
+class BulkStudentImportPayload(BaseModel):
+    students: List[dict]
+    defaultPassword: Optional[str] = None
+
+
+@router.post("/bulk-import")
+async def bulk_import_students(payload: BulkStudentImportPayload):
+    try:
+        db = get_db()
+        use_db = True
+    except HTTPException as error:
+        if error.status_code == 503:
+            use_db = False
+        else:
+            raise
+
+    imported_count = 0
+    records = []
+
+    for index, s in enumerate(payload.students):
+        # Generate student ID / roll number if not provided
+        student_id = s.get("id") or s.get("rollNumber") or f"STU-2025-{int(datetime.now(timezone.utc).timestamp() * 1000) % 1000000 + index}"
+        
+        # Determine password
+        password = payload.defaultPassword or s.get("password") or student_id
+        
+        # Prepare admission record
+        admission_record = {
+            "id": student_id,
+            "admission_id": student_id,
+            "role": "student",
+            "type": "student",
+            "status": "Pending",
+            "createdDate": datetime.now(timezone.utc).date().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "name": s.get("name", s.get("fullName", "")),
+            "fullName": s.get("fullName", s.get("name", "")),
+            "email": s.get("email", ""),
+            "phone": s.get("phone", ""),
+            "dateOfBirth": s.get("dateOfBirth") or s.get("dob") or "",
+            "gender": s.get("gender", "Male"),
+            "previousSchool": s.get("previousSchool", ""),
+            "board": s.get("board", "CBSE"),
+            "yearOfPassing": int(s.get("yearOfPassing") or 2024),
+            "marksPercentage": float(s.get("marksPercentage") or 0.0),
+            "courseCategory": s.get("courseCategory", s.get("department", "Computer Science")),
+            "course": s.get("course", "CSE"),
+            "quota": s.get("quota", "Government Quota"),
+            "accommodation": s.get("accommodation", "Day Scholar"),
+            "roomType": s.get("roomType", ""),
+            "password": password,
+            "payment_status": "Paid",
+            "paymentStatus": "Paid",
+            "payment": {
+                "application_fee": 500.0,
+                "payment_method": "UPI",
+                "transaction_id": f"TXN-{int(datetime.now(timezone.utc).timestamp() * 1000) % 1000000}",
+                "status": "Paid"
+            },
+            # Flat fields for direct root access
+            "address": s.get("address", ""),
+            "city": s.get("city", ""),
+            "state": s.get("state", ""),
+            "pincode": s.get("pincode", ""),
+            "guardianName": s.get("guardian", s.get("guardianName", "")),
+            "guardianPhone": s.get("guardianPhone", ""),
+            "relationship": s.get("relationship", "Father"),
+            "guardianEmail": s.get("guardianEmail", ""),
+            "guardianOccupation": s.get("guardianOccupation", ""),
+            "hostelName": s.get("hostelName", ""),
+            "semester": int(s.get("semester") or 1),
+            "roll": s.get("roll") or s.get("rollNumber") or s.get("roll_number") or student_id,
+            "cgpa": float(s.get("cgpa") or 0.0),
+        }
+        
+        # For compatibility
+        admission_record["personal"] = {
+            "full_name": admission_record["fullName"],
+            "gender": admission_record["gender"],
+            "dob": admission_record["dateOfBirth"],
+            "email": admission_record["email"],
+            "phone": admission_record["phone"],
+            "student_id": student_id,
+            "address": admission_record["address"],
+            "city": admission_record["city"],
+            "state": admission_record["state"],
+            "pincode": admission_record["pincode"],
+            "guardianName": admission_record["guardianName"],
+            "guardianPhone": admission_record["guardianPhone"],
+            "relationship": admission_record["relationship"],
+            "guardianEmail": admission_record["guardianEmail"],
+            "guardianOccupation": admission_record["guardianOccupation"],
+        }
+        admission_record["academic"] = {
+            "previous_school": admission_record["previousSchool"],
+            "board": admission_record["board"],
+            "year_of_passing": admission_record["yearOfPassing"],
+            "marks_percentage": admission_record["marksPercentage"]
+        }
+        admission_record["course_info"] = {
+            "category": admission_record["courseCategory"],
+            "course": admission_record["course"]
+        }
+
+        records.append(admission_record)
+
+    if use_db:
+        if records:
+            await db["admissions"].insert_many(records)
+            imported_count = len(records)
+    else:
+        if "admissions" not in DEV_STORE:
+            DEV_STORE["admissions"] = []
+        for r in records:
+            DEV_STORE["admissions"].insert(0, deepcopy(r))
+        imported_count = len(records)
+
+    return {
+        "status": "success",
+        "message": f"Successfully imported {imported_count} student admission requests.",
+        "count": imported_count
+    }

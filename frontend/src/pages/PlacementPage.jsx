@@ -1,10 +1,11 @@
-﻿import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { Pagination, TableSkeleton } from '../components/common'
 import Layout from '../components/Layout'
 import KpiCard from '../components/KpiCard'
 import KpiGrid from '../components/KpiGrid'
 import Modal from '../components/Modal'
 import { getUserSession } from '../auth/sessionController'
-import { fetchPlacements, createPlacement } from '../api/placementApi'
+import { fetchPlacements, createPlacement, deletePlacement } from '../api/placementApi'
 import { fetchStudentById } from '../api/studentsApi'
 
 const emptyForm = { name: '', company: '', role: '', package: '', status: 'Selected', date: '' }
@@ -40,6 +41,8 @@ export default function PlacementPage({ noLayout = false }) {
   const [apiNotice, setApiNotice] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const filterRef = useRef(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(3)
 
   async function loadPlacements({ silent = false } = {}) {
     if (!silent) setLoading(true)
@@ -119,7 +122,19 @@ export default function PlacementPage({ noLayout = false }) {
     }
   }
 
-  const inputClasses = "w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#276221]/10 focus:border-[#276221] outline-none transition-all text-sm text-slate-700 bg-white";
+  async function handleDelete(placementId) {
+    if (!window.confirm('Delete this placement record?')) return
+    try {
+      await deletePlacement(placementId)
+      setEntries(prev => prev.filter(p => (p.id || p._id) !== placementId))
+      setApiNotice('Placement record deleted successfully.')
+    } catch (error) {
+      console.error('Failed to delete placement:', error)
+      setApiNotice('Failed to delete placement record.')
+    }
+  }
+
+  const inputClasses = "w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#4c1d95]/10 focus:border-[#4c1d95] outline-none transition-all text-sm text-slate-700 bg-white";
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-0.5";
 
   function parsePackageLpa(value) {
@@ -172,7 +187,7 @@ export default function PlacementPage({ noLayout = false }) {
   const addButton = (
     <button
       onClick={() => setShowModal(true)}
-      className="flex items-center gap-2 px-4 py-2 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#276221]/90 transition-all shadow-sm active:scale-95 w-fit"
+      className="flex items-center gap-2 px-4 py-2 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95]/90 transition-all shadow-sm active:scale-95 w-fit"
     >
       <span className="material-symbols-outlined text-lg">add</span>Add Placement
     </button>
@@ -249,7 +264,7 @@ export default function PlacementPage({ noLayout = false }) {
             placeholder={isAdmin ? "Search student or company..." : "Search company..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-2 w-full bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#276221]/30 focus:border-[#276221] transition-all duration-200"
+            className="pl-9 pr-4 py-2 w-full bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/30 focus:border-[#4c1d95] transition-all duration-200"
           />
         </div>
         <div className="relative" ref={filterRef}>
@@ -257,7 +272,7 @@ export default function PlacementPage({ noLayout = false }) {
             onClick={() => setFilterOpen(prev => !prev)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
               appliedFilterCount > 0
-                ? 'bg-[#276221] text-white border-[#276221] shadow-sm'
+                ? 'bg-[#4c1d95] text-white border-[#4c1d95] shadow-sm'
                 : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 shadow-sm'
             }`}
           >
@@ -273,7 +288,7 @@ export default function PlacementPage({ noLayout = false }) {
                     onClick={() => setActiveFilterTab(section)}
                     className={`${filterTabBaseClass} ${
                       activeFilterTab === section
-                        ? 'text-[#276221] border-b-2 border-[#276221] bg-[#276221]/5'
+                        ? 'text-[#4c1d95] border-b-2 border-[#4c1d95] bg-[#4c1d95]/5'
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
@@ -294,7 +309,7 @@ export default function PlacementPage({ noLayout = false }) {
                           key={company}
                           onClick={() => toggleFilterValue(company, setCompanyFilters)}
                           className={`${filterOptionBaseClass} ${
-                            active ? 'bg-[#276221]/10 text-[#276221] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                            active ? 'bg-[#4c1d95]/10 text-[#4c1d95] font-semibold' : 'text-slate-600 hover:bg-slate-50'
                           }`}
                         >
                           <span>{company}</span>
@@ -313,7 +328,7 @@ export default function PlacementPage({ noLayout = false }) {
                           key={option.id}
                           onClick={() => toggleFilterValue(option.id, setPackageFilters)}
                           className={`${filterOptionBaseClass} ${
-                            active ? 'bg-[#276221]/10 text-[#276221] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                            active ? 'bg-[#4c1d95]/10 text-[#4c1d95] font-semibold' : 'text-slate-600 hover:bg-slate-50'
                           }`}
                         >
                           <span>{option.label}</span>
@@ -332,7 +347,7 @@ export default function PlacementPage({ noLayout = false }) {
                           key={status}
                           onClick={() => toggleFilterValue(status, setStatusFilters)}
                           className={`${filterOptionBaseClass} ${
-                            active ? 'bg-[#276221]/10 text-[#276221] font-semibold' : 'text-slate-600 hover:bg-slate-50'
+                            active ? 'bg-[#4c1d95]/10 text-[#4c1d95] font-semibold' : 'text-slate-600 hover:bg-slate-50'
                           }`}
                         >
                           <span className="inline-flex items-center gap-2">
@@ -373,47 +388,46 @@ export default function PlacementPage({ noLayout = false }) {
       )}
 
       {/* Placement Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-              {showStudentColumn && <th className="px-6 py-4">Student</th>}
-              <th className="px-6 py-4">Company</th>
-              <th className="px-6 py-4">Role</th>
-              <th className="px-6 py-4">Package</th>
-              <th className="px-6 py-4">Date</th>
-              <th className="px-6 py-4">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading && (
-              <tr>
-                <td colSpan={showStudentColumn ? 6 : 5} className="px-6 py-10 text-center text-slate-400 text-sm">Loading...</td>
+      {loading ? (
+        <TableSkeleton cols={showStudentColumn ? (isAdmin ? 7 : 6) : (isAdmin ? 6 : 5)} rows={8} />
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                {showStudentColumn && <th className="px-6 py-4">Student</th>}
+                <th className="px-6 py-4">Company</th>
+                <th className="px-6 py-4">Role</th>
+                <th className="px-6 py-4">Package</th>
+                <th className="px-6 py-4">Date</th>
+                <th className="px-6 py-4">Status</th>
+                {isAdmin && <th className="px-6 py-4">Actions</th>}
               </tr>
-            )}
-            {!loading && filteredEntries.length === 0 && (
-              <tr>
-                <td colSpan={showStudentColumn ? 6 : 5}>
-                  <div className="px-6 py-10 flex flex-col items-center justify-center text-center">
-                    {isStudent && (
-                      <>
-                        <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">work_outline</span>
-                        <p className="text-slate-500 font-medium mb-4">No placements yet</p>
-                        {addButton}
-                      </>
-                    )}
-                    {(isAdmin || isFaculty) && (
-                      <>
-                        <p className="text-slate-400 text-sm mb-4">No records found</p>
-                        {canAddPlacement && addButton}
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            )}
-            {!loading && filteredEntries.map((p, i) => (
-              <tr key={i} className="hover:bg-slate-50 transition-colors">
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredEntries.length === 0 && (
+                <tr>
+                  <td colSpan={showStudentColumn ? (isAdmin ? 7 : 6) : (isAdmin ? 6 : 5)}>
+                    <div className="px-6 py-10 flex flex-col items-center justify-center text-center">
+                      {isStudent && (
+                        <>
+                          <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">work_outline</span>
+                          <p className="text-slate-500 font-medium mb-4">No placements yet</p>
+                          {addButton}
+                        </>
+                      )}
+                      {(isAdmin || isFaculty) && (
+                        <>
+                          <p className="text-slate-400 text-sm mb-4">No records found</p>
+                          {canAddPlacement && addButton}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {filteredEntries.slice((currentPage-1)*pageSize, currentPage*pageSize).map((p, i) => (
+              <tr key={p.id || p._id || i} className="hover:bg-slate-50 transition-colors">
                 {showStudentColumn && <td className="px-6 py-4 text-sm font-semibold text-slate-900">{p.name || p.ownerId || '-'}</td>}
                 <td className="px-6 py-4 text-sm text-slate-600 font-medium">{p.company}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{p.role}</td>
@@ -424,11 +438,31 @@ export default function PlacementPage({ noLayout = false }) {
                     p.status === 'Selected' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'
                   }`}>{p.status}</span>
                 </td>
+                {isAdmin && (
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleDelete(p.id || p._id)}
+                      title="Delete record"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                    >
+                      <span className="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil(filteredEntries.length / pageSize))}
+          onPageChange={setCurrentPage}
+          totalItems={filteredEntries.length}
+          pageSize={pageSize}
+          onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
+        />
       </div>
+      )}
 
       <Modal
         isOpen={showModal}
@@ -446,7 +480,7 @@ export default function PlacementPage({ noLayout = false }) {
             </button>
             <button
               onClick={handleSubmit}
-              className="px-6 py-2 bg-[#276221] text-white rounded-lg text-sm font-semibold hover:bg-[#276221]/90 transition-all shadow-sm active:scale-95"
+              className="px-6 py-2 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95]/90 transition-all shadow-sm active:scale-95"
             >
               Add Entry
             </button>

@@ -41,5 +41,13 @@ class Faculty(BaseModel):
     # Basic Payroll integration fields (can be expanded later)
     basic_salary: Optional[float] = Field(None, alias="basicSalary")
     
+    # Newly added fields
+    qualification: str = ""
+    gender: str = ""
+    dob: str = ""
+    college: str = ""
+    university: str = ""
+    nationality: str = ""
+    
     class Config:
         populate_by_name = True

@@ -1,7 +1,8 @@
 fastapi
 uvicorn
 python-dotenv
-motor>=3.0.0
+motor>=3.0.0,<3.6.0
 pydantic
-pymongo>=4.0
+pymongo>=4.0,<4.9.0
 reportlab
+python-multipart

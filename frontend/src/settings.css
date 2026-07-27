@@ -1,11 +1,11 @@
 :root {
-  --settings-bg: #f0f5f1;
+  --settings-bg: #faf5ff;
   --settings-card: #ffffff;
   --settings-border: #d9e8dc;
   --settings-text: #1f2937;
   --settings-muted: #6b7280;
-  --settings-primary: #276221;
-  --settings-primary-dark: #1e4618;
+  --settings-primary: #4c1d95;
+  --settings-primary-dark: #3b0764;
   --settings-primary-soft: #e8f1eb;
   --settings-success: #0f9d6f;
   --settings-error: #cf3030;
@@ -18,7 +18,7 @@
 
 .settings-header {
   height: 84px;
-  background: linear-gradient(110deg, #1e4618 0%, #276221 55%, #3d8b30 100%);
+  background: linear-gradient(110deg, #3b0764 0%, #4c1d95 55%, #6d28d9 100%);
   color: #ffffff;
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -322,7 +322,7 @@
 
 .settings-nav-item.active {
   background: linear-gradient(90deg, #dbeafe, #ecfeff);
-  color: #276221;
+  color: #4c1d95;
   font-weight: 600;
 }
 

@@ -14,7 +14,7 @@
 
 .notification-card.unread {
   background-color: #eff6ff;
-  border-left: 4px solid #276221;
+  border-left: 4px solid #4c1d95;
   padding-left: 12px;
 }
 
@@ -125,12 +125,12 @@
 }
 
 .notification-card-action-btn.primary {
-  background-color: #276221;
+  background-color: #4c1d95;
   color: white;
 }
 
 .notification-card-action-btn.primary:hover {
-  background-color: #1e4618;
+  background-color: #3b0764;
 }
 
 .notification-card-action-btn.secondary {

@@ -8,11 +8,14 @@ from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
 from urllib.parse import urlsplit
 
-# Always load .env from the backend folder, independent of process CWD.
-load_dotenv(dotenv_path=Path(__file__).with_name(".env"))
+# Load .env from backend folder or project root folder
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
 # Use Atlas connection string
-MONGODB_URI = os.getenv("MONGODB_URI") or "mongodb+srv://priyadharshini:Ezhilithanya@cluster0.crvutrr.mongodb.net/College_db"
+MONGODB_URI = os.getenv("MONGODB_URI")
+if not MONGODB_URI:
+    raise RuntimeError("MONGODB_URI environment variable is not set. Please set it in your .env file.")
 
 client: Optional[AsyncIOMotorClient] = None
 db = None

@@ -1,116 +1,119 @@
 import { useEffect, useState } from 'react';
 import { settingsApi } from '../../api/settingsApi';
-import SettingsActionBar from './SettingsActionBar';
-import SettingsToast from './SettingsToast';
+import { SettingsActions, SettingsCard, SettingsError, SettingsLoader, SettingsToast, ToggleRow, inputCls, labelCls, isDirty } from './SettingsPanelCommon';
 
 export default function SecuritySettings() {
   const [form, setForm] = useState(null);
   const [baseline, setBaseline] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
-    async function load() {
-      const data = await settingsApi.getSecuritySettings();
+    settingsApi.getSecuritySettings().then((data) => {
       setForm(data);
       setBaseline(data);
-    }
-
-    load();
+    }).catch(() => setError('Failed to load security settings.'));
   }, []);
 
-  if (!form) {
-    return <div className="settings-skeleton">Loading security settings...</div>;
-  }
-
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((cur) => ({ ...cur, [field]: value }));
   }
 
   async function handleSave() {
     setSaving(true);
-    const updated = await settingsApi.updateSecuritySettings(form);
-    setBaseline(updated);
-    setForm(updated);
-    setToast({ type: 'success', message: 'Security policies updated.' });
-    setSaving(false);
+    setError('');
+    try {
+      const updated = await settingsApi.updateSecuritySettings(form);
+      setBaseline(updated);
+      setForm(updated);
+      setToast('Security settings saved.');
+    } catch {
+      setError('Failed to save security settings.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleReset() {
     setForm(baseline);
-    setToast({ type: 'success', message: 'Security policies reset.' });
+    setToast('Settings reset.');
   }
 
-  return (
-    <section className="settings-card-grid">
-      <article className="settings-card">
-        <h3>Security Settings</h3>
-        <p>Control password rules, MFA, login limits, and session policies.</p>
+  if (!form) return <SettingsLoader label="Loading security settings…" />;
 
-        <div className="settings-form-grid">
-          <label>
-            Minimum Password Length
+  const dirty = isDirty(form, baseline);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <SettingsError message={error} />
+
+      {/* Password Policy */}
+      <SettingsCard title="Password Policy" description="Control how passwords are enforced across all accounts.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
+          <div>
+            <label className={labelCls}>Minimum Password Length</label>
             <input
               type="number"
               min="6"
-              max="24"
-              value={form.minPasswordLength}
-              onChange={(event) => updateField('minPasswordLength', Number(event.target.value) || 8)}
+              max="32"
+              value={form.minPasswordLength || 8}
+              onChange={(e) => updateField('minPasswordLength', Number(e.target.value) || 8)}
+              className={inputCls}
             />
-          </label>
-
-          <label>
-            Maximum Failed Logins
+          </div>
+          <div>
+            <label className={labelCls}>Max Failed Login Attempts</label>
             <input
               type="number"
               min="3"
-              value={form.maxLoginAttempts}
-              onChange={(event) => updateField('maxLoginAttempts', Number(event.target.value) || 5)}
+              max="20"
+              value={form.maxLoginAttempts || 5}
+              onChange={(e) => updateField('maxLoginAttempts', Number(e.target.value) || 5)}
+              className={inputCls}
             />
-          </label>
+          </div>
+        </div>
+        <div className="border border-slate-100 rounded-xl overflow-hidden">
+          <ToggleRow
+            label="Require Uppercase Letters"
+            description="All passwords must contain at least one uppercase letter."
+            checked={Boolean(form.requireUppercase)}
+            onChange={(v) => updateField('requireUppercase', v)}
+          />
+        </div>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
 
-          <label>
-            Session Timeout (minutes)
+      {/* Session & Access */}
+      <SettingsCard title="Session & Access Limits" description="Define timeout rules and IP restrictions.">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className={labelCls}>Session Timeout (minutes)</label>
             <input
               type="number"
               min="5"
-              value={form.sessionTimeout}
-              onChange={(event) => updateField('sessionTimeout', Number(event.target.value) || 30)}
+              max="1440"
+              value={form.sessionTimeout || 30}
+              onChange={(e) => updateField('sessionTimeout', Number(e.target.value) || 30)}
+              className={inputCls}
             />
-          </label>
-
-          <label className="settings-inline-toggle">
-            <input
-              type="checkbox"
-              checked={form.requireUppercase}
-              onChange={(event) => updateField('requireUppercase', event.target.checked)}
-            />
-            <span>Require uppercase letters</span>
-          </label>
-
-          <label className="settings-inline-toggle">
-            <input
-              type="checkbox"
-              checked={form.mfaEnabled}
-              onChange={(event) => updateField('mfaEnabled', event.target.checked)}
-            />
-            <span>Enable MFA for staff accounts</span>
-          </label>
-
-          <label className="settings-form-span-2">
-            IP Restrictions
+          </div>
+          <div className="md:col-span-2">
+            <label className={labelCls}>IP Restrictions <span className="text-slate-400 font-normal text-xs">(one per line, leave empty to allow all)</span></label>
             <textarea
-              rows="3"
-              value={form.ipRestrictions}
-              onChange={(event) => updateField('ipRestrictions', event.target.value)}
+              rows={3}
+              value={form.ipRestrictions || ''}
+              onChange={(e) => updateField('ipRestrictions', e.target.value)}
+              placeholder="e.g.&#10;192.168.1.0/24&#10;10.0.0.1"
+              className={`${inputCls} resize-none`}
             />
-          </label>
+          </div>
         </div>
+        <SettingsActions onSave={handleSave} onReset={handleReset} saving={saving} disableSave={!dirty} />
+      </SettingsCard>
 
-        <SettingsActionBar onSave={handleSave} onReset={handleReset} saving={saving} />
-      </article>
-
-      <SettingsToast toast={toast} onDismiss={() => setToast(null)} />
-    </section>
+      <SettingsToast message={toast} onClear={() => setToast('')} />
+    </div>
   );
 }

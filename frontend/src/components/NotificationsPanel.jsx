@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { buildApiUrl } from '../api/apiBase';
 
 export default function NotificationsPanel({ facultyId, isOpen, onClose }) {
   const [notifications, setNotifications] = useState([]);
@@ -15,7 +16,7 @@ export default function NotificationsPanel({ facultyId, isOpen, onClose }) {
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/faculty/${facultyId}/notifications`);
+      const response = await fetch(buildApiUrl(`/faculty/${facultyId}/notifications`));
       const data = await response.json();
       setNotifications(data);
       
@@ -30,7 +31,7 @@ export default function NotificationsPanel({ facultyId, isOpen, onClose }) {
 
   const markAsRead = async (notificationId) => {
     try {
-      const response = await fetch(`/api/faculty/${facultyId}/notifications/${notificationId}`, {
+      const response = await fetch(buildApiUrl(`/faculty/${facultyId}/notifications/${notificationId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });

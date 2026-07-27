@@ -6,9 +6,12 @@ from datetime import datetime
 from pathlib import Path
 
 # Load environment variables
-load_dotenv(dotenv_path=Path(__file__).with_name(".env"))
+load_dotenv(dotenv_path=Path(__file__).resolve().parent / ".env")
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
-MONGODB_URI = os.getenv("MONGODB_URI") or "mongodb+srv://priyadharshini:Ezhilithanya@cluster0.crvutrr.mongodb.net/College_db"
+MONGODB_URI = os.getenv("MONGODB_URI")
+if not MONGODB_URI:
+    raise RuntimeError("MONGODB_URI environment variable is not set. Please set it in your .env file.")
 
 async def seed_faculty():
     """Seed the database with sample faculty data"""

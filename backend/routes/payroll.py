@@ -10,6 +10,7 @@ from backend.dev_store import DEV_STORE
 from backend.schemas.payroll import PayrollRecord, PayrollUpdate
 from backend.utils.mongo import parse_object_id, serialize_doc
 from backend.utils.invoice_utils import create_invoice_from_payroll
+from backend.utils.notify import send_notification
 
 router = APIRouter(prefix="/api/payroll", tags=["payroll"])
 
@@ -147,6 +148,28 @@ async def create_payroll(record: PayrollRecord):
     
     # Automatically generate invoice
     await create_invoice_from_payroll(db, str(result.inserted_id), created)
+
+    # Notify the faculty member about salary credit
+    staff_id = data.get("staffId") or data.get("staff_id")
+    net_pay = data.get("netPay") or data.get("net_pay") or 0
+    staff_name = data.get("staffName") or data.get("name") or "Staff"
+    pay_period = data.get("payPeriodDetailed") or data.get("payMonth") or "This Month"
+    if staff_id:
+        await send_notification(
+            db=db,
+            receiver_role="faculty",
+            event_key="salaryCredit",
+            title="Salary Credited",
+            message=(
+                f"Your salary of ₹{net_pay:,.0f} for {pay_period} has been processed "
+                f"and credited to your account."
+            ),
+            sender_role="admin",
+            module="Finance",
+            priority="High",
+            related_data={"staffId": staff_id, "netPay": net_pay, "period": pay_period},
+            receiver_user_id=staff_id,
+        )
     
     return normalize_payroll_document(created)
 

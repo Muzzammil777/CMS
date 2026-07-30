@@ -342,6 +342,21 @@ async def check_faculty_attendance_permission(db, faculty_id: str, class_id: str
                                     break
         
         if not timetable_match:
+            tt_full = await db["academic_timetables"].find_one({"classId": class_id})
+            if tt_full:
+                faculty_name = faculty.get("name") or faculty.get("fullName") or ""
+                slots = tt_full.get("slots") or []
+                for row in slots:
+                    for slot in row:
+                        if slot:
+                            instructor = str(slot.get("instructor") or "").lower()
+                            if faculty_id.lower() in instructor or (faculty_name and faculty_name.lower() in instructor):
+                                timetable_match = True
+                                break
+                    if timetable_match:
+                        break
+
+        if not timetable_match:
             raise HTTPException(status_code=403, detail=f"Class '{class_label}' is not assigned to you.")
         
     try:

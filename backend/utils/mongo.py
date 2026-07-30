@@ -25,7 +25,15 @@ async def get_database():
         return _db
     
     try:
-        client = AsyncIOMotorClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        client = AsyncIOMotorClient(
+            MONGODB_URI,
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=10000,
+            maxIdleTimeMS=60000,
+            retryWrites=True,
+            retryReads=True,
+            readPreference="primaryPreferred"
+        )
         await client.admin.command("ping")
         
         # Get the database

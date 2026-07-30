@@ -20,7 +20,7 @@ async def seed_faculty():
         # Connect to MongoDB with longer timeout
         client = AsyncIOMotorClient(MONGODB_URI, serverSelectionTimeoutMS=30000, connectTimeoutMS=30000)
         await client.admin.command("ping")
-        print("✓ Connected to MongoDB")
+        print("[OK] Connected to MongoDB")
         
         # Get database
         if "mongodb.net" in str(MONGODB_URI):
@@ -31,7 +31,7 @@ async def seed_faculty():
         if db.name == "test" and "mongodb.net" not in str(MONGODB_URI):
             db = client["College_db"]
         
-        print(f"✓ Using database: {db.name}")
+        print(f"[OK] Using database: {db.name}")
         
         # Get faculty collection
         faculty_collection = db["faculty"]
@@ -166,9 +166,9 @@ async def seed_faculty():
         if existing_count == 0:
             # Insert faculty data
             result = await faculty_collection.insert_many(faculty_data)
-            print(f"✓ Inserted {len(result.inserted_ids)} faculty members")
+            print(f"[OK] Inserted {len(result.inserted_ids)} faculty members")
         else:
-            print(f"ℹ Faculty collection already has {existing_count} documents")
+            print(f"[INFO] Faculty collection already has {existing_count} documents")
             
             # Update with new data if needed
             for faculty in faculty_data:
@@ -177,26 +177,26 @@ async def seed_faculty():
                     {"$set": faculty},
                     upsert=True
                 )
-            print(f"✓ Synced {len(faculty_data)} faculty records")
+            print(f"[OK] Synced {len(faculty_data)} faculty records")
         
         # Verify data
         count = await faculty_collection.count_documents({})
-        print(f"✓ Total faculty in database: {count}")
+        print(f"[OK] Total faculty in database: {count}")
         
         # Show sample
         sample = await faculty_collection.find_one()
         if sample:
-            print(f"\n✓ Sample faculty record:")
+            print(f"\n[OK] Sample faculty record:")
             print(f"  - Name: {sample['name']}")
             print(f"  - Employee ID: {sample['employeeId']}")
             print(f"  - Department: {sample['departmentId']}")
             print(f"  - Status: {sample['employment_status']}")
         
         client.close()
-        print("\n✓ Seed complete!")
+        print("\n[OK] Seed complete!")
         
     except Exception as error:
-        print(f"✗ Error: {error}")
+        print(f"[ERROR] Error: {error}")
         raise
 
 if __name__ == "__main__":

@@ -227,7 +227,7 @@ export default function StudentProfilePage() {
 
   return (
     <Layout title="Student Profile">
-      <div className="page-container">
+      <div className="page-container h-full overflow-y-auto pr-2 pb-12 custom-scrollbar">
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate('/students')}

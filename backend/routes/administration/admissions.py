@@ -1,8 +1,10 @@
+import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Body
+from pymongo.errors import PyMongoError, AutoReconnect, ServerSelectionTimeoutError
 
 from backend.db import get_db
 from backend.schemas.admission_schema import AdmissionCreate
@@ -342,8 +344,16 @@ async def get_all_admissions():
     admissions_collection = _admissions_collection()
     data: list[dict[str, Any]] = []
 
-    async for item in admissions_collection.find().sort("created_at", -1):
-        data.append(_serialize_admission(item))
+    for attempt in range(2):
+        try:
+            async for item in admissions_collection.find().sort("created_at", -1):
+                data.append(_serialize_admission(item))
+            break
+        except (AutoReconnect, ServerSelectionTimeoutError, PyMongoError) as err:
+            if attempt == 1:
+                print(f"Warning: get_all_admissions encountered db error: {err}")
+                break
+            await asyncio.sleep(0.3)
 
     return data
 
@@ -354,8 +364,16 @@ async def get_student_admissions():
     data: list[dict[str, Any]] = []
 
     query = {"$or": [{"role": "student"}, {"type": "student"}]}
-    async for item in admissions_collection.find(query).sort("created_at", -1):
-        data.append(_serialize_admission(item))
+    for attempt in range(2):
+        try:
+            async for item in admissions_collection.find(query).sort("created_at", -1):
+                data.append(_serialize_admission(item))
+            break
+        except (AutoReconnect, ServerSelectionTimeoutError, PyMongoError) as err:
+            if attempt == 1:
+                print(f"Warning: get_student_admissions encountered db error: {err}")
+                break
+            await asyncio.sleep(0.3)
 
     return data
 

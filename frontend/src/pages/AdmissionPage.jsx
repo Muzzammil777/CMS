@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import EnterprisePageTemplate from '../components/EnterprisePageTemplate';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 import { useAdmission } from '../context/AdmissionContext';
 import AdmissionDetailsModal from '../components/AdmissionDetailsModal';
-import { PageContainer, StatsSection, StatusBadge, ActionButtons, Pagination, TableSkeleton } from '../components/common';
+import { Eye, Check, X, Trash2, Users, UserCheck, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function AdmissionPage() {
   const navigate = useNavigate();
@@ -18,75 +20,56 @@ export default function AdmissionPage() {
   } = useAdmission();
 
   const [activeTab, setActiveTab] = useState('students');
-  const [searchName, setSearchName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState({ status: '' });
   const [selectedApp, setSelectedApp] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
 
-  // Reset page when tab or search query changes
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchName]);
+  // ── Raw List Filter ──────────────────────────────────────────────────────
+  const filteredApps = useMemo(() => {
+    let rawApps = activeTab === 'students' ? studentApps : facultyApps;
 
-  const filteredApps = useMemo(() =>{
-    let apps = activeTab === 'students' ? studentApps : facultyApps;
-    
-    return apps.map(app =>{
-      if (activeTab === 'faculty' || app.designation) {
-        return {
-          ...app,
-          role: app.designation || app.role,
-          experience: app.yearsOfExperience,
-          highestQualification: app.qualification,
-        };
-      }
-      return app;
-    }).filter((app) =>app.name?.toLowerCase().includes(searchName.toLowerCase()) ||
-      app.fullName?.toLowerCase().includes(searchName.toLowerCase())
-    );
-  }, [activeTab, studentApps, facultyApps, searchName]);
+    return rawApps
+      .map((app) => {
+        if (activeTab === 'faculty' || app.designation) {
+          return {
+            ...app,
+            role: app.designation || app.role || 'Faculty Member',
+            experience: app.yearsOfExperience,
+            highestQualification: app.qualification,
+          };
+        }
+        return app;
+      })
+      .filter((app) => {
+        const q = searchQuery.toLowerCase();
+        const matchSearch =
+          !q ||
+          (app.name || app.fullName || '').toLowerCase().includes(q) ||
+          (app.id || app.rollNumber || app.employeeId || '').toLowerCase().includes(q) ||
+          (app.email || '').toLowerCase().includes(q);
 
-  const totalPages = Math.max(1, Math.ceil(filteredApps.length / itemsPerPage));
-  const paginatedApps = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredApps.slice(start, start + itemsPerPage);
-  }, [filteredApps, currentPage, itemsPerPage]);
+        const st = (app.status || 'Pending').toLowerCase();
+        const matchStatus = !activeFilters.status || st === activeFilters.status.toLowerCase();
 
-  const stats = [
-    { value: studentApps.length, label: 'Total Student Adm', icon: 'group' },
-    { value: facultyApps.length, label: 'Total Faculty', icon: 'person' },
-    {
-      value:
-        studentApps.filter((a) =>a.status === 'Approved').length +
-        facultyApps.filter((a) =>a.status === 'Approved').length,
-      label: 'Approved',
-      icon: 'check_circle',
-    },
-    {
-      value:
-        studentApps.filter((a) =>a.status === 'Rejected').length +
-        facultyApps.filter((a) =>a.status === 'Rejected').length,
-      label: 'Rejected',
-      icon: 'cancel',
-    },
-  ];
+        return matchSearch && matchStatus;
+      });
+  }, [activeTab, studentApps, facultyApps, searchQuery, activeFilters]);
 
-  const handleApprove = async (id) =>{
+  // ── Actions ──────────────────────────────────────────────────────────────
+  const handleApprove = async (id) => {
     try {
       if (activeTab === 'students') {
         await updateStudentStatus(id, 'Approved');
-        alert(` Student ${id} approved successfully! They will now appear in the Students tab.`);
       } else {
         await updateFacultyStatus(id, 'Approved');
-        alert(` Faculty ${id} approved successfully! They will now appear in the Faculty list.`);
       }
     } catch (error) {
-      alert(` Error approving application: ${error.message}`);
+      alert(`Error approving application: ${error.message}`);
     }
   };
 
-  const handleReject = (id) =>{
+  const handleReject = (id) => {
     if (activeTab === 'students') {
       updateStudentStatus(id, 'Rejected');
     } else {
@@ -94,8 +77,8 @@ export default function AdmissionPage() {
     }
   };
 
-  const handleDelete = (id) =>{
-    if (confirm('Are you sure you want to delete this application?')) {
+  const handleDelete = (id) => {
+    if (window.confirm('Delete this application permanently?')) {
       if (activeTab === 'students') {
         deleteStudentApp(id);
       } else {
@@ -104,7 +87,7 @@ export default function AdmissionPage() {
     }
   };
 
-  const handleView = (app) =>{
+  const handleView = (app) => {
     setSelectedApp({
       ...app,
       type: activeTab === 'students' ? 'student' : 'faculty',
@@ -112,71 +95,240 @@ export default function AdmissionPage() {
     setShowDetailsModal(true);
   };
 
-  const getValue = (field) =>{
-    if (typeof field === 'string') return field;
-    if (typeof field === 'object' && field !== null) {
-      return field.course || field.name || field.value || JSON.stringify(field);
-    }
-    return '';
+  // ── Export CSV/PDF ───────────────────────────────────────────────────────
+  const handleExportCSV = () => {
+    if (!filteredApps.length) return alert('No data to export');
+    const rows = filteredApps.map((a) => ({
+      ID: a.id || a.employeeId || '',
+      Name: a.name || a.fullName || '',
+      Type: activeTab,
+      Course_Role: a.course || a.role || a.designation || '',
+      Department: a.department || a.departmentId || '',
+      Status: a.status || 'Pending',
+    }));
+    const header = Object.keys(rows[0]).join(',');
+    const csv = [header, ...rows.map((r) => Object.values(r).map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `admissions_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
+  // ── KPI Cards ────────────────────────────────────────────────────────────
+  const approvedCount =
+    studentApps.filter((a) => a.status === 'Approved').length +
+    facultyApps.filter((a) => a.status === 'Approved').length;
+  const rejectedCount =
+    studentApps.filter((a) => a.status === 'Rejected').length +
+    facultyApps.filter((a) => a.status === 'Rejected').length;
+
+  const kpiCards = [
+    {
+      title: 'Student Applicants',
+      value: studentApps.length.toLocaleString(),
+      sub: 'Pending admissions',
+      trend: 'New intake cycle',
+      trendUp: true,
+      icon: <Users className="w-5 h-5" />,
+      gradient: 'indigo',
+    },
+    {
+      title: 'Faculty Applicants',
+      value: facultyApps.length.toLocaleString(),
+      sub: 'Faculty recruitment',
+      trend: 'Teaching staff',
+      trendUp: true,
+      icon: <UserCheck className="w-5 h-5" />,
+      gradient: 'teal',
+    },
+    {
+      title: 'Approved Applications',
+      value: approvedCount.toLocaleString(),
+      sub: 'Enrolled & Verified',
+      trend: `${(((approvedCount || 0) / ((studentApps.length + facultyApps.length) || 1)) * 100).toFixed(1)}% approved`,
+      trendUp: true,
+      icon: <CheckCircle2 className="w-5 h-5" />,
+      gradient: 'emerald',
+    },
+    {
+      title: 'Rejected Applications',
+      value: rejectedCount.toLocaleString(),
+      sub: 'Did not qualify',
+      trend: 'Archived files',
+      trendUp: false,
+      icon: <XCircle className="w-5 h-5" />,
+      gradient: 'rose',
+    },
+  ];
+
+  // ── Status Badge ─────────────────────────────────────────────────────────
+  const statusStyles = {
+    APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+    REJECTED: 'bg-rose-50 text-rose-700 border-rose-200',
+  };
+
+  const columns = [
+    {
+      key: 'name',
+      label: 'Applicant Name',
+      render: (_, a) => (
+        <div className="flex items-center gap-3 group cursor-pointer" onClick={() => handleView(a)}>
+          <img
+            src={a.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name || a.fullName || 'A')}&background=003A40&color=fff&size=80`}
+            alt={a.name}
+            className="w-9 h-9 rounded-lg object-cover border border-[#E6EDF2] flex-shrink-0 group-hover:border-[#0A686A] transition-all"
+          />
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-[#003A40] group-hover:text-[#0A686A] group-hover:underline truncate leading-tight transition-colors">
+              {a.name || a.fullName}
+            </p>
+            <p className="text-[10px] text-[#8C98A5] font-medium truncate">{a.id || a.employeeId || 'APP'}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Email / Contact',
+      render: (_, a) => <span className="text-xs text-[#5F6B7A] font-medium">{a.email || a.phone || '—'}</span>,
+    },
+    {
+      key: 'role_course',
+      label: activeTab === 'students' ? 'Applied Course' : 'Role / Designation',
+      render: (_, a) => (
+        <span className="inline-block px-2.5 py-1 bg-[#F4F7FF] border border-[#E6EDF2] rounded-lg text-xs font-bold text-[#003A40]">
+          {activeTab === 'students'
+            ? (typeof a.course === 'object' ? a.course?.name || a.course?.course : a.course) || 'Computer Science'
+            : a.role || a.designation || 'Assistant Professor'}
+        </span>
+      ),
+    },
+    {
+      key: 'department',
+      label: 'Department',
+      render: (_, a) => (
+        <span className="text-xs text-[#5F6B7A] font-medium">
+          {a.department || a.departmentId || 'Main Department'}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (_, a) => {
+        const st = (a.status || 'Pending').toUpperCase();
+        const cls = statusStyles[st] || statusStyles.PENDING;
+        return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${cls}`}>
+            {a.status || 'Pending'}
+          </span>
+        );
+      },
+    },
+  ];
+
+  const tableActions = [
+    {
+      icon: <Eye className="w-3.5 h-3.5" />,
+      label: 'View Application',
+      color: 'teal',
+      onClick: (a) => handleView(a),
+    },
+    {
+      icon: <Check className="w-3.5 h-3.5" />,
+      label: 'Approve Applicant',
+      color: 'green',
+      onClick: (a) => handleApprove(a.id),
+    },
+    {
+      icon: <X className="w-3.5 h-3.5" />,
+      label: 'Reject Applicant',
+      color: 'red',
+      onClick: (a) => handleReject(a.id),
+    },
+    {
+      icon: <Trash2 className="w-3.5 h-3.5" />,
+      label: 'Delete Record',
+      color: 'red',
+      onClick: (a) => handleDelete(a.id),
+    },
+  ];
+
+  const filterOptions = [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'Pending', label: 'Pending' },
+        { value: 'Approved', label: 'Approved' },
+        { value: 'Rejected', label: 'Rejected' },
+      ],
+    },
+  ];
+
   return (
-    <Layout title="Admission Management"><PageContainer>{/* Stats Section */}
-        <StatsSection stats={stats} />{/* Tabs and Table Section */}
-        <div className="bg-white rounded-lg shadow p-6"><div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6"><div className="flex gap-2">{['students', 'faculty'].map((tab) =>(
-                <button
-                  key={tab}
-                  onClick={() =>{
-                    setActiveTab(tab);
-                    setSearchName('');
-                  }}
-                  className={`px-4 py-2 font-medium rounded-lg transition-all ${
-                    activeTab === tab
-                      ? 'bg-green-700 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >{tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>))}
-            </div><div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto"><input
-                type="text"
-                placeholder="Search by name..."
-                value={searchName}
-                onChange={(e) =>setSearchName(e.target.value)}
-                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-              /></div></div>{/* Table */}
-          {loading ? (
-            <TableSkeleton cols={activeTab === 'students' ? 6 : 5} rows={6} />
-          ) : (
-            <>
-              <div className="overflow-x-auto"><table className="w-full text-sm min-w-[750px]"><thead><tr className="border-b-2 border-gray-200"><th className="text-left py-3 px-4 font-semibold text-gray-700">{activeTab === 'students' ? 'Application ID' : 'Employee ID'}
-                      </th><th className="text-left py-3 px-4 font-semibold text-gray-700">Name</th><th className="text-left py-3 px-4 font-semibold text-gray-700">{activeTab === 'students' ? 'Course' : 'Role'}
-                      </th>{activeTab === 'faculty' && (
-                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Department</th>)}
-                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>{activeTab === 'students' && (<th className="text-left py-3 px-4 font-semibold text-gray-700">Payment Status</th>)}<th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th></tr></thead><tbody>{paginatedApps.map((app) =>(
-                      <tr key={app.id} className="border-b border-gray-100 hover:bg-gray-50"><td className="py-3 px-4 text-gray-700">{app.id}</td><td className="py-3 px-4 text-gray-700">{app.name || app.fullName}</td><td className="py-3 px-4 text-gray-700">{activeTab === 'students' ? getValue(app.course) : getValue(app.role)}
-                        </td>{activeTab === 'faculty' && (
-                          <td className="py-3 px-4 text-gray-700">{getValue(app.department)}</td>)}
-                         <td className="py-3 px-4"><StatusBadge status={app.status} /></td>{activeTab === 'students' && (<td className="py-3 px-4"><StatusBadge status={app.paymentStatus || 'Pending'} /></td>)}<td className="py-3 px-4"><div className="flex gap-2"><ActionButtons
-                              onView={() =>handleView(app)}
-                              onApprove={app.status === 'Pending' ? () =>handleApprove(app.id) : null}
-                              onReject={app.status === 'Pending' ? () =>handleReject(app.id) : null}
-                              onDelete={() =>handleDelete(app.id)}
-                            /></div></td></tr>))}
-                  </tbody></table>{filteredApps.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">No applications found</div>)}
-              </div>
-              <Pagination 
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={(page) => setCurrentPage(page)}
-              />
-            </>
-          )}
-          </div></PageContainer>{/* Modals */}
+    <Layout title="Admission Management">
+      {loading ? (
+        <DashboardSkeleton />
+      ) : (
+        <div className="flex flex-col gap-3 h-full overflow-hidden">
+          {/* Custom Tab Switcher */}
+          <div className="flex items-center gap-2 bg-white border border-[#E6EDF2] p-1.5 rounded-xl self-start shadow-xs">
+            <button
+              onClick={() => setActiveTab('students')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'students'
+                  ? 'bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white shadow-sm'
+                  : 'text-[#5F6B7A] hover:bg-[#F4F7FF]'
+              }`}
+            >
+              Student Admissions ({studentApps.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('faculty')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'faculty'
+                  ? 'bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white shadow-sm'
+                  : 'text-[#5F6B7A] hover:bg-[#F4F7FF]'
+              }`}
+            >
+              Faculty Applications ({facultyApps.length})
+            </button>
+          </div>
+
+          {/* Template */}
+          <EnterprisePageTemplate
+            kpiCards={kpiCards}
+            columns={columns}
+            rows={filteredApps}
+            actions={tableActions}
+            rowKey="id"
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder={`Search ${activeTab} by name, ID, email...`}
+            filterOptions={filterOptions}
+            activeFilters={activeFilters}
+            onFilterChange={(key, val) => setActiveFilters((prev) => ({ ...prev, [key]: val }))}
+            onExportCSV={handleExportCSV}
+            onAdd={() => navigate('/add-student')}
+            addLabel="New Admission"
+            loading={false}
+            emptyMessage={`No ${activeTab} applications match your search.`}
+          />
+        </div>
+      )}
+
+      {/* Details Modal */}
       {showDetailsModal && selectedApp && (
         <AdmissionDetailsModal
           isOpen={showDetailsModal}
-          onClose={() =>setShowDetailsModal(false)}
+          onClose={() => setShowDetailsModal(false)}
           application={selectedApp}
           onApprove={() => {
             handleApprove(selectedApp.id);
@@ -186,6 +338,8 @@ export default function AdmissionPage() {
             handleReject(selectedApp.id);
             setShowDetailsModal(false);
           }}
-        />)}
-    </Layout>);
+        />
+      )}
+    </Layout>
+  );
 }

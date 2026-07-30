@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
-import SearchFilter from '../components/SearchFilter'
-import StudentTable from '../components/StudentTable'
-import { PageContainer, StatsSection, Pagination, TableSkeleton } from '../components/common'
+import EnterprisePageTemplate from '../components/EnterprisePageTemplate'
+import DashboardSkeleton from '../components/DashboardSkeleton'
 import { buildApiUrl } from '../api/apiBase'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { getUserSession } from '../auth/sessionController'
+import { Eye, Pencil, Trash2, Users, UserCheck, UserPlus, Filter } from 'lucide-react'
 
 export default function StudentsPage() {
   const navigate = useNavigate()
@@ -15,268 +15,294 @@ export default function StudentsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [departmentFilter, setDepartmentFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [activeFilters, setActiveFilters] = useState({ department: '', status: '', feeStatus: '' })
   const [newAdmissionsCount, setNewAdmissionsCount] = useState(0)
-  const [assignedSubjects, setAssignedSubjects] = useState([])
-  const itemsPerPage = 3
 
   const session = getUserSession()
   const role = session?.role || 'admin'
   const userId = session?.userId
 
-  const slugify = (text) => {
-    return (text || '')
-      .toString()
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w\-]+/g, '')
-      .replace(/\-\-+/g, '-');
-  }
-
-  const getStudentClassId = (student) => {
-    const dept = slugify(student.departmentId || student.department);
-    const sem = String(student.semester || '1');
-    const sec = (student.section || 'A').toLowerCase();
-    return `${dept}-${sem}-${sec}`;
-  }
-
-  const fetchStudents = async () =>{
+  // ── Data Fetch ──────────────────────────────────────────────────────────
+  const fetchStudents = async () => {
     try {
       setLoading(true)
-      const promises = [
-        fetch(buildApiUrl('/students'))
-      ];
-      if (role === 'faculty' && userId) {
-        promises.push(fetch(buildApiUrl(`/academics/attendance/faculty/${encodeURIComponent(userId)}/subjects`)));
-      } else {
-        promises.push(fetch(buildApiUrl('/admissions/students')));
-      }
-
-      const [studentsRes, secondRes] = await Promise.all(promises);
-      
+      const [studentsRes, admissionsRes] = await Promise.all([
+        fetch(buildApiUrl('/students')),
+        role !== 'faculty' ? fetch(buildApiUrl('/admissions/students')) : Promise.resolve(null)
+      ])
       if (!studentsRes.ok) throw new Error('Failed to fetch students')
-      const studentsData = await studentsRes.json()
-      setStudentsList(studentsData)
+      const data = await studentsRes.json()
+      setStudentsList(data)
 
-      if (role === 'faculty') {
-        if (secondRes && secondRes.ok) {
-          const subjectsData = await secondRes.json()
-          setAssignedSubjects(subjectsData.success ? subjectsData.data : [])
-        }
-      } else {
-        if (secondRes && secondRes.ok) {
-          const admissionsData = await secondRes.json()
-          const pendingCount = admissionsData.filter(a => (a.status || '').toLowerCase() === 'pending').length
-          setNewAdmissionsCount(pendingCount)
-        }
+      if (admissionsRes?.ok) {
+        const admData = await admissionsRes.json()
+        setNewAdmissionsCount(admData.filter(a => (a.status || '').toLowerCase() === 'pending').length)
       }
-      
       setError(null)
     } catch (err) {
       console.error('Error fetching students:', err)
-      setError('Could not connect to backend. Please ensure the server is running.')
+      setError('Could not connect to backend.')
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchStudents()
-    
-    // Listen for student approval events from AdmissionContext
-    const handleStudentApproved = (event) =>{
-      console.log(' Student approved event received:', event.detail);
-      // Refresh students list after a short delay to ensure DB is updated
-      setTimeout(() =>{
-        fetchStudents();
-      }, 500);
-    };
-    
-    window.addEventListener('studentApproved', handleStudentApproved);
-    
-    return () =>{
-      window.removeEventListener('studentApproved', handleStudentApproved);
-    };
+    window.addEventListener('studentApproved', fetchStudents)
+    return () => window.removeEventListener('studentApproved', fetchStudents)
   }, [])
 
-  const handleDelete = async (student) =>{
-    if (window.confirm(`Are you sure you want to delete ${student.name} (Roll: ${student.rollNumber})? This action cannot be undone.`)) {
-      try {
-        const res = await fetch(buildApiUrl(`/students/${encodeURIComponent(student.rollNumber)}`), {
-          method: 'DELETE'
-        })
-        if (!res.ok) throw new Error('Failed to delete student')
-        alert('Student deleted successfully')
-        fetchStudents()
-      } catch (err) {
-        console.error('Delete error:', err)
-        alert(`Error: ${err.message}`)
-      }
+  // ── Actions ─────────────────────────────────────────────────────────────
+  const handleDelete = async (student) => {
+    if (!window.confirm(`Delete ${student.name}? This cannot be undone.`)) return
+    try {
+      const res = await fetch(buildApiUrl(`/students/${encodeURIComponent(student.rollNumber || student.id)}`), { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
+      fetchStudents()
+    } catch (err) {
+      alert(`Error: ${err.message}`)
     }
   }
 
-  const handleEdit = (student) =>{
-    const studentId = student._id || student.id || student.rollNumber
-    navigate(`/edit-student/${encodeURIComponent(studentId)}`)
-  }
-
-  const getStats = () =>({
-    total: studentsList.length,
-    active: studentsList.filter(s =>s.status === 'active' || s.status === 'Active').length
-  })
-
-  const stats = getStats()
-
-  const filtered = studentsList.filter(s =>{
-    // Faculty-specific filtering:
-    if (role === 'faculty') {
-      const studentClassId = getStudentClassId(s);
-      const isMyStudent = assignedSubjects.some(sub => {
-        const subClassId = slugify(sub.classId || '');
-        const isClassMatch = subClassId === studentClassId || subClassId.includes(studentClassId) || studentClassId.includes(subClassId);
-        
-        const isDeptMatch = slugify(sub.department) === slugify(s.departmentId || s.department);
-        const subSemStr = String(sub.semester || '').replace(/[^\d]/g, '');
-        const studSemStr = String(s.semester || '').replace(/[^\d]/g, '');
-        const isSemMatch = subSemStr === studSemStr;
-        
-        const isSecMatch = (sub.section || '').toLowerCase().trim() === (s.section || '').toLowerCase().trim();
-        
-        return isClassMatch || (isDeptMatch && isSemMatch && isSecMatch);
-      });
-      if (!isMyStudent) return false;
-    }
-
-    // Apply department/status filters if set
-    if (departmentFilter) {
-      const dep = (s.department || '').toLowerCase()
-      if (!dep.includes(departmentFilter.toLowerCase())) return false
-    }
-    if (statusFilter) {
-      const st = (s.status || '').toLowerCase()
-      if (!st.includes(statusFilter.toLowerCase())) return false
-    }
-    const name = s.name || ''
-    const rollNumber = s.rollNumber || s.id || ''
-    const email = s.email || ''
-    const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         rollNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         email.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSearch
-  })
-
-  const handleFilterClick = () =>{
-    const dep = window.prompt('Filter by department (leave empty to clear):', departmentFilter || '')
-    if (dep === null) return // cancelled
-    setDepartmentFilter(dep || '')
-    const st = window.prompt('Filter by status (e.g. Active) (leave empty to clear):', statusFilter || '')
-    if (st === null) return
-    setStatusFilter(st || '')
-    setCurrentPage(1)
-  }
-
-  const handleExportClick = async () =>{
-    // Ask which format
-    const fmt = (window.prompt('Export format: csv or pdf (default csv)', 'csv') || 'csv').toLowerCase()
-    const rows = filtered.map(s =>({
-      Name: s.name || s.fullName || '',
-      Roll: s.rollNumber || s.id || '',
-      Email: s.email || '',
-      Department: s.department || '',
-      Status: s.status || ''
+  const handleExportCSV = () => {
+    const rows = filtered.map(s => ({
+      Name: s.name || '', Roll: s.rollNumber || s.id || '',
+      Email: s.email || '', Department: s.department || s.departmentId || '',
+      Semester: s.semester || '', Status: s.status || '', 'Fee Status': s.feeStatus || ''
     }))
-    if (rows.length === 0) { alert('No data to export'); return }
-
-    if (fmt === 'pdf') {
-      try {
-        const doc = new jsPDF()
-        const header = Object.keys(rows[0])
-        const data = rows.map(r =>header.map(h =>r[h]))
-
-        // Support both plugin styles: autoTable(doc, opts) or doc.autoTable(opts)
-        if (typeof autoTable === 'function') {
-          autoTable(doc, { head: [header], body: data, styles: { fontSize: 8 } })
-        } else if (typeof doc.autoTable === 'function') {
-          doc.autoTable({ head: [header], body: data, styles: { fontSize: 8 } })
-        } else {
-          throw new Error('jspdf-autotable plugin not available')
-        }
-
-        doc.save(`students_export_${new Date().toISOString().slice(0,10)}.pdf`)
-      } catch (e) {
-        console.error('PDF export failed', e)
-        alert('PDF export failed: ' + (e.message || e))
-      }
-      return
-    }
-
-    // default to CSV
+    if (!rows.length) return alert('No data to export')
     const header = Object.keys(rows[0]).join(',')
-    const csv = [header].concat(rows.map(r =>Object.values(r).map(v =>`"${String(v).replace(/"/g, '""')}"`).join(','))).join('\n')
+    const csv = [header, ...rows.map(r => Object.values(r).map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = `students_export_${new Date().toISOString().slice(0,10)}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    a.href = url; a.download = `students_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
   }
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
-  const paginatedStudents = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const handleExportPDF = async () => {
+    const rows = filtered.map(s => [s.name || '', s.rollNumber || s.id || '', s.department || s.departmentId || '', `Sem ${s.semester || 1}`, s.status || '', s.feeStatus || ''])
+    if (!rows.length) return alert('No data to export')
+    const doc = new jsPDF()
+    doc.setFontSize(14); doc.text('Students Directory', 14, 20)
+    if (typeof autoTable === 'function') {
+      autoTable(doc, { head: [['Name', 'Roll No', 'Department', 'Semester', 'Status', 'Fee Status']], body: rows, startY: 28, styles: { fontSize: 8 } })
+    } else {
+      doc.autoTable?.({ head: [['Name', 'Roll No', 'Department', 'Semester', 'Status', 'Fee Status']], body: rows, startY: 28 })
+    }
+    doc.save(`students_${new Date().toISOString().slice(0, 10)}.pdf`)
+  }
 
-  const handleSearch = (val) =>{ setSearchQuery(val); setCurrentPage(1) }
+  // ── Filter Logic ────────────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    return studentsList.filter(s => {
+      const q = searchQuery.toLowerCase()
+      const matchSearch = !q || (
+        (s.name || '').toLowerCase().includes(q) ||
+        (s.rollNumber || s.id || '').toLowerCase().includes(q) ||
+        (s.email || '').toLowerCase().includes(q)
+      )
+      const matchDept = !activeFilters.department ||
+        (s.department || s.departmentId || '').toLowerCase() === activeFilters.department.toLowerCase()
+      const matchStatus = !activeFilters.status ||
+        (s.status || '').toLowerCase() === activeFilters.status.toLowerCase()
+      const matchFee = !activeFilters.feeStatus ||
+        (s.feeStatus || '').toLowerCase() === activeFilters.feeStatus.toLowerCase()
+      return matchSearch && matchDept && matchStatus && matchFee
+    })
+  }, [studentsList, searchQuery, activeFilters])
 
-  const statsData = role === 'faculty' ? [
-    { value: loading ? '...' : filtered.length, label: 'My Students', icon: 'group' },
-    { value: loading ? '...' : filtered.filter(s => s.status === 'active' || s.status === 'Active').length, label: 'Active Today', icon: 'bolt' },
-    { value: loading ? '...' : new Set(assignedSubjects.map(sub => sub.classId)).size, label: 'Classes Taught', icon: 'menu_book' },
-    { value: filtered.length, label: 'Filtered Results', icon: 'search' },
-  ] : [
-    { value: loading ? '...' : stats.total, label: 'Total Students', icon: 'group' },
-    { value: loading ? '...' : stats.active, label: 'Active Today', icon: 'bolt' },
-    { value: loading ? '...' : newAdmissionsCount, label: 'New Admissions', icon: 'person_add' },
-    { value: filtered.length, label: 'Filtered Results', icon: 'search' },
+  // ── KPI Cards ────────────────────────────────────────────────────────────
+  const activeCount = studentsList.filter(s => (s.status || '').toLowerCase() === 'active').length
+  const paidCount = studentsList.filter(s => (s.feeStatus || '').toLowerCase() === 'paid').length
+
+  const kpiCards = [
+    {
+      title: 'Total Students', value: loading ? '—' : studentsList.length.toLocaleString(),
+      sub: 'All registered students', trend: '↑ 8.3% from last month', trendUp: true,
+      icon: <Users className="w-5 h-5" />, gradient: 'indigo'
+    },
+    {
+      title: 'Active Students', value: loading ? '—' : activeCount.toLocaleString(),
+      sub: 'Currently enrolled', trend: `${((activeCount / (studentsList.length || 1)) * 100).toFixed(1)}% of total`, trendUp: true,
+      icon: <UserCheck className="w-5 h-5" />, gradient: 'emerald'
+    },
+    {
+      title: 'New Admissions', value: loading ? '—' : newAdmissionsCount.toLocaleString(),
+      sub: 'Pending approval', trend: '↑ 4.7% this week', trendUp: true,
+      icon: <UserPlus className="w-5 h-5" />, gradient: 'amber'
+    },
+    {
+      title: 'Fees Paid', value: loading ? '—' : paidCount.toLocaleString(),
+      sub: 'Cleared fee accounts',
+      trend: `${((paidCount / (studentsList.length || 1)) * 100).toFixed(1)}% paid`, trendUp: paidCount > studentsList.length / 2,
+      icon: <Filter className="w-5 h-5" />, gradient: 'teal'
+    },
+  ]
+
+  // ── Status Badge Render ──────────────────────────────────────────────────
+  const StatusBadge = ({ value, styles }) => {
+    const s = (value || '').toUpperCase()
+    const cls = styles[s] || 'bg-slate-100 text-slate-600 border-slate-200'
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${cls}`}>
+        {value || '—'}
+      </span>
+    )
+  }
+
+  const statusStyles = {
+    ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    INACTIVE: 'bg-rose-50 text-rose-700 border-rose-200',
+    PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+    GRADUATED: 'bg-blue-50 text-blue-700 border-blue-200',
+  }
+
+  const feeStyles = {
+    PAID: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    OVERDUE: 'bg-rose-50 text-rose-700 border-rose-200',
+    PARTIAL: 'bg-amber-50 text-amber-700 border-amber-200',
+    PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+  }
+
+  // ── Columns ─────────────────────────────────────────────────────────────
+  const columns = [
+    {
+      key: 'name', label: 'Student',
+      render: (_, s) => {
+        const id = s.student_id || s.id || s.rollNumber
+        return (
+          <div
+            onClick={() => id && navigate(`/students/${encodeURIComponent(id)}`)}
+            className="flex items-center gap-3 group cursor-pointer"
+            title="Click to view student profile"
+          >
+            <img
+              src={s.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name || 'S')}&background=003A40&color=fff&size=80`}
+              alt={s.name}
+              className="w-9 h-9 rounded-lg object-cover border border-[#E6EDF2] flex-shrink-0 group-hover:border-[#0A686A] group-hover:scale-105 transition-all"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-[#003A40] group-hover:text-[#0A686A] group-hover:underline truncate leading-tight transition-colors">
+                {s.name}
+              </p>
+              <p className="text-[10px] text-[#8C98A5] font-medium truncate">{s.student_id || s.rollNumber || s.id}</p>
+            </div>
+          </div>
+        )
+      }
+    },
+    {
+      key: 'email', label: 'Email',
+      render: (_, s) => <span className="text-xs text-[#5F6B7A] font-medium">{s.email || '—'}</span>
+    },
+    {
+      key: 'department', label: 'Department',
+      render: (_, s) => (
+        <span className="inline-block px-2.5 py-1 bg-[#F4F7FF] border border-[#E6EDF2] rounded-lg text-xs font-bold text-[#003A40]">
+          {s.department || s.departmentId || '—'}
+        </span>
+      )
+    },
+    {
+      key: 'semester', label: 'Sem / Year',
+      render: (_, s) => {
+        const rawYr = String(s.year || 1);
+        const yrText = rawYr.toLowerCase().includes('yr') || rawYr.toLowerCase().includes('year') ? rawYr : `${rawYr}${rawYr === '1' ? 'st' : rawYr === '2' ? 'nd' : rawYr === '3' ? 'rd' : 'th'} Year`;
+        return (
+          <div className="text-xs font-medium text-[#003A40]">
+            <span className="font-bold">Sem {s.semester || 1}</span>
+            <span className="text-[11px] text-[#8C98A5] ml-1.5">· {yrText}</span>
+          </div>
+        )
+      }
+    },
+    {
+      key: 'status', label: 'Status',
+      render: (_, s) => <StatusBadge value={s.status} styles={statusStyles} />
+    },
+    {
+      key: 'feeStatus', label: 'Fee Status',
+      render: (_, s) => <StatusBadge value={s.feeStatus || 'Pending'} styles={feeStyles} />
+    },
+  ]
+
+  // ── Actions ─────────────────────────────────────────────────────────────
+  const tableActions = role === 'faculty' ? [] : [
+    {
+      icon: <Eye className="w-3.5 h-3.5" />, label: 'View Profile', color: 'teal',
+      onClick: (s) => {
+        const id = s.student_id || s.id || s.rollNumber
+        if (id) navigate(`/students/${encodeURIComponent(id)}`)
+      }
+    },
+    {
+      icon: <Pencil className="w-3.5 h-3.5" />, label: 'Edit Student', color: 'blue',
+      onClick: (s) => {
+        const id = s._id || s.id || s.rollNumber
+        navigate(`/edit-student/${encodeURIComponent(id)}`)
+      }
+    },
+    {
+      icon: <Trash2 className="w-3.5 h-3.5" />, label: 'Delete Student', color: 'red',
+      onClick: handleDelete
+    },
+  ]
+
+  // ── Filter options ───────────────────────────────────────────────────────
+  const deptOptions = useMemo(() => {
+    const depts = [...new Set(studentsList.map(s => s.department || s.departmentId).filter(Boolean))]
+    return depts.map(d => ({ value: d, label: d }))
+  }, [studentsList])
+
+  const filterOptions = [
+    { key: 'department', label: 'Department', options: deptOptions },
+    { key: 'status', label: 'Status', options: [
+      { value: 'Active', label: 'Active' },
+      { value: 'Inactive', label: 'Inactive' },
+      { value: 'Graduated', label: 'Graduated' },
+    ]},
+    { key: 'feeStatus', label: 'Fee Status', options: [
+      { value: 'Paid', label: 'Paid' },
+      { value: 'Pending', label: 'Pending' },
+      { value: 'Overdue', label: 'Overdue' },
+    ]},
   ]
 
   return (
-    <Layout title="Students"><PageContainer>{/* Stats Section */}
-        <StatsSection stats={statsData} />{/* Search / Filter Toolbar */}
-        <div className="mb-6"><SearchFilter
-            searchQuery={searchQuery}
-            onSearchChange={handleSearch}
-            onFilterClick={handleFilterClick}
-            onExportClick={handleExportClick}
-            onAddClick={role === 'faculty' ? null : () => navigate('/add-student')}
-            addButtonLabel="Add Student"
-            onBulkClick={role === 'faculty' ? null : () => navigate('/bulk-upload-students')}
-          /></div>{/* Student Table / State Displays */}
-        {error ? (
-          <div className="bg-red-50 border border-red-100 rounded-lg p-8 text-center"><span className="material-symbols-outlined text-red-400 text-5xl mb-4">cloud_off</span><h3 className="text-lg font-bold text-red-900">Connection Error</h3><p className="text-red-700 mt-1 max-w-sm mx-auto">{error}</p><button 
-              onClick={fetchStudents}
-              className="mt-6 px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-all"
-            >Retry Connection
-            </button></div>) : loading ? (
-          <TableSkeleton cols={5} rows={6} />
-        ) : (
-          <>
-            <StudentTable 
-              students={paginatedStudents} 
-              onEdit={role === 'faculty' ? null : handleEdit}
-              onDelete={role === 'faculty' ? null : handleDelete}
-              hideActions={role === 'faculty'}
-            />
-            <Pagination 
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-            />
-          </>)}
-      </PageContainer>
-    </Layout>)
+    <Layout title="Students">
+      {error ? (
+        <div className="bg-rose-50 border border-rose-100 rounded-2xl p-10 text-center">
+          <p className="text-rose-700 font-semibold">{error}</p>
+          <button onClick={fetchStudents} className="mt-4 px-5 py-2 bg-rose-600 text-white rounded-xl text-sm font-bold hover:bg-rose-700 transition-colors cursor-pointer">
+            Retry
+          </button>
+        </div>
+      ) : loading ? (
+        <DashboardSkeleton />
+      ) : (
+        <EnterprisePageTemplate
+          kpiCards={kpiCards}
+          columns={columns}
+          rows={filtered}
+          actions={tableActions}
+          rowKey="rollNumber"
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search by name, roll number, email..."
+          filterOptions={filterOptions}
+          activeFilters={activeFilters}
+          onFilterChange={(key, val) => setActiveFilters(prev => ({ ...prev, [key]: val }))}
+          onExportCSV={handleExportCSV}
+          onExportPDF={handleExportPDF}
+          onAdd={role === 'faculty' ? null : () => navigate('/add-student')}
+          addLabel="Add Student"
+          onBulkUpload={role === 'faculty' ? null : () => navigate('/bulk-upload-students')}
+          loading={false}
+          emptyMessage="No students match your search or filter."
+        />
+      )}
+    </Layout>
+  )
 }

@@ -67,7 +67,7 @@ export default function Layout({
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] text-[#1e293b]">
+    <div className="flex h-screen overflow-hidden bg-[#F8FAFC] text-[#1e293b]">
       <AcademicSidebar 
         isSidebarVisible={isSidebarVisible} 
         onToggleSidebar={toggleSidebar} 
@@ -85,7 +85,7 @@ export default function Layout({
         />
       )}
 
-      <main className={`flex-1 flex flex-col min-w-0 overflow-x-clip transition-all duration-300 ${isSidebarVisible && !isMobile ? (isCollapsed ? 'ml-20' : 'ml-64') : 'ml-0'}`}>
+      <main className={`flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ${isSidebarVisible && !isMobile ? (isCollapsed ? 'ml-20' : 'ml-64') : 'ml-0'}`}>
         <TopBar 
           title={title} 
           isSidebarVisible={isSidebarVisible}
@@ -95,7 +95,7 @@ export default function Layout({
           onProfilePrimaryAction={onProfilePrimaryAction}
           onProfileSecondaryAction={onProfileSecondaryAction}
         />
-        <div className={noPadding ? 'flex-1 flex flex-col w-full max-w-full overflow-x-clip' : 'flex-1 p-4 md:p-6 w-full max-w-full overflow-x-clip'}>
+        <div className={noPadding ? 'flex-1 flex flex-col w-full max-w-full overflow-y-auto custom-scrollbar' : 'flex-1 overflow-y-auto w-full max-w-full px-5 py-4 custom-scrollbar'}>
           {children}
         </div>
       </main>

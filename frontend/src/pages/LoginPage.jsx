@@ -254,7 +254,7 @@ export default function LoginPage() {
                 >{showPassword ? <EyeClosedIcon />: <EyeOpenIcon />}
                 </button></div></div>{error ? <div className="login-message login-error">{error}</div>: null}
 
-            <div style={{ marginBottom: '12px' }}><p style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Load Demo Credentials</p><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>{Object.keys(demoUsers).map((demoRole) =>(
+            <div style={{ marginBottom: '12px' }}><p style={{ fontSize: '11px', fontWeight: '600', color: '#8C98A5', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>Load Demo Credentials</p><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>{Object.keys(demoUsers).map((demoRole) =>(
                   <button
                     key={demoRole}
                     type="button"
@@ -264,9 +264,9 @@ export default function LoginPage() {
                       alignItems: 'center',
                       gap: '6px',
                       padding: '8px 12px',
-                      background: role === demoRole ? '#4c1d95' : '#f8fafc',
-                      color: role === demoRole ? '#ffffff' : '#475569',
-                      border: role === demoRole ? '1.5px solid #4c1d95' : '1.5px solid #e2e8f0',
+                      background: role === demoRole ? '#003A40' : '#F4F7FF',
+                      color: role === demoRole ? '#ffffff' : '#5F6B7A',
+                      border: role === demoRole ? '1.5px solid #003A40' : '1.5px solid #E6EDF2',
                       borderRadius: '8px',
                       fontSize: '12px',
                       fontWeight: '600',
@@ -285,7 +285,7 @@ export default function LoginPage() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#4c1d95',
+                  color: '#0A686A',
                   fontSize: '13px',
                   fontWeight: '600',
                   textDecoration: 'underline',
@@ -314,57 +314,59 @@ export default function LoginPage() {
                 &times;
               </button>
 
-              <h2 className="text-xl font-bold text-gray-800 mb-2">Track Admission Application</h2>
-              <p className="text-xs text-gray-500 mb-6">Enter your Application ID below to check your status and upload requested documents.</p>
+              <h2 className="text-xl font-bold text-[#1B1F24] mb-2">Track Admission Application</h2>
+              <p className="text-xs text-[#5F6B7A] mb-6">Enter your Application ID below to check your status and upload requested documents.</p>
 
               {!trackedApplication ? (
                 <form onSubmit={handleTrackApplication} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Application ID</label>
+                    <label className="block text-xs font-semibold text-[#1B1F24] mb-1">Application ID</label>
                     <input
                       type="text"
                       placeholder="e.g. STU-1782290094407"
                       value={trackAppId}
                       onChange={(e) => setTrackAppId(e.target.value)}
-                      className="w-full px-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
+                      className="w-full px-4 py-2 text-sm border border-[#E6EDF2] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0A686A]"
                     />
                   </div>
-                  {trackError && <p className="text-xs text-red-500 font-medium">{trackError}</p>}
+                  {trackError && <p className="text-xs text-[#EF4444] font-medium">{trackError}</p>}
                   <button
                     type="submit"
                     disabled={trackLoading}
-                    className="w-full py-2 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#3b0764] transition disabled:opacity-50"
+                    className="w-full py-2 bg-[#003A40] text-white rounded-lg text-sm font-semibold hover:bg-[#03323A] transition disabled:opacity-50"
                   >
                     {trackLoading ? 'Searching...' : 'Track Application'}
                   </button>
                 </form>
               ) : (
                 <div className="space-y-6">
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-2 border">
-                    <p className="text-xs text-gray-500 font-medium font-semibold">Applicant Details</p>
-                    <h3 className="text-sm font-bold text-gray-800">{trackedApplication.fullName || trackedApplication.name}</h3>
-                    <p className="text-xs text-gray-600">Course: <span className="font-semibold text-gray-700">{trackedApplication.course}</span></p>
-                    <p className="text-xs text-gray-600">ID: <span className="font-mono text-gray-700 font-semibold">{trackedApplication.id}</span></p>
+                  <div className="bg-[#F4F7FF] p-4 rounded-lg space-y-2 border border-[#E6EDF2]">
+                    <p className="text-xs text-[#5F6B7A] font-semibold">Applicant Details</p>
+                    <h3 className="text-sm font-bold text-[#1B1F24]">{trackedApplication.fullName || trackedApplication.name}</h3>
+                    <p className="text-xs text-[#5F6B7A]">Course: <span className="font-semibold text-[#1B1F24]">{trackedApplication.course}</span></p>
+                    <p className="text-xs text-[#5F6B7A]">ID: <span className="font-mono text-[#1B1F24] font-semibold">{trackedApplication.id}</span></p>
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs text-gray-500 font-medium font-semibold">Application Status</p>
+                    <p className="text-xs text-[#5F6B7A] font-semibold">Application Status</p>
                     <div className={`p-4 rounded-lg border flex flex-col gap-1 ${
                       trackedApplication.status === 'Approved'
-                        ? 'bg-green-50 border-green-200 text-green-800'
+                        ? 'bg-[#ECFDF3] border-[#22C55E] text-[#22C55E]'
                         : trackedApplication.status === 'Rejected'
-                        ? 'bg-red-50 border-red-200 text-red-800'
+                        ? 'bg-[#FEE2E2] border-[#EF4444] text-[#EF4444]'
                         : trackedApplication.status === 'Pending Documents'
-                        ? 'bg-amber-50 border-amber-200 text-amber-800'
-                        : 'bg-orange-50 border-orange-200 text-orange-800'
+                        ? 'bg-[#FEF3C7] border-[#F59E0B] text-[#F59E0B]'
+                        : 'bg-[#EFF6FF] border-[#3B82F6] text-[#3B82F6]'
                     }`}>
                       <div className="flex items-center gap-2">
                         <span className={`w-2.5 h-2.5 rounded-full ${
                           trackedApplication.status === 'Approved'
-                            ? 'bg-green-500'
+                            ? 'bg-[#22C55E]'
                             : trackedApplication.status === 'Rejected'
-                            ? 'bg-red-500'
-                            : 'bg-amber-500'
+                            ? 'bg-[#EF4444]'
+                            : trackedApplication.status === 'Pending Documents'
+                            ? 'bg-[#F59E0B]'
+                            : 'bg-[#3B82F6]'
                         }`} />
                         <span className="text-sm font-bold uppercase tracking-wider">{trackedApplication.status}</span>
                       </div>
@@ -382,7 +384,7 @@ export default function LoginPage() {
 
                   {/* Document upload list for student */}
                   <div className="space-y-3">
-                    <p className="text-xs text-gray-500 font-medium font-semibold">Required Documents</p>
+                    <p className="text-xs text-[#5F6B7A] font-semibold">Required Documents</p>
                     <div className="space-y-2">
                       {[
                         { id: 'DOC-01', name: 'Passport Photo' },
@@ -395,21 +397,21 @@ export default function LoginPage() {
                         const isRequested = doc && doc.status === 'Pending Re-upload';
 
                         return (
-                          <div key={docType.id} className="p-3 border rounded-lg bg-gray-50 flex items-center justify-between gap-4">
+                          <div key={docType.id} className="p-3 border border-[#E6EDF2] rounded-lg bg-[#F4F7FF] flex items-center justify-between gap-4">
                             <div className="min-w-0 flex-1">
-                              <h4 className="text-xs font-semibold text-gray-800">{docType.name}</h4>
+                              <h4 className="text-xs font-semibold text-[#1B1F24]">{docType.name}</h4>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
                                   isRequested 
-                                    ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse'
+                                    ? 'bg-[#FEF3C7] text-[#F59E0B] border border-[#F59E0B] animate-pulse'
                                     : hasFile
-                                    ? 'bg-green-100 text-green-800 border border-green-200'
-                                    : 'bg-gray-100 text-gray-500 border border-gray-200'
+                                    ? 'bg-[#ECFDF3] text-[#22C55E] border border-[#22C55E]'
+                                    : 'bg-[#F4F7FF] text-[#8C98A5] border border-[#E6EDF2]'
                                 }`}>
                                   {isRequested ? 'Action Required' : hasFile ? 'Uploaded' : 'Missing'}
                                 </span>
                                 {hasFile && (
-                                  <span className="text-[10px] text-gray-500 truncate max-w-[120px]">
+                                  <span className="text-[10px] text-[#5F6B7A] truncate max-w-[120px]">
                                     {doc.data.name || 'document_file'}
                                   </span>
                                 )}
@@ -418,7 +420,7 @@ export default function LoginPage() {
 
                             <div className="flex-shrink-0">
                               {isRequested ? (
-                                <label className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-xs rounded font-semibold transition cursor-pointer flex items-center justify-center">
+                                <label className="px-3 py-1 bg-[#F59E0B] hover:bg-[#d98206] text-white text-xs rounded font-semibold transition cursor-pointer flex items-center justify-center">
                                   Upload
                                   <input
                                     type="file"
@@ -430,11 +432,11 @@ export default function LoginPage() {
                                   />
                                 </label>
                               ) : hasFile ? (
-                                <span className="text-xs text-green-600 font-semibold flex items-center gap-0.5">
+                                <span className="text-xs text-[#22C55E] font-semibold flex items-center gap-0.5">
                                   ✓ Verified
                                 </span>
                               ) : (
-                                <label className="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs rounded font-semibold transition cursor-pointer flex items-center justify-center">
+                                <label className="px-3 py-1 bg-[#EEF4F7] hover:bg-[#DCE5EA] text-[#1B1F24] text-xs rounded font-semibold transition cursor-pointer flex items-center justify-center">
                                   Upload
                                   <input
                                     type="file"
@@ -459,7 +461,7 @@ export default function LoginPage() {
                       setTrackAppId('');
                       setTrackError('');
                     }}
-                    className="w-full py-2 bg-gray-100 border text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition"
+                    className="w-full py-2 bg-[#F4F7FF] border border-[#E6EDF2] text-[#1B1F24] rounded-lg text-sm font-semibold hover:bg-[#EEF4F7] transition"
                   >
                     Track Another Application
                   </button>

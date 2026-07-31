@@ -140,7 +140,7 @@ export default function EditFacultyPage() {
 
   if (loading) {
     return (
-      <Layout title="Edit Faculty">
+      <Layout title="Edit Faculty" showBack={true}>
         <div className="space-y-4">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex flex-col items-center justify-center h-64 gap-4 animate-pulse">
@@ -156,7 +156,7 @@ export default function EditFacultyPage() {
 
   if (error) {
     return (
-      <Layout title="Edit Faculty">
+      <Layout title="Edit Faculty" showBack={true}>
         <div className="space-y-4">
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
             <span className="material-symbols-outlined text-red-400 text-5xl mb-4">error</span>
@@ -172,7 +172,7 @@ export default function EditFacultyPage() {
   }
 
   return (
-    <Layout title="Edit Faculty">
+    <Layout title="Edit Faculty" showBack={true}>
       <div className="space-y-4">
         {/* Page Header */}
         <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between">

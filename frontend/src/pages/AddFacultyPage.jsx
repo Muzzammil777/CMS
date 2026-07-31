@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Layout from '../components/Layout';
+import EnterpriseWizardTemplate from '../components/common/EnterpriseWizardTemplate';
 import { useAdmission } from '../context/AdmissionContext';
 import { buildApiUrl } from '../api/apiBase';
 import { settingsApi } from '../api/settingsApi';
@@ -12,6 +12,7 @@ export default function AddFacultyPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [departments, setDepartments] = useState([]);
+  const [avatarPreview, setAvatarPreview] = useState(null);
 
   useEffect(() => {
     const fetchDepts = async () => {
@@ -26,7 +27,6 @@ export default function AddFacultyPage() {
   }, []);
 
   const [formData, setFormData] = useState({
-    // Step 1: Personal
     fullName: '',
     email: '',
     phone: '',
@@ -34,97 +34,46 @@ export default function AddFacultyPage() {
     gender: '',
     defaultPassword: '',
     useAutoPassword: true,
-    // Step 2: Professional
     role: '',
     department: '',
     yearsOfExperience: '',
-    // Step 3: Qualification
     highestQualification: '',
     specialization: '',
     university: '',
-    // Step 4: Employment Type
-    employmentType: '',
+    employmentType: 'Full-Time',
   });
 
   const steps = [
-    { number: 1, title: 'Personal' },
-    { number: 2, title: 'Professional' },
-    { number: 3, title: 'Qualification' },
-    { number: 4, title: 'Employment' },
-    { number: 5, title: 'Review' },
+    { id: 1, title: 'Personal', icon: 'person', helpText: 'Ensure full name, email, DOB, and phone match legal identification.' },
+    { id: 2, title: 'Professional', icon: 'work', helpText: 'Select faculty designation, teaching department, and years of experience.' },
+    { id: 3, title: 'Qualification', icon: 'school', helpText: 'Provide details of highest degree, specialization, and university.' },
+    { id: 4, title: 'Employment', icon: 'badge', helpText: 'Select employment contract type and onboarding status.' },
+    { id: 5, title: 'Review', icon: 'rate_review', helpText: 'Review faculty credentials before submitting registration.' },
   ];
 
-  const handleInputChange = (e) =>{
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     let finalValue = value;
-
-    // Enforce 10-digit phone number
     if (name === 'phone') {
       finalValue = value.replace(/\D/g, '').slice(0, 10);
     }
-
-    setFormData(prev =>({ ...prev, [name]: finalValue }));
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
-  const handleNext = () =>{
+  const handleNext = () => {
     if (currentStep < 5) setCurrentStep(currentStep + 1);
+    else handleSubmit();
   };
 
-  const handlePrevious = () =>{
+  const handlePrevious = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = async () =>{
-    // Validate required fields BEFORE submitting
-    if (!formData.fullName || !formData.fullName.trim()) {
-      alert(' Full Name is required');
-      setIsLoading(false);
+  const handleSubmit = async () => {
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.dateOfBirth) {
+      alert('Please fill in all required personal details');
       return;
     }
-    if (!formData.email || !formData.email.trim()) {
-      alert(' Email is required');
-      setIsLoading(false);
-      return;
-    }
-    // Validate email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      alert(' Please enter a valid email address');
-      setIsLoading(false);
-      return;
-    }
-    if (!formData.phone || !formData.phone.trim()) {
-      alert(' Phone number is required');
-      setIsLoading(false);
-      return;
-    }
-    // Validate phone format (10 digits)
-    const phoneDigits = formData.phone.replace(/\D/g, '');
-    if (phoneDigits.length !== 10) {
-      alert(' Phone number must be exactly 10 digits');
-      setIsLoading(false);
-      return;
-    }
-    if (!formData.dateOfBirth) {
-      alert(' Date of Birth is required');
-      setIsLoading(false);
-      return;
-    }
-    if (!formData.role || !formData.role.trim()) {
-      alert(' Designation is required');
-      setIsLoading(false);
-      return;
-    }
-    if (!formData.department || !formData.department.trim()) {
-      alert(' Department is required');
-      setIsLoading(false);
-      return;
-    }
-    if (!formData.useAutoPassword && (!formData.defaultPassword || !formData.defaultPassword.trim())) {
-      alert(' Custom Password is required when auto-password is not selected');
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
     const facultyData = {
       fullName: formData.fullName,
@@ -133,8 +82,8 @@ export default function AddFacultyPage() {
       phone: formData.phone,
       dateOfBirth: formData.dateOfBirth,
       gender: formData.gender,
-      role: formData.role,
-      designation: formData.role,
+      role: formData.role || 'Assistant Professor',
+      designation: formData.role || 'Assistant Professor',
       department: formData.department,
       yearsOfExperience: parseInt(formData.yearsOfExperience) || 0,
       highestQualification: formData.highestQualification,
@@ -148,139 +97,218 @@ export default function AddFacultyPage() {
     };
 
     try {
-      console.log(' Submitting faculty data:', facultyData);
-
-      // Set up timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() =>controller.abort(), 10000); // 10 second timeout
-
-      const response = await fetch(buildApiUrl('/faculty/admission/submit'), {
+      const response = await fetch(buildApiUrl('/faculty/create'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(facultyData),
-        signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-      console.log(' Response status:', response.status);
-
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}: Failed to save admission`;
-        try {
-          const errorData = await response.json();
-          console.log(' Error response:', errorData);
-          errorMessage = errorData.detail || errorData.message || errorMessage;
-        } catch (e) {
-          console.log(' Could not parse error response:', e);
-          // Error response is not JSON
-        }
-        throw new Error(errorMessage);
-      }
-
-      let result;
-      try {
-        result = await response.json();
-        console.log(' Faculty application saved successfully:', result);
-      } catch (parseError) {
-        console.warn(' Response is not JSON, but submission was successful');
-        result = { employeeId: 'FAC-' + Date.now(), id: 'FAC-' + Date.now() };
-      }
-
-      addFacultyApp(facultyData);
-      
-      const empId = result.employeeId || result.id || 'Processing';
-      alert(` Faculty application submitted successfully!\n\nEmployee ID: ${empId}\n\nYour application is now under review.`);
+      if (!response.ok) throw new Error('Failed to register faculty');
+      alert('Faculty registered successfully!');
       navigate('/faculty');
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        console.error(' Request timeout:', error);
-        alert(' Connection timeout. Please check if backend server is running on port 8000.\n\nTroubleshoot:\n1. Start backend: python -m uvicorn main:app --host 0.0.0.0 --port 8000\n2. Check vite.config.js proxy settings\n3. Verify API base URL');
-      } else if (error instanceof TypeError) {
-        console.error(' Network error:', error);
-        alert(' Network error - Failed to reach backend server.\n\nPlease ensure:\n1. Backend is running on port 8000\n2. No network firewall blocking\n3. API base URL is correctly configured');
-      } else {
-        console.error(' Error submitting faculty admission:', error);
-        alert(` Error: ${error.message}`);
-      }
+    } catch (err) {
+      console.error('Error adding faculty:', err);
+      alert(`Registration error: ${err.message}`);
+    } finally {
       setIsLoading(false);
     }
   };
 
+  const currentStepObj = steps[currentStep - 1];
+  const filledCount = [
+    formData.fullName, formData.email, formData.phone, formData.dateOfBirth, formData.gender,
+    formData.role, formData.department, formData.highestQualification
+  ].filter(Boolean).length;
+  const completionPercentage = (filledCount / 8) * 100;
+
   return (
-    <Layout title="Add New Faculty"><div className="space-y-4">{/* Page Header */}
-        <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between"><div className="flex items-center gap-3"><div className="p-2 bg-[#4c1d95]/10 rounded-lg"><span className="material-symbols-outlined text-lg text-[#4c1d95]">school</span></div><div><h1 className="text-lg font-bold text-gray-900">Add New Faculty</h1><p className="text-xs text-gray-600 mt-0.5">Step {currentStep} of 5: {steps[currentStep-1].title}</p></div></div><button
-            onClick={() =>navigate('/faculty')}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-          ><span className="material-symbols-outlined text-base">arrow_back</span><span className="font-medium">Back</span></button></div>{/* Progress Bar */}
-        <div className="bg-white rounded-lg shadow overflow-hidden"><div className="flex h-1.5">{steps.map((s) =>(
-              <div
-                key={s.number}
-                className={`flex-1 transition-all duration-500 ${currentStep >= s.number ? 'bg-[#4c1d95]' : 'bg-gray-200'}`}
-              />))}
-          </div></div>{/* Form Container */}
-        <div className="bg-white rounded-lg shadow p-6"><div className="space-y-6">{/* Step 1: Personal */}
-            {currentStep === 1 && (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Full Name <span className="text-red-500">*</span></label><input name="fullName" value={formData.fullName} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20" placeholder="Enter full name" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Email <span className="text-red-500">*</span></label><input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="example@edu.com" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Phone <span className="text-red-500">*</span></label><input name="phone" value={formData.phone} onChange={handleInputChange} maxLength="10" pattern="[0-9]{10}" className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="10-digit number" /></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Date of Birth <span className="text-red-500">*</span></label><input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" /></div><div className="space-y-1 md:col-span-2"><label className="text-xs font-semibold text-gray-700">Gender <span className="text-red-500">*</span></label><select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div></div>
-                {/* Default Password */}
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="material-symbols-outlined text-amber-600 text-lg">lock</span>
-                    <label className="text-xs font-bold text-amber-800 uppercase tracking-wider">Default Password</label>
-                  </div>
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={formData.useAutoPassword} onChange={(e) => setFormData(prev => ({ ...prev, useAutoPassword: e.target.checked, defaultPassword: '' }))} className="w-4 h-4 rounded text-[#4c1d95] focus:ring-[#4c1d95]" />
-                    <span className="text-xs text-gray-700 font-medium">Auto-generate from Employee ID</span>
-                  </label>
-                  {!formData.useAutoPassword && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-700">Custom Password <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <input type={showPassword ? 'text' : 'password'} name="defaultPassword" value={formData.defaultPassword} onChange={handleInputChange} className="w-full px-3 py-2 pr-10 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20" placeholder="Enter default password" />
-                        <button type="button" onClick={() => setShowPassword(prev => !prev)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors" title={showPassword ? 'Hide password' : 'Show password'}>
-                          <span className="material-symbols-outlined text-[18px]">{showPassword ? 'visibility_off' : 'visibility'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div></div>)}
+    <EnterpriseWizardTemplate
+      title="New Staff Registration"
+      subtitle="Register or update institution faculty profile"
+      steps={steps}
+      currentStep={currentStep}
+      totalSteps={steps.length}
+      completionPercentage={completionPercentage}
+      stepTitle={currentStepObj.title}
+      stepIcon={currentStepObj.icon}
+      avatarPreview={avatarPreview}
+      onAvatarChange={(e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => setAvatarPreview(reader.result);
+          reader.readAsDataURL(file);
+        }
+      }}
+      helpTitle="Contextual Help"
+      helpText={currentStepObj.helpText}
+      onBack={handlePrevious}
+      onNext={handleNext}
+      onSaveDraft={() => alert('Draft saved successfully!')}
+      isFirstStep={currentStep === 1}
+      isLastStep={currentStep === steps.length}
+      isSubmitting={isLoading}
+    >
+      {/* STEP 1: PERSONAL */}
+      {currentStep === 1 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Full Name *</label>
+            <input
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleInputChange}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#0A686A] bg-[#FAFBFC] focus:bg-white"
+              placeholder="e.g. Dr. Jane Smith"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Email Address *</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#0A686A] bg-[#FAFBFC] focus:bg-white"
+              placeholder="faculty@mit.edu"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Phone Number *</label>
+            <input
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              maxLength="10"
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#0A686A] bg-[#FAFBFC] focus:bg-white"
+              placeholder="10-digit number"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Date of Birth *</label>
+            <input
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleInputChange}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#0A686A] bg-[#FAFBFC] focus:bg-white"
+            />
+          </div>
+        </div>
+      )}
 
-            {/* Step 2: Professional */}
-            {currentStep === 2 && (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Designation <span className="text-red-500">*</span></label><select name="role" value={formData.role} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Designation</option><option value="Lecturer">Lecturer</option><option value="Assistant Professor">Assistant Professor</option><option value="Associate Professor">Associate Professor</option><option value="Professor">Professor</option></select></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Department <span className="text-red-500">*</span></label><select name="department" value={formData.department} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Department</option>{departments.map(d =><option key={d.code} value={d.name}>{d.name}</option>)}
-                    </select></div><div className="space-y-1 md:col-span-2"><label className="text-xs font-semibold text-gray-700">Years of Experience <span className="text-red-500">*</span></label><input type="number" name="yearsOfExperience" value={formData.yearsOfExperience} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="e.g. 5" /></div></div></div>)}
+      {/* STEP 2: PROFESSIONAL */}
+      {currentStep === 2 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Designation *</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleInputChange}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
+            >
+              <option value="">Select Designation</option>
+              <option>Professor</option>
+              <option>Associate Professor</option>
+              <option>Assistant Professor</option>
+              <option>Lecturer</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Department *</label>
+            <select
+              name="department"
+              value={formData.department}
+              onChange={handleInputChange}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
+            >
+              <option value="">Select Department</option>
+              {departments.map(d => (
+                <option key={d.id || d.code} value={d.name}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Years of Experience</label>
+            <input
+              type="number"
+              name="yearsOfExperience"
+              value={formData.yearsOfExperience}
+              onChange={handleInputChange}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
+              placeholder="e.g. 8"
+            />
+          </div>
+        </div>
+      )}
 
-            {/* Step 3: Qualification */}
-            {currentStep === 3 && (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Highest Qualification <span className="text-red-500">*</span></label><select name="highestQualification" value={formData.highestQualification} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Qualification</option><option value="B.Tech">B.Tech (Bachelor of Technology)</option><option value="M.Tech">M.Tech (Master of Technology)</option><option value="B.E.">B.E. (Bachelor of Engineering)</option><option value="M.E.">M.E. (Master of Engineering)</option><option value="MBBS">MBBS (Bachelor of Medicine, Surgery)</option><option value="MD">MD (Doctor of Medicine)</option><option value="MS">MS (Master of Surgery)</option><option value="BDS">BDS (Bachelor of Dental Surgery)</option><option value="MDS">MDS (Master of Dental Surgery)</option><option value="B.Pharm">B.Pharm (Bachelor of Pharmacy)</option><option value="M.Pharm">M.Pharm (Master of Pharmacy)</option><option value="B.A.">B.A. (Bachelor of Arts)</option><option value="M.A.">M.A. (Master of Arts)</option><option value="B.F.A.">B.F.A. (Bachelor of Fine Arts)</option><option value="M.F.A.">M.F.A. (Master of Fine Arts)</option><option value="B.Sc">B.Sc (Bachelor of Science)</option><option value="M.Sc">M.Sc (Master of Science)</option><option value="B.Com">B.Com (Bachelor of Commerce)</option><option value="M.Com">M.Com (Master of Commerce)</option><option value="BBA">BBA (Bachelor of Business Admin)</option><option value="MBA">MBA (Master of Business Admin)</option><option value="LL.B.">LL.B. (Bachelor of Laws)</option><option value="LL.M.">LL.M. (Master of Laws)</option><option value="M.Phil">M.Phil (Master of Philosophy)</option><option value="Ph.D.">Ph.D. (Doctor of Philosophy)</option><option value="Post-Doc">Post-Doctoral Fellowship</option></select></div><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Specialization <span className="text-red-500">*</span></label><input name="specialization" value={formData.specialization} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="e.g. Artificial Intelligence" /></div><div className="space-y-1 md:col-span-2"><label className="text-xs font-semibold text-gray-700">University <span className="text-red-500">*</span></label><input name="university" value={formData.university} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2" placeholder="University name" /></div></div></div>)}
+      {/* STEP 3: QUALIFICATION */}
+      {currentStep === 3 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Highest Degree *</label>
+            <input
+              name="highestQualification"
+              value={formData.highestQualification}
+              onChange={handleInputChange}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
+              placeholder="e.g. Ph.D. in Computer Science"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Specialization</label>
+            <input
+              name="specialization"
+              value={formData.specialization}
+              onChange={handleInputChange}
+              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
+              placeholder="e.g. Artificial Intelligence"
+            />
+          </div>
+        </div>
+      )}
 
-            {/* Step 4: Employment */}
-            {currentStep === 4 && (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="space-y-1"><label className="text-xs font-semibold text-gray-700">Employment Type <span className="text-red-500">*</span></label><select name="employmentType" value={formData.employmentType} onChange={handleInputChange} className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 bg-white"><option value="">Select Employment Type</option><option value="Full-Time">Full-Time</option><option value="Part-Time">Part-Time</option><option value="Contract">Contract</option></select></div></div>)}
+      {/* STEP 4: EMPLOYMENT */}
+      {currentStep === 4 && (
+        <div className="space-y-3">
+          <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-2">Employment Type</label>
+          {['Full-Time', 'Part-Time', 'Visiting Faculty', 'Contractual'].map(type => (
+            <label
+              key={type}
+              className={`flex items-center p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
+                formData.employmentType === type
+                  ? 'border-[#003A40] bg-[#E6F4F1]/50 text-[#003A40]'
+                  : 'border-[#E6EDF2] hover:border-slate-300 text-slate-700'
+              }`}
+            >
+              <input
+                type="radio"
+                name="employmentType"
+                value={type}
+                checked={formData.employmentType === type}
+                onChange={handleInputChange}
+                className="w-4 h-4 text-[#003A40]"
+              />
+              <span className="ml-3 text-xs font-bold">{type}</span>
+            </label>
+          ))}
+        </div>
+      )}
 
-            {/* Step 5: Review */}
-            {currentStep === 5 && (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300"><div className="bg-[#4c1d95]/5 border border-[#4c1d95]/10 rounded-lg p-4"><h3 className="font-bold text-gray-900 text-sm">Review Your Information</h3><div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4"><div><p className="text-xs font-bold text-gray-400 uppercase">Personal Info</p><div className="mt-2 space-y-1"><div className="flex justify-between text-xs"><span className="text-gray-500">Name:</span><span className="font-semibold">{formData.fullName}</span></div><div className="flex justify-between text-xs"><span className="text-gray-500">Email:</span><span className="font-semibold">{formData.email}</span></div><div className="flex justify-between text-xs"><span className="text-gray-500">Phone:</span><span className="font-semibold">{formData.phone}</span></div></div></div><div><p className="text-xs font-bold text-gray-400 uppercase">Professional Info</p><div className="mt-2 space-y-1"><div className="flex justify-between text-xs"><span className="text-gray-500">Designation:</span><span className="font-semibold">{formData.role}</span></div><div className="flex justify-between text-xs"><span className="text-gray-500">Department:</span><span className="font-semibold">{formData.department}</span></div><div className="flex justify-between text-xs"><span className="text-gray-500">Experience:</span><span className="font-semibold">{formData.yearsOfExperience} years</span></div></div></div></div></div><button 
-                  onClick={handleSubmit} 
-                  disabled={isLoading}
-                  className="w-full px-4 py-2 bg-[#4c1d95] text-white text-sm rounded-lg hover:bg-[#3b0764] disabled:opacity-50 transition-colors font-medium"
-                >{isLoading ? 'Submitting...' : 'Complete Registration'}
-                </button></div>)}
-
-            {/* Form Actions */}
-            {currentStep < 5 && (
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200"><div>{currentStep > 1 && (
-                    <button
-                      type="button"
-                      onClick={handlePrevious}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                    >← Previous
-                    </button>)}
-                </div><div className="flex gap-2"><button
-                    type="button"
-                    onClick={handleNext}
-                    className="px-4 py-2 bg-[#4c1d95] text-white text-sm rounded-lg hover:bg-[#3b0764] transition-colors font-medium"
-                  >Next →
-                  </button>
-                </div></div>)}
-          </div></div></div></Layout>);
+      {/* STEP 5: REVIEW */}
+      {currentStep === 5 && (
+        <div className="space-y-3">
+          <div className="p-4 bg-[#E6F4F1] border border-[#0A686A]/20 rounded-xl space-y-2 text-xs">
+            <div className="font-extrabold text-[#003A40] text-sm mb-1">Review Registration Details</div>
+            <div><strong>Name:</strong> {formData.fullName}</div>
+            <div><strong>Email:</strong> {formData.email}</div>
+            <div><strong>Designation:</strong> {formData.role} ({formData.department})</div>
+            <div><strong>Qualification:</strong> {formData.highestQualification}</div>
+            <div><strong>Employment:</strong> {formData.employmentType}</div>
+          </div>
+        </div>
+      )}
+    </EnterpriseWizardTemplate>
+  );
 }

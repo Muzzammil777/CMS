@@ -104,14 +104,14 @@ function normalizeTimetableRecord(record) {
 function ClassCell({ cls, canEdit, onEdit, onClear }) {
   if (!cls || !cls.code) {
     return (
-      <div className="relative group h-full bg-slate-50 flex items-center justify-center rounded-lg border border-dashed border-slate-200">
-        <span className="text-xs text-slate-400 font-medium">{cls?.label || 'No Class'}</span>
+      <div className="relative group h-full bg-[#FAFBFC] hover:bg-[#F2FBFA] flex items-center justify-center rounded-xl border border-dashed border-slate-200/80 transition-colors">
+        <span className="text-[11px] text-slate-400 font-semibold">{cls?.label || 'Free'}</span>
         {canEdit && !cls?.label && (
           <button
             onClick={onEdit}
-            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-slate-100/80 rounded-lg transition-opacity"
+            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-[#003A40]/10 rounded-xl transition-opacity cursor-pointer"
           >
-            <span className="material-symbols-outlined text-slate-500 text-lg">add</span>
+            <span className="material-symbols-outlined text-[#003A40] text-lg font-bold">add</span>
           </button>
         )}
       </div>
@@ -120,31 +120,44 @@ function ClassCell({ cls, canEdit, onEdit, onClear }) {
 
   return (
     <div className="relative group h-full overflow-visible">
-      <div className={`h-full border-l-4 px-2 py-1.5 rounded-r-lg ${cls.color} cursor-default`}>
-        <p className={`text-[10px] font-bold uppercase tracking-wide ${cls.textColor}`}>{cls.code}</p>
-        <p className="text-xs font-semibold text-slate-800 leading-tight line-clamp-2 mt-0.5">{cls.name}</p>
+      <div className={`h-full border-l-4 px-2.5 py-2 rounded-r-xl ${cls.color} shadow-2xs hover:shadow-xs transition-shadow cursor-default flex flex-col justify-between`}>
+        <div>
+          <div className="flex items-center justify-between gap-1 mb-0.5">
+            <span className={`text-[9px] font-black uppercase tracking-wider ${cls.textColor}`}>{cls.code}</span>
+            <span className="text-[9px] font-semibold text-slate-400">{cls.room}</span>
+          </div>
+          <p className="text-xs font-bold text-slate-800 leading-snug line-clamp-2">{cls.name}</p>
+        </div>
+        {cls.instructor && (
+          <p className="text-[10px] font-semibold text-slate-500 truncate mt-1 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[11px] text-slate-400">person</span>
+            {cls.instructor}
+          </p>
+        )}
       </div>
 
       {/* Hover tooltip */}
-      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-52
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-56
                       invisible opacity-0 group-hover:visible group-hover:opacity-100
                       transition-all duration-150 pointer-events-none">
-        <div className="w-3 h-3 bg-slate-900 rotate-45 mx-auto -mb-1.5 rounded-sm" />
-        <div className="bg-slate-900 text-white rounded-xl shadow-2xl p-3 text-xs">
-          <p className={`font-bold text-sm mb-1 ${cls.textColor?.replace('700','400')}`}>{cls.code}</p>
-          <p className="font-semibold text-white mb-2 leading-snug">{cls.name}</p>
-          <div className="space-y-1 text-slate-300">
+        <div className="bg-[#003A40] text-white rounded-xl shadow-2xl p-3 text-xs border border-white/10">
+          <div className="flex items-center justify-between gap-2 mb-1 border-b border-white/10 pb-1.5">
+            <span className="font-extrabold text-teal-300 text-xs tracking-wide">{cls.code}</span>
+            <span className="text-[10px] font-bold text-white/70 bg-white/10 px-2 py-0.5 rounded-full">{cls.type}</span>
+          </div>
+          <p className="font-bold text-white mb-2 text-xs leading-snug">{cls.name}</p>
+          <div className="space-y-1 text-[#C4D9DC] text-[11px]">
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[13px]">location_on</span>
-              <span>{cls.room}</span>
+              <span className="material-symbols-outlined text-xs text-teal-400">location_on</span>
+              <span>Room: {cls.room || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[13px]">person</span>
-              <span>{cls.instructor}</span>
+              <span className="material-symbols-outlined text-xs text-teal-400">person</span>
+              <span>Instructor: {cls.instructor || 'N/A'}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-[13px]">school</span>
-              <span>{cls.type} · {cls.credits} credit{cls.credits !== 1 ? 's' : ''}</span>
+              <span className="material-symbols-outlined text-xs text-teal-400">school</span>
+              <span>Credits: {cls.credits || 1}</span>
             </div>
           </div>
         </div>
@@ -152,17 +165,17 @@ function ClassCell({ cls, canEdit, onEdit, onClear }) {
 
       {/* Edit / clear overlay — only in edit mode */}
       {canEdit && (
-        <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 bg-white/80 rounded-r-lg transition-opacity z-10">
+        <div className="absolute inset-0 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 bg-white/90 backdrop-blur-2xs rounded-r-xl transition-opacity z-20">
           <button
             onClick={onEdit}
-            className="p-1 rounded-md bg-[#4c1d95] text-white hover:bg-[#4c1d95]/90"
+            className="p-1.5 rounded-lg bg-[#003A40] text-white hover:bg-[#02282d] transition-colors cursor-pointer"
             title="Edit"
           >
             <span className="material-symbols-outlined text-sm">edit</span>
           </button>
           <button
             onClick={onClear}
-            className="p-1 rounded-md bg-red-500 text-white hover:bg-red-600"
+            className="p-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-colors cursor-pointer"
             title="Remove"
           >
             <span className="material-symbols-outlined text-sm">delete</span>
@@ -359,6 +372,7 @@ export default function TimetablePage({ noLayout = false }) {
   const [editTarget,   setEditTarget]   = useState(null)   // { slotIdx, dayIdx }
   const [showNewClass, setShowNewClass] = useState(false)
   const [isSyncing,    setIsSyncing]    = useState(false)
+  const [loading,      setLoading]      = useState(true)
   const [studentProfile, setStudentProfile] = useState(null)
   const [periodSlots, setPeriodSlots] = useState(TIME_SLOTS)
   const [breakItems, setBreakItems] = useState(DEFAULT_BREAK_ITEMS)
@@ -460,6 +474,7 @@ export default function TimetablePage({ noLayout = false }) {
     let isMounted = true
 
     async function fetchTimetables() {
+      setLoading(true)
       try {
         const response = await fetch(buildApiUrl('/academics/timetable'))
         const payload = await response.json().catch(() => null)
@@ -481,6 +496,8 @@ export default function TimetablePage({ noLayout = false }) {
         }
       } catch (error) {
         console.error('Failed to fetch timetables:', error)
+      } finally {
+        if (isMounted) setLoading(false)
       }
     }
 
@@ -725,94 +742,113 @@ export default function TimetablePage({ noLayout = false }) {
       return 'minmax(80px, 1fr)'
     })
     .join(' ')
-  const headerCell = 'px-2 py-3 text-center text-[10px] font-bold text-slate-500 border-r border-slate-200 leading-tight flex flex-col items-center justify-center gap-0.5 bg-slate-50'
+  const headerCell = 'px-2 py-3 text-center text-[10px] font-bold text-[#5F6B7A] border-r border-[#E6EDF2] leading-tight flex flex-col items-center justify-center gap-0.5 bg-[#F8FAFC]'
 
   const inner = (
-    <>
-      {/* ── Class Tabs ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
-        {visibleTimetableEntries.map(([id, tt]) => (
-          <button
-            key={id}
-            onClick={() => { setActiveClass(id); setEditMode(false) }}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
-              activeClass === id
-                ? 'bg-[#4c1d95] text-white border-[#4c1d95] shadow-sm'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-            }`}
-          >
-            {tt.label}
-          </button>
-        ))}
-        {canEdit && (
-          <button
-            onClick={() => setShowNewClass(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border border-dashed border-slate-300 text-slate-500 hover:border-[#4c1d95] hover:text-[#4c1d95] transition-all"
-          >
-            <span className="material-symbols-outlined text-base">add</span>New Class
-          </button>
-        )}
-      </div>
+    <div className="flex flex-col h-full min-h-0 gap-0 overflow-hidden bg-[#F8FAFC]">
 
-      {/* ── Toolbar ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <p className="text-slate-500">
-          {current ? `${current.dept} — ${current.semester} (${current.section})` : 'No timetable found'}
-        </p>
-        <div className="flex gap-3 items-center flex-wrap">
+      {/* ── TOP CONTROL BAR ─────────────────────────────────────── */}
+      <div className="flex-shrink-0 bg-white border-b border-[#E6EDF2] px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+        
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Class Select Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm text-[#0A686A]">grid_view</span>
+            <select
+              value={activeClass}
+              onChange={(e) => { setActiveClass(e.target.value); setEditMode(false); }}
+              className="px-3.5 py-2 border border-[#E6EDF2] rounded-xl text-xs font-bold text-[#003A40] bg-[#F4F7FF] outline-none focus:border-[#0A686A] focus:ring-2 focus:ring-[#0A686A]/10 cursor-pointer max-w-xs shadow-2xs"
+            >
+              {visibleTimetableEntries.map(([id, tt]) => (
+                <option key={id} value={id}>
+                  {tt.label} ({tt.dept || 'CS'})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {canEdit && (
+            <button
+              onClick={() => setShowNewClass(true)}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-[#003A40] border border-dashed border-[#0A686A]/30 hover:bg-[#F2FBFA] transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">add</span>
+              New Class
+            </button>
+          )}
+
+          {current && (
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-xs font-semibold text-[#5F6B7A] bg-[#FAFBFC] border border-[#E6EDF2] px-3 py-1.5 rounded-xl">
+              <span className="material-symbols-outlined text-xs text-[#0A686A]">school</span>
+              {current.dept} · {current.semester} ({current.section})
+            </span>
+          )}
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex items-center gap-2">
           {isSyncing && (
-            <span className="text-xs font-medium text-slate-500">Syncing changes...</span>
+            <span className="text-[11px] font-semibold text-[#0A686A] animate-pulse mr-1">Syncing...</span>
           )}
           {canEdit && (
             <button
               onClick={() => setShowPeriodEditor(prev => !prev)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 showPeriodEditor
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-[#4c1d95] hover:text-[#4c1d95]'
+                  ? 'bg-[#003A40] text-white shadow-sm'
+                  : 'bg-white text-[#5F6B7A] border border-[#E6EDF2] hover:text-[#003A40] hover:bg-[#F2FBFA]'
               }`}
             >
-              <span className="material-symbols-outlined text-base">schedule</span>
-              {showPeriodEditor ? 'Hide Periods' : 'Edit Periods'}
+              <span className="material-symbols-outlined text-sm">schedule</span>
+              {showPeriodEditor ? 'Close Periods' : 'Edit Periods'}
             </button>
           )}
           {canEdit && (
             <button
               onClick={() => setEditMode(prev => !prev)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 editMode
-                  ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-[#4c1d95] hover:text-[#4c1d95]'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-white text-[#003A40] border border-[#E6EDF2] hover:bg-[#F2FBFA]'
               }`}
             >
-              <span className="material-symbols-outlined text-base">{editMode ? 'check_circle' : 'edit'}</span>
+              <span className="material-symbols-outlined text-sm">{editMode ? 'check_circle' : 'edit'}</span>
               {editMode ? 'Done Editing' : 'Edit Timetable'}
             </button>
           )}
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#003A40] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all cursor-pointer shadow-2xs"
+          >
+            <span className="material-symbols-outlined text-sm">print</span>
+            Print
+          </button>
         </div>
       </div>
 
-      {showPeriodEditor && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-6">
-          <div className="flex flex-col gap-4">
+      {/* ── MAIN CONTENT SCROLL AREA ─────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto p-5 min-h-0 flex flex-col gap-4">
+
+        {showPeriodEditor && (
+          <div className="bg-white rounded-2xl border border-[#E6EDF2] shadow-xs p-5 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
             <div>
-              <p className="text-sm font-semibold text-slate-700">Period Intervals</p>
-              <p className="text-xs text-slate-500 mt-1">Edit period timings, then drag break cards and drop them between periods to reposition or swap.</p>
+              <p className="text-sm font-bold text-[#003A40]">Period Intervals &amp; Breaks</p>
+              <p className="text-xs text-[#5F6B7A] mt-0.5">Edit period timings, then drag break cards and drop them between periods to reposition.</p>
             </div>
             <div className="flex items-center justify-end">
               <button
                 type="button"
                 onClick={addPeriod}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:border-[#4c1d95] hover:text-[#4c1d95]"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#E6EDF2] bg-white text-xs font-bold text-[#003A40] hover:bg-[#F2FBFA] transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-base">add</span>
+                <span className="material-symbols-outlined text-sm">add</span>
                 Create Period
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {periodSlots.map((slot, idx) => (
-                <div key={idx} className="text-xs font-semibold text-slate-600">
-                  <span className="block mb-1">Period {idx + 1}</span>
+                <div key={idx} className="text-xs font-semibold text-[#5F6B7A]">
+                  <span className="block mb-1 font-bold text-[#003A40]">Period {idx + 1}</span>
                   <div className="relative">
                     <input
                       type="text"
@@ -823,29 +859,29 @@ export default function TimetablePage({ noLayout = false }) {
                         setPeriodSlots(next)
                         persistEditorConfig(next, breakItems)
                       }}
-                      className="w-full px-3 pr-10 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95]"
+                      className="w-full px-3 pr-10 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold text-[#003A40] focus:outline-none focus:border-[#0A686A] bg-[#FAFBFC]"
                     />
                     <button
                       type="button"
                       onClick={() => removePeriod(idx)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-6 h-6 rounded-md border border-red-200 text-red-600 hover:bg-red-50 bg-white"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-6 h-6 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 bg-white cursor-pointer"
                       title={`Remove Period ${idx + 1}`}
                     >
-                      <span className="material-symbols-outlined text-sm">delete</span>
+                      <span className="material-symbols-outlined text-xs">delete</span>
                     </button>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="rounded-xl border border-slate-200 p-4 bg-white">
+            <div className="rounded-xl border border-[#E6EDF2] p-4 bg-[#FAFBFC]">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Break Labels</p>
+                <p className="text-xs font-extrabold text-[#5F6B7A] uppercase tracking-wider">Break Labels</p>
                 <button
                   type="button"
                   onClick={addBreakItem}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#E6EDF2] text-xs font-bold text-[#003A40] bg-white hover:bg-[#F2FBFA] cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-sm">add</span>
+                  <span className="material-symbols-outlined text-xs">add</span>
                   Add Break
                 </button>
               </div>
@@ -857,12 +893,12 @@ export default function TimetablePage({ noLayout = false }) {
                       type="text"
                       value={item.label}
                       onChange={(e) => updateBreakItem(item.id, { label: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/20 focus:border-[#4c1d95]"
+                      className="w-full px-3 py-1.5 border border-[#E6EDF2] rounded-xl text-xs text-[#003A40] font-semibold bg-white"
                     />
                     <select
                       value={item.tone}
                       onChange={(e) => updateBreakItem(item.id, { tone: e.target.value })}
-                      className="px-2 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 bg-white"
+                      className="px-2 py-1.5 border border-[#E6EDF2] rounded-xl text-xs font-bold text-[#5F6B7A] bg-white cursor-pointer"
                     >
                       <option value="slate">Slate</option>
                       <option value="amber">Amber</option>
@@ -872,22 +908,22 @@ export default function TimetablePage({ noLayout = false }) {
                     <button
                       type="button"
                       onClick={() => removeBreakItem(item.id)}
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-red-200 text-red-600 hover:bg-red-50"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 cursor-pointer"
                       title="Remove break"
                     >
-                      <span className="material-symbols-outlined text-sm">delete</span>
+                      <span className="material-symbols-outlined text-xs">delete</span>
                     </button>
                   </div>
                 ))}
               </div>
 
               {breakEditorNotice && (
-                <p className="mt-2 text-xs font-medium text-slate-500">{breakEditorNotice}</p>
+                <p className="mt-2 text-xs font-semibold text-[#0A686A]">{breakEditorNotice}</p>
               )}
             </div>
 
-            <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/60">
-              <p className="text-xs font-semibold text-slate-600 mb-3 uppercase tracking-wider">Drag And Swap Break Times</p>
+            <div className="rounded-xl border border-[#E6EDF2] p-4 bg-[#FAFBFC]">
+              <p className="text-xs font-extrabold text-[#5F6B7A] mb-3 uppercase tracking-wider">Drag And Swap Break Times</p>
               <div className="flex flex-wrap gap-2 mb-4">
                 {breakItems.map((item) => {
                   const tone = getBreakToneClasses(item.tone)
@@ -898,7 +934,7 @@ export default function TimetablePage({ noLayout = false }) {
                       draggable
                       onDragStart={() => setDraggingBreakId(item.id)}
                       onDragEnd={() => setDraggingBreakId('')}
-                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-semibold shadow-sm cursor-grab active:cursor-grabbing ${tone.bgClass} ${tone.textClass}`}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold shadow-2xs cursor-grab active:cursor-grabbing ${tone.bgClass} ${tone.textClass}`}
                       title="Drag and drop between periods"
                     >
                       <span className="material-symbols-outlined text-sm">drag_indicator</span>
@@ -912,10 +948,10 @@ export default function TimetablePage({ noLayout = false }) {
                 {editableBreakBoundaries.map((boundary) => {
                   const itemsAtBoundary = breakItems.filter((item) => item.afterPeriod === boundary)
                   const badgeClass = itemsAtBoundary.length > 0
-                    ? 'bg-white border-slate-300 text-slate-700'
+                    ? 'bg-white border-[#E6EDF2] text-[#003A40]'
                     : draggingBreakId
-                      ? 'bg-[#4c1d95]/5 border-[#4c1d95]/30 text-[#4c1d95]'
-                      : 'bg-white border-slate-200 text-slate-400'
+                      ? 'bg-[#F2FBFA] border-[#0A686A]/30 text-[#0A686A]'
+                      : 'bg-white border-[#E6EDF2] text-[#9AAAB4]'
 
                   return (
                     <div
@@ -927,117 +963,153 @@ export default function TimetablePage({ noLayout = false }) {
                         moveBreakToBoundary(draggingBreakId, boundary)
                         setDraggingBreakId('')
                       }}
-                      className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${badgeClass}`}
+                      className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${badgeClass}`}
                     >
-                      <p className="text-[11px] text-slate-500 mb-1">After Period {boundary}</p>
-                      <p className="truncate">{itemsAtBoundary.length > 0 ? itemsAtBoundary.map((item) => item.label).join(' | ') : 'Drop break here'}</p>
+                      <p className="text-[10px] text-[#5F6B7A] mb-0.5">After Period {boundary}</p>
+                      <p className="truncate font-bold">{itemsAtBoundary.length > 0 ? itemsAtBoundary.map((item) => item.label).join(' | ') : 'Drop break here'}</p>
                     </div>
                   )
                 })}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {editMode && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl mb-5 text-sm text-amber-700">
-          <span className="material-symbols-outlined text-amber-500">info</span>
-          <span>Hover over any cell to <strong>add</strong>, <strong>edit</strong>, or <strong>remove</strong> a class entry.</span>
-        </div>
-      )}
-
-      {/* ── Timetable Grid ─────────────────────────────────────────────── */}
-      {current ? (
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-        <div style={{ minWidth: 780 }}>
-          {/* Header */}
-          <div className="grid border-b border-slate-200" style={{ gridTemplateColumns: tpl }}>
-            <div className="bg-slate-50 border-r border-slate-200" />
-            {gridColumns.slice(1).map((column, columnIndex, arr) => {
-              const isLast = columnIndex === arr.length - 1
-              if (column.kind === 'break') {
-                return (
-                  <div
-                    key={column.id}
-                    className={`${column.headerClass} ${isLast ? '' : 'border-r border-slate-200'}`}
-                  />
-                )
-              }
-              return (
-                <div key={column.id} className={`${headerCell} ${isLast ? 'border-r-0' : ''}`}>
-                  {String(periodSlots[column.periodIdx] || '').split('–').map((t, i) => <span key={i}>{t}{i===0 && '–'}</span>)}
-                </div>
-              )
-            })}
+        {editMode && (
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200/80 rounded-xl text-xs font-semibold text-amber-800 animate-in fade-in duration-150">
+            <span className="material-symbols-outlined text-amber-600 text-sm">info</span>
+            <span>Hover over any cell to <strong>add</strong>, <strong>edit</strong>, or <strong>remove</strong> a class entry.</span>
           </div>
+        )}
 
-          {/* Days */}
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-0 grid z-10" style={{ gridTemplateColumns: tpl }}>
-              <div />
-              {gridColumns.slice(1).map((column) => {
-                if (column.kind === 'break') {
-                  return (
-                    <div key={`overlay-${column.id}`} className="flex items-center justify-center">
-                      <span className={`text-[11px] font-semibold tracking-[0.2em] [writing-mode:vertical-rl] rotate-180 ${column.textClass}`}>
-                        {column.label}
-                      </span>
-                    </div>
-                  )
-                }
-                return <div key={`overlay-${column.id}`} />
-              })}
-            </div>
-
-            {DAYS.map((day, di) => (
-              <div key={di} className="grid border-b border-slate-100 last:border-b-0 min-h-[80px]" style={{ gridTemplateColumns: tpl }}>
-                <div className="px-1 py-2 text-sm font-bold text-slate-700 border-r border-slate-200 flex items-center justify-center bg-slate-50">
-                  {day}
+        {/* ── Timetable Grid ─────────────────────────────────────────────── */}
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-[#E6EDF2] shadow-xs overflow-hidden flex-1 min-h-0 flex flex-col animate-pulse">
+            <div className="grid border-b border-[#E6EDF2] flex-shrink-0 bg-[#F8FAFC]" style={{ gridTemplateColumns: '100px repeat(7, 1fr)' }}>
+              <div className="p-3 border-r border-[#E6EDF2] flex items-center justify-center">
+                <div className="h-3 bg-slate-200 rounded w-12" />
+              </div>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="p-3 border-r border-[#E6EDF2] last:border-r-0 flex items-center justify-center">
+                  <div className="h-3 bg-slate-200 rounded w-16" />
                 </div>
-                {gridColumns.slice(1).map((column, columnIndex, arr) => {
-                  const isLast = columnIndex === arr.length - 1
-
-                  if (column.kind === 'break') {
+              ))}
+            </div>
+            <div className="flex-1 flex flex-col divide-y divide-[#E6EDF2]">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
+                <div key={day} className="grid flex-1 min-h-[85px] h-1/5" style={{ gridTemplateColumns: '100px repeat(7, 1fr)' }}>
+                  <div className="bg-[#F8FAFC] border-r border-[#E6EDF2] p-3 flex items-center justify-center">
+                    <div className="h-4 bg-slate-200 rounded w-8" />
+                  </div>
+                  {Array.from({ length: 7 }).map((_, cIdx) => (
+                    <div key={cIdx} className="p-2 border-r border-[#E6EDF2] last:border-r-0 flex flex-col justify-between bg-[#FAFBFC]/40">
+                      <div className="space-y-1.5">
+                        <div className="h-2.5 bg-slate-200 rounded w-10" />
+                        <div className="h-3.5 bg-slate-200 rounded w-full" />
+                      </div>
+                      <div className="h-2.5 bg-slate-200 rounded w-12" />
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : current ? (
+          <div className="bg-white rounded-2xl border border-[#E6EDF2] shadow-xs overflow-hidden flex-1 min-h-0 flex flex-col">
+            <div className="overflow-x-auto flex-1 custom-scrollbar">
+              <div style={{ minWidth: 800 }} className="h-full flex flex-col">
+                {/* Header */}
+                <div className="grid border-b border-[#E6EDF2] flex-shrink-0" style={{ gridTemplateColumns: tpl }}>
+                  <div className="bg-[#F8FAFC] border-r border-[#E6EDF2] flex items-center justify-center p-2 text-[10px] font-extrabold text-[#5F6B7A] uppercase tracking-wider">
+                    Day / Time
+                  </div>
+                  {gridColumns.slice(1).map((column, columnIndex, arr) => {
+                    const isLast = columnIndex === arr.length - 1
+                    if (column.kind === 'break') {
+                      return (
+                        <div
+                          key={column.id}
+                          className={`${column.headerClass} ${isLast ? '' : 'border-r border-[#E6EDF2]'}`}
+                        />
+                      )
+                    }
                     return (
-                      <div
-                        key={`${day}-${column.id}`}
-                        className={`${column.bgClass} ${isLast ? '' : 'border-r border-slate-100'}`}
-                      />
+                      <div key={column.id} className={`${headerCell} ${isLast ? 'border-r-0' : 'border-r border-[#E6EDF2]'}`}>
+                        {String(periodSlots[column.periodIdx] || '').split('–').map((t, i) => <span key={i} className="font-extrabold text-[#003A40]">{t}{i===0 && '–'}</span>)}
+                      </div>
                     )
-                  }
+                  })}
+                </div>
 
-                  return (
-                    <div key={`${day}-${column.id}`} className={`p-1.5 ${isLast ? '' : 'border-r border-slate-100'}`}>
-                      <ClassCell
-                        cls={current.slots[column.periodIdx]?.[di]}
-                        canEdit={editMode}
-                        onEdit={() => setEditTarget({ slotIdx: column.periodIdx, dayIdx: di })}
-                        onClear={() => handleClearCell(column.periodIdx, di)}
-                      />
+                {/* Days */}
+                <div className="relative flex-1">
+                  <div className="pointer-events-none absolute inset-0 grid z-10" style={{ gridTemplateColumns: tpl }}>
+                    <div />
+                    {gridColumns.slice(1).map((column) => {
+                      if (column.kind === 'break') {
+                        return (
+                          <div key={`overlay-${column.id}`} className="flex items-center justify-center">
+                            <span className={`text-[10px] font-black tracking-[0.2em] [writing-mode:vertical-rl] rotate-180 ${column.textClass}`}>
+                              {column.label}
+                            </span>
+                          </div>
+                        )
+                      }
+                      return <div key={`overlay-${column.id}`} />
+                    })}
+                  </div>
+
+                  {DAYS.map((day, di) => (
+                    <div key={di} className="grid border-b border-[#E6EDF2] last:border-b-0 min-h-[85px] h-1/5" style={{ gridTemplateColumns: tpl }}>
+                      <div className="px-2 py-2 text-xs font-black text-[#003A40] uppercase tracking-wider border-r border-[#E6EDF2] flex items-center justify-center bg-[#F8FAFC]">
+                        {day}
+                      </div>
+                      {gridColumns.slice(1).map((column, columnIndex, arr) => {
+                        const isLast = columnIndex === arr.length - 1
+
+                        if (column.kind === 'break') {
+                          return (
+                            <div
+                              key={`${day}-${column.id}`}
+                              className={`${column.bgClass} ${isLast ? '' : 'border-r border-[#E6EDF2]'}`}
+                            />
+                          )
+                        }
+
+                        return (
+                          <div key={`${day}-${column.id}`} className={`p-1.5 ${isLast ? '' : 'border-r border-[#E6EDF2]'}`}>
+                            <ClassCell
+                              cls={current.slots[column.periodIdx]?.[di]}
+                              canEdit={editMode}
+                              onEdit={() => setEditTarget({ slotIdx: column.periodIdx, dayIdx: di })}
+                              onClear={() => handleClearCell(column.periodIdx, di)}
+                            />
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center text-slate-500">
-          No timetable is available for the current class and semester.
-        </div>
-      )}
+        ) : (
+          <div className="bg-white rounded-2xl border border-[#E6EDF2] shadow-xs p-12 text-center text-[#5F6B7A]">
+            <span className="material-symbols-outlined text-5xl mb-2 opacity-20">calendar_clock</span>
+            <p className="text-sm font-semibold">No timetable is available for the current class selection.</p>
+          </div>
+        )}
 
-      {/* ── Legend ─────────────────────────────────────────────────────── */}
-      <div className="mt-8 flex flex-wrap gap-6 items-center">
-        <p className="text-sm font-bold text-slate-700">Course Codes:</p>
-        {LEGEND.map((l) => (
-          <div key={l.label} className="flex items-center gap-2">
-            <span className={`size-3 rounded-full ${l.color}`} />
-            <span className="text-xs text-slate-600">{l.label}</span>
-          </div>
-        ))}
+        {/* ── Legend Ribbon ───────────────────────────────────────────── */}
+        <div className="flex-shrink-0 flex flex-wrap gap-4 items-center bg-white px-5 py-3 rounded-2xl border border-[#E6EDF2]">
+          <p className="text-xs font-extrabold text-[#003A40] uppercase tracking-wider">Legend:</p>
+          {LEGEND.map((l) => (
+            <div key={l.label} className="flex items-center gap-1.5">
+              <span className={`w-2.5 h-2.5 rounded-full ${l.color}`} />
+              <span className="text-xs font-semibold text-[#5F6B7A]">{l.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── Entry Modal ────────────────────────────────────────────────── */}
@@ -1055,8 +1127,7 @@ export default function TimetablePage({ noLayout = false }) {
       {showNewClass && (
         <NewClassModal onSave={handleCreateClass} onClose={() => setShowNewClass(false)} />
       )}
-    </>
+    </div>
   )
-
-  return noLayout ? inner : <Layout title="Timetable">{inner}</Layout>
+  return noLayout ? inner : <Layout title="Timetable" noPadding>{inner}</Layout>
 }

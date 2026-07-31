@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { MoreVertical, Eye, Pencil, Trash2, FileText, UserPlus, Grid, CheckSquare, FileCheck } from 'lucide-react'
 import { Pagination, TableSkeleton } from '../components/common'
 import Layout from '../components/Layout'
 import KpiCard from '../components/KpiCard'
@@ -85,6 +86,14 @@ export default function ExamsPage({ noLayout = false }) {
   const [facultyList, setFacultyList] = useState([])
   const [selectedDetailSubject, setSelectedDetailSubject] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [openActionMenuId, setOpenActionMenuId] = useState(null)
+
+  useEffect(() => {
+    const handleClickOutside = () => setOpenActionMenuId(null);
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // Helper to calculate academic year relative to current semester
   const getSubjectAcademicYear = (subjectSem, currentSem, currentAcademicYear) => {
@@ -699,369 +708,565 @@ export default function ExamsPage({ noLayout = false }) {
   const labelClasses = "block text-sm font-semibold text-slate-700 mb-1.5 ml-0.5";
 
   const inner = (
-    <>
-      {/* Global Filter Card */}
-      <div className="bg-white rounded-xl border border-teal-200 overflow-hidden shadow-sm mb-6">
-        <div className="bg-teal-600 px-6 py-3 flex items-center gap-2.5">
-          <span className="material-symbols-outlined text-white">calendar_month</span>
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Select Academic Year & Semester</h3>
+    <div className="flex flex-col h-full min-h-0 gap-0">
+
+      {/* ── TOP CONTROL BAR ─────────────────────────────────────── */}
+      <div className="flex-shrink-0 bg-white border-b border-[#E6EDF2] px-5 py-3 flex flex-wrap items-center gap-3">
+
+        {/* Search field */}
+        <div className="relative flex-shrink-0">
+          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-[#9AAAB4] pointer-events-none">search</span>
+          <input
+            type="text"
+            placeholder="Search course, code..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            className="pl-8 pr-3 py-1.5 text-xs font-medium border border-[#E6EDF2] rounded-xl bg-[#F8FAFC] text-[#003A40] placeholder-[#9AAAB4] outline-none focus:border-[#0A686A] focus:ring-2 focus:ring-[#0A686A]/10 w-52 transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => { setSearchQuery(''); setCurrentPage(1); }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9AAAB4] hover:text-[#003A40] transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+          )}
         </div>
-        <div className="p-6">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-            <div className="flex-1 space-y-1.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Academic Year</label>
-              <select
-                value={academicYearFilter}
-                onChange={(e) => setAcademicYearFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 bg-slate-50 font-medium outline-none transition-all focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-              >
-                <option value="">All Academic Years</option>
-                <option value="2026-2027">2026-2027</option>
-                <option value="2025-2026">2025-2026</option>
-                <option value="2024-2025">2024-2025</option>
-                <option value="2023-2024">2023-2024</option>
-                <option value="2022-2023">2022-2023</option>
-              </select>
-            </div>
-            
-            <div className="flex-1 space-y-1.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Semester</label>
-              <select
-                value={semesterFilterVal}
-                onChange={(e) => setSemesterFilterVal(e.target.value)}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 bg-slate-50 font-medium outline-none transition-all focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-              >
-                <option value="">All Semesters</option>
-                <option value="Semester 1">Semester 1</option>
-                <option value="Semester 2">Semester 2</option>
-                <option value="Semester 3">Semester 3</option>
-                <option value="Semester 4">Semester 4</option>
-                <option value="Semester 5">Semester 5</option>
-                <option value="Semester 6">Semester 6</option>
-                <option value="Semester 7">Semester 7</option>
-                <option value="Semester 8">Semester 8</option>
-              </select>
-            </div>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setAppliedYear(academicYearFilter);
-                  setAppliedSem(semesterFilterVal);
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all shadow-sm active:scale-95"
-              >
-                <span className="material-symbols-outlined text-base">filter_list</span>
-                Filter
-              </button>
-              <button
-                onClick={() => {
-                  setAcademicYearFilter('');
-                  setSemesterFilterVal('');
-                  setAppliedYear('');
-                  setAppliedSem('');
-                }}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-semibold transition-all shadow-sm active:scale-95"
-              >
-                <span className="material-symbols-outlined text-base">close</span>
-                Clear
-              </button>
-            </div>
-          </div>
+        {/* Divider */}
+        <div className="w-px h-6 bg-[#E6EDF2] hidden sm:block" />
 
-          {/* Alert bar */}
-          <div className="flex items-start gap-3 p-4 bg-sky-50 border border-sky-100 rounded-xl text-sky-800 mt-4 animate-in fade-in duration-200">
-            <span className="material-symbols-outlined text-sky-600 mt-0.5">info</span>
-            <div className="text-xs leading-relaxed font-medium">
-              Currently showing: <span className="font-bold text-sky-900">Academic Year {appliedYear} - {appliedSem}</span>
-              <p className="text-sky-600 mt-0.5">These filters apply to both "Mark show" and "Exam timetable" tabs</p>
-            </div>
-          </div>
+        {/* Tab pill switcher */}
+        <div className="inline-flex bg-[#F2FBFA] border border-[#E6EDF2] rounded-xl p-1 gap-1">
+          <button
+            onClick={() => { setActiveExamsTab('schedules'); setCurrentPage(1); }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeExamsTab === 'schedules'
+                ? 'bg-[#003A40] text-white shadow-sm'
+                : 'text-[#5F6B7A] hover:text-[#003A40]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm">calendar_month</span>
+            Exam Timetable
+          </button>
+          <button
+            onClick={() => { setActiveExamsTab('marks'); }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeExamsTab === 'marks'
+                ? 'bg-[#003A40] text-white shadow-sm'
+                : 'text-[#5F6B7A] hover:text-[#003A40]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm">grade</span>
+            Mark Show
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-6 bg-[#E6EDF2] hidden sm:block" />
+
+        {/* Filter inline */}
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+          <select
+            value={academicYearFilter}
+            onChange={(e) => setAcademicYearFilter(e.target.value)}
+            className="px-3 py-1.5 border border-[#E6EDF2] rounded-lg text-xs text-[#003A40] bg-[#F4F7FF] font-semibold outline-none focus:border-[#0A686A] focus:ring-1 focus:ring-[#0A686A]/20 cursor-pointer"
+          >
+            <option value="">All Years</option>
+            <option value="2026-2027">2026-2027</option>
+            <option value="2025-2026">2025-2026</option>
+            <option value="2024-2025">2024-2025</option>
+            <option value="2023-2024">2023-2024</option>
+          </select>
+          <select
+            value={semesterFilterVal}
+            onChange={(e) => setSemesterFilterVal(e.target.value)}
+            className="px-3 py-1.5 border border-[#E6EDF2] rounded-lg text-xs text-[#003A40] bg-[#F4F7FF] font-semibold outline-none focus:border-[#0A686A] focus:ring-1 focus:ring-[#0A686A]/20 cursor-pointer"
+          >
+            <option value="">All Semesters</option>
+            {[1,2,3,4,5,6,7,8].map(n => (
+              <option key={n} value={`Semester ${n}`}>Semester {n}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => { setAppliedYear(academicYearFilter); setAppliedSem(semesterFilterVal); }}
+            className="flex items-center gap-1 px-3 py-1.5 bg-[#003A40] hover:bg-[#02282d] text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm"
+          >
+            <span className="material-symbols-outlined text-sm">filter_list</span>
+            Apply
+          </button>
+          {(appliedYear || appliedSem) && (
+            <button
+              onClick={() => { setAcademicYearFilter(''); setSemesterFilterVal(''); setAppliedYear(''); setAppliedSem(''); }}
+              className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+              Clear
+            </button>
+          )}
+          {(appliedYear || appliedSem) && (
+            <span className="text-[11px] font-medium text-[#0A686A] bg-[#F2FBFA] border border-[#0A686A]/20 px-2.5 py-1 rounded-full">
+              {appliedYear || 'All Years'} · {appliedSem || 'All Sems'}
+            </span>
+          )}
+        </div>
+
+        {/* Right action buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {isStudent && (
+            <button
+              onClick={handleOpenAllHallTickets}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-sm cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">badge</span>
+              Hall Tickets
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              onClick={() => setShowScheduleWizard(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-[#0A686A] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-sm cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">add_circle</span>
+              Schedule Exam
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Tab Selectors */}
-      <div className="flex border-b border-slate-200 mb-6">
-        <button
-          onClick={() => { setActiveExamsTab('schedules'); setCurrentPage(1); }}
-          className={`pb-3 text-sm font-semibold transition-all relative px-4 ${
-            activeExamsTab === 'schedules' ? 'text-[#4c1d95]' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          Exam Timetable
-          {activeExamsTab === 'schedules' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4c1d95] rounded-t-full" />
-          )}
-        </button>
-        <button
-          onClick={() => { setActiveExamsTab('marks'); }}
-          className={`pb-3 text-sm font-semibold transition-all relative px-4 ${
-            activeExamsTab === 'marks' ? 'text-[#4c1d95]' : 'text-slate-400 hover:text-slate-600'
-          }`}
-        >
-          Mark Show
-          {activeExamsTab === 'marks' && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4c1d95] rounded-t-full" />
-          )}
-        </button>
-      </div>
-
+      {/* ── MAIN CONTENT AREA ───────────────────────────────────── */}
       {activeExamsTab === 'schedules' ? (
-        <>
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-wrap items-center gap-2">
-              {isStudent && (
-                <button 
-                  onClick={handleOpenAllHallTickets}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#3b0764] transition-all shadow-sm active:scale-95"
-                >
-                  <span className="material-symbols-outlined text-lg">badge</span>
-                  Download Hall Tickets
-                </button>
-              )}
-              {isAdmin && (
-                <button 
-                  onClick={() => setShowScheduleWizard(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-semibold hover:bg-emerald-200 transition-all"
-                >
-                  <span className="material-symbols-outlined text-lg">edit_calendar</span>
-                  Create Schedule
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {/* Stats Cards */}
-          <KpiGrid className="lg:grid-cols-3">
-            <KpiCard icon="event_upcoming" label="Upcoming Exams" value={stats.upcoming} colorScheme="blue" />
-            <KpiCard icon="check_circle" label="Completed" value={stats.completed} colorScheme="emerald" />
-            <KpiCard icon="pending" label="Results Pending" value={stats.pending} colorScheme="orange" />
-          </KpiGrid>
+        <div className="flex-1 min-h-0 flex gap-0">
 
-          {/* Exams Table */}
-          {loading ? (
-            <TableSkeleton cols={isStudent ? 9 : 7} rows={8} />
-          ) : (
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left min-w-[900px]">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-                    <th className="px-6 py-4">Course</th>
-                    <th className="px-6 py-4">Date & Time</th>
-                    <th className="px-6 py-4">Room</th>
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Duration</th>
-                    <th className="px-6 py-4">Status</th>
-                    {isStudent && <th className="px-6 py-4 text-center">Score</th>}
-                    {isStudent && <th className="px-6 py-4 text-center">Register</th>}
-                    {isStudent && <th className="px-6 py-4 text-center">Revaluation</th>}
-                    {!isStudent && <th className="px-6 py-4 text-right">Actions</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredExamsForTimetable.length === 0 ? (
-                    <tr>
-                      <td colSpan={isStudent ? 9 : 7} className="px-6 py-12 text-center text-slate-500">
-                        <span className="material-symbols-outlined text-5xl mb-2 opacity-20">quiz</span>
-                        <p className="text-sm">{isStudent ? 'No exams scheduled yet.' : 'No exams scheduled yet. Click "Schedule Exam" to add one.'}</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredExamsForTimetable.slice((currentPage-1)*pageSize, currentPage*pageSize).map((exam) => (
-                      <tr key={exam._id || exam.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <p className="text-xs font-bold text-[#4c1d95] uppercase">{exam.code}</p>
-                          <p className="text-sm font-semibold text-slate-900">{exam.name}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-sm font-medium text-slate-900">{formatDate(exam.date)}</p>
-                          <p className="text-xs text-slate-500">{formatTime(exam.time)}</p>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          <div>{exam.room}</div>
-                          {isStudent && exam.seatNumber && (
-                            <div className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded inline-block mt-1">
-                              Seat: {exam.seatNumber}
-                            </div>
+          {/* ── LEFT PANEL: KPI + Exam List ── */}
+          <div className="flex flex-col min-h-0 flex-1 border-r border-[#E6EDF2]">
+
+            {/* KPI Row */}
+            <div className="flex-shrink-0 px-5 py-3 grid grid-cols-3 gap-3 border-b border-[#E6EDF2] bg-[#FAFBFC]">
+              {/* Upcoming */}
+              <div className="relative overflow-hidden flex items-center gap-3 bg-white rounded-xl border border-[#E6EDF2] p-4 shadow-sm group">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-blue-600">event_upcoming</span>
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-[#003A40] leading-none">{stats.upcoming}</p>
+                  <p className="text-[10px] font-bold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Upcoming</p>
+                </div>
+              </div>
+              {/* Completed */}
+              <div className="relative overflow-hidden flex items-center gap-3 bg-white rounded-xl border border-[#E6EDF2] p-4 shadow-sm group">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-[#003A40] leading-none">{stats.completed}</p>
+                  <p className="text-[10px] font-bold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Completed</p>
+                </div>
+              </div>
+              {/* Pending */}
+              <div className="relative overflow-hidden flex items-center gap-3 bg-white rounded-xl border border-[#E6EDF2] p-4 shadow-sm group">
+                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-orange-600">pending</span>
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-[#003A40] leading-none">{stats.pending}</p>
+                  <p className="text-[10px] font-bold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Results Pending</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Table header */}
+            <div className="flex-shrink-0 px-5 py-2.5 bg-[#F0F4F8] border-b border-[#E6EDF2]">
+              <div className="grid grid-cols-12 gap-2 text-[10px] font-extrabold text-[#7A8FA0] uppercase tracking-widest">
+                <div className="col-span-4">Course</div>
+                <div className="col-span-2">Date &amp; Time</div>
+                <div className="col-span-1">Room</div>
+                <div className="col-span-1 text-center">Type</div>
+                <div className="col-span-1 text-center">Dur.</div>
+                <div className="col-span-2 text-center">Status</div>
+                <div className="col-span-1 text-right">Actions</div>
+              </div>
+            </div>
+
+            {/* Exam rows (scrolls within left panel only) */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {loading ? (
+                <div className="flex flex-col gap-0">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="px-5 py-3.5 border-b border-[#E6EDF2] animate-pulse flex gap-3">
+                      <div className="h-10 w-3/12 bg-slate-100 rounded-lg" />
+                      <div className="h-10 w-2/12 bg-slate-100 rounded-lg" />
+                      <div className="h-10 w-2/12 bg-slate-100 rounded-lg" />
+                      <div className="h-10 w-3/12 bg-slate-100 rounded-lg" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredExamsForTimetable.filter(e =>
+                  !searchQuery ||
+                  (e.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  (e.code || '').toLowerCase().includes(searchQuery.toLowerCase())
+                ).length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full gap-3 py-16 text-[#5F6B7A]">
+                  <span className="material-symbols-outlined text-5xl opacity-20">quiz</span>
+                  <p className="text-sm font-semibold">
+                    {searchQuery ? `No results for "${searchQuery}"` : 'No exams scheduled for this selection'}
+                  </p>
+                  {isAdmin && !searchQuery && (
+                    <button
+                      onClick={() => setShowScheduleWizard(true)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-[#003A40] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all cursor-pointer mt-1"
+                    >
+                      <span className="material-symbols-outlined text-sm">add</span>
+                      Schedule First Exam
+                    </button>
+                  )}
+                </div>
+              ) : (
+                filteredExamsForTimetable
+                  .filter(e =>
+                    !searchQuery ||
+                    (e.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (e.code || '').toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .slice((currentPage-1)*pageSize, currentPage*pageSize).map((exam, idx) => (
+                  <div
+                    key={exam._id || exam.id}
+                    className={`px-5 py-3.5 border-b border-[#E6EDF2] hover:bg-[#F2FBFA] transition-colors group grid grid-cols-12 gap-2 items-center ${
+                      idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFBFC]'
+                    }`}
+                  >
+                    {/* Course */}
+                    <div className="col-span-4 min-w-0 flex items-center gap-3">
+                      <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${
+                        exam.status === 'Completed' ? 'bg-emerald-400' :
+                        exam.status === 'Upcoming' ? 'bg-blue-400' : 'bg-rose-400'
+                      }`} />
+                      <div className="min-w-0">
+                        <span className="inline-block text-[9px] font-extrabold text-[#0A686A] bg-[#F2FBFA] border border-[#0A686A]/20 px-1.5 py-0.5 rounded mb-0.5 tracking-wide">
+                          {exam.code}
+                        </span>
+                        <p className="text-sm font-bold text-[#003A40] leading-tight truncate">{exam.name}</p>
+                      </div>
+                    </div>
+
+                    {/* Date & Time */}
+                    <div className="col-span-2">
+                      <p className="text-xs font-bold text-[#1E293B]">{formatDate(exam.date)}</p>
+                      <p className="text-[11px] text-[#64748B] font-medium">{formatTime(exam.time)}</p>
+                    </div>
+
+                    {/* Room */}
+                    <div className="col-span-1">
+                      <p className="text-xs font-semibold text-[#334155] truncate">{exam.room}</p>
+                      {isStudent && exam.seatNumber && (
+                        <span className="text-[10px] font-bold text-emerald-700">Seat {exam.seatNumber}</span>
+                      )}
+                    </div>
+
+                    {/* Type */}
+                    <div className="col-span-1 text-center">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-extrabold border tracking-wide ${
+                        exam.type === 'End-Sem' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                        exam.type === 'Mid-Sem' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                        exam.type === 'Practical' ? 'bg-teal-50 text-teal-700 border-teal-200' :
+                        exam.type === 'Quiz' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                        'bg-slate-50 text-slate-600 border-slate-200'
+                      }`}>
+                        {exam.type}
+                      </span>
+                    </div>
+
+                    {/* Duration */}
+                    <div className="col-span-1 text-center">
+                      <span className="inline-flex items-center gap-0.5 text-xs font-bold text-[#5F6B7A]">
+                        <span className="material-symbols-outlined text-xs text-[#9AAAB4]">schedule</span>
+                        {parseDurationToMinutes(exam.duration) || exam.duration}m
+                      </span>
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-2 text-center">
+                      {exam.status === 'Completed' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>Completed
+                        </span>
+                      ) : exam.status === 'Upcoming' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/80">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0"></span>Upcoming
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0"></span>{exam.status || 'Cancelled'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-1 flex items-center justify-end gap-1 relative">
+                      <button
+                        onClick={() => handleOpenExamReport(exam)}
+                        className="p-1.5 rounded-lg text-[#0A686A] hover:bg-[#F2FBFA] border border-transparent hover:border-[#E6EDF2] transition-all cursor-pointer"
+                        title="View Report"
+                      >
+                        <FileText className="w-4 h-4 text-[#0A686A]" />
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenActionMenuId(openActionMenuId === (exam._id || exam.id) ? null : (exam._id || exam.id));
+                        }}
+                        className="p-1.5 rounded-lg text-[#5F6B7A] hover:text-[#003A40] hover:bg-[#F2FBFA] border border-transparent hover:border-[#E6EDF2] transition-all cursor-pointer"
+                        title="More options"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+
+                      {openActionMenuId === (exam._id || exam.id) && (
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-[#E6EDF2] py-1.5 z-30 animate-in fade-in zoom-in-95 duration-150"
+                        >
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => { setOpenActionMenuId(null); openEditModal(exam); }}
+                                className="w-full px-3 py-2 text-left text-xs font-semibold text-[#003A40] hover:bg-[#F2FBFA] flex items-center gap-2.5 transition-colors cursor-pointer"
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                                Edit Exam
+                              </button>
+                              <button
+                                onClick={() => { setOpenActionMenuId(null); handleOpenSeatAssignment(exam); }}
+                                className="w-full px-3 py-2 text-left text-xs font-semibold text-[#003A40] hover:bg-[#F2FBFA] flex items-center gap-2.5 transition-colors cursor-pointer"
+                              >
+                                <Grid className="w-3.5 h-3.5 text-indigo-600" />
+                                Seat Assignment
+                              </button>
+                              <button
+                                onClick={() => { setOpenActionMenuId(null); handleOpenInvigilatorAssign(exam); }}
+                                className="w-full px-3 py-2 text-left text-xs font-semibold text-[#003A40] hover:bg-[#F2FBFA] flex items-center gap-2.5 transition-colors cursor-pointer"
+                              >
+                                <UserPlus className="w-3.5 h-3.5 text-cyan-600" />
+                                Invigilators
+                              </button>
+                              <div className="my-1 border-t border-[#E6EDF2]" />
+                              <button
+                                onClick={() => { setOpenActionMenuId(null); handleDelete(exam._id || exam.id); }}
+                                className="w-full px-3 py-2 text-left text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                Delete Exam
+                              </button>
+                            </>
                           )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                            {exam.type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
-                          {parseDurationToMinutes(exam.duration) || exam.duration} min
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            exam.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 
-                            exam.status === 'Upcoming' ? 'bg-green-50 text-[#4c1d95]' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {exam.status}
-                          </span>
-                        </td>
-                        {isStudent && (
-                          <>
-                            <td className="px-6 py-4 text-center">
-                              {exam.marks !== undefined && exam.marks !== null ? (
-                                <div>
-                                  <p className="text-lg font-bold text-slate-900">{exam.marks}/{exam.maxMarks}</p>
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                                    exam.grade === 'A+' || exam.grade === 'A' ? 'bg-emerald-100 text-emerald-700' :
-                                    exam.grade === 'B+' || exam.grade === 'B' ? 'bg-green-100 text-green-700' :
-                                    'bg-slate-100 text-slate-700'
-                                  }`}>
-                                    Grade: {exam.grade}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-slate-400">—</span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              {exam.status === 'Upcoming' && !exam.registered ? (
+                          {isFaculty && (
+                            <>
+                              <button
+                                onClick={() => { setOpenActionMenuId(null); handleOpenMarksEntry(exam); }}
+                                className="w-full px-3 py-2 text-left text-xs font-semibold text-[#003A40] hover:bg-[#F2FBFA] flex items-center gap-2.5 transition-colors cursor-pointer"
+                              >
+                                <FileCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                Enter Marks
+                              </button>
+                              <button
+                                onClick={() => { setOpenActionMenuId(null); handleOpenAttendance(exam); }}
+                                className="w-full px-3 py-2 text-left text-xs font-semibold text-[#003A40] hover:bg-[#F2FBFA] flex items-center gap-2.5 transition-colors cursor-pointer"
+                              >
+                                <CheckSquare className="w-3.5 h-3.5 text-purple-600" />
+                                Attendance
+                              </button>
+                              <button
+                                onClick={() => { setOpenActionMenuId(null); openEditModal(exam); }}
+                                className="w-full px-3 py-2 text-left text-xs font-semibold text-[#003A40] hover:bg-[#F2FBFA] flex items-center gap-2.5 transition-colors cursor-pointer"
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                                Edit Exam
+                              </button>
+                            </>
+                          )}
+                          {isStudent && (
+                            <>
+                              {exam.status === 'Upcoming' && !exam.registered && (
                                 <button
-                                  onClick={() => handleRegister(exam._id || exam.id)}
-                                  className="px-3 py-1.5 bg-[#4c1d95] text-white rounded-lg text-xs font-semibold hover:bg-[#3b0764] transition-all"
+                                  onClick={() => { setOpenActionMenuId(null); handleRegister(exam._id || exam.id); }}
+                                  className="w-full px-3 py-2 text-left text-xs font-semibold text-[#003A40] hover:bg-[#F2FBFA] flex items-center gap-2.5 transition-colors cursor-pointer"
                                 >
+                                  <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
                                   Register
                                 </button>
-                              ) : exam.registered ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                                  <span className="material-symbols-outlined text-sm mr-1">check_circle</span>
-                                  Registered
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400">—</span>
                               )}
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              {exam.status === 'Completed' && exam.resultsPublished ? (
+                              {exam.registered && (
+                                <div className="px-3 py-2 text-xs font-semibold text-emerald-600 flex items-center gap-2">
+                                  ✓ Registered
+                                </div>
+                              )}
+                              {exam.status === 'Completed' && exam.resultsPublished && (
                                 <button
-                                  onClick={() => handleOpenRevaluation(exam)}
-                                  className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600 transition-all"
-                                  title="Apply for Revaluation"
+                                  onClick={() => { setOpenActionMenuId(null); handleOpenRevaluation(exam); }}
+                                  className="w-full px-3 py-2 text-left text-xs font-semibold text-orange-600 hover:bg-orange-50 flex items-center gap-2.5 transition-colors cursor-pointer"
                                 >
-                                  Apply
+                                  <FileText className="w-3.5 h-3.5 text-orange-600" />
+                                  Apply Revaluation
                                 </button>
-                              ) : (
-                                <span className="text-xs text-slate-400">—</span>
                               )}
-                            </td>
-                          </>
-                        )}
-                        {!isStudent && (
-                          <td className="px-6 py-4">
-                            <div className="flex items-center justify-end gap-2">
-                              {isFaculty && (
-                                <>
-                                  <button
-                                    onClick={() => handleOpenMarksEntry(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                    title="Enter Marks"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">edit_note</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleOpenAttendance(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                                    title="Mark Attendance"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">fact_check</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleOpenExamReport(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                                    title="View Report"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">assessment</span>
-                                  </button>
-                                  <button
-                                    onClick={() => openEditModal(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-[#4c1d95] hover:bg-[#4c1d95]/10 rounded-lg transition-colors"
-                                    title="Edit"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">edit</span>
-                                  </button>
-                                </>
-                              )}
-                              {isAdmin && (
-                                <>
-                                  <button
-                                    onClick={() => handleOpenSeatAssignment(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                    title="Seat Assignment"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">event_seat</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleOpenInvigilatorAssign(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors"
-                                    title="Assign Invigilators"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">person_add</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleOpenExamReport(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                                    title="View Report"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">assessment</span>
-                                  </button>
-                                  <button
-                                    onClick={() => openEditModal(exam)}
-                                    className="p-1.5 text-slate-400 hover:text-[#4c1d95] hover:bg-[#4c1d95]/10 rounded-lg transition-colors"
-                                    title="Edit"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">edit</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(exam._id || exam.id)}
-                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                    title="Delete"
-                                  >
-                                    <span className="material-symbols-outlined text-lg">delete</span>
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-              </div>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={Math.max(1, Math.ceil(filteredExamsForTimetable.length / pageSize))}
-                onPageChange={setCurrentPage}
-                totalItems={filteredExamsForTimetable.length}
-                pageSize={pageSize}
-                onPageSizeChange={(s) => { setPageSize(s); setCurrentPage(1); }}
-              />
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          )}
-        </>
+
+            {/* Pagination footer */}
+            {filteredExamsForTimetable.length > 0 && (
+              <div className="flex-shrink-0 border-t border-[#E6EDF2] px-5 py-2.5 flex items-center justify-between bg-[#FAFBFC]">
+                <span className="text-[11px] font-semibold text-[#5F6B7A]">
+                  Showing {Math.min((currentPage-1)*pageSize+1, filteredExamsForTimetable.length)}–{Math.min(currentPage*pageSize, filteredExamsForTimetable.length)} of {filteredExamsForTimetable.length} exams
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p-1))}
+                    disabled={currentPage === 1}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#E6EDF2] text-[#5F6B7A] disabled:opacity-40 hover:bg-[#F2FBFA] transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">chevron_left</span>
+                  </button>
+                  {[...Array(Math.max(1, Math.ceil(filteredExamsForTimetable.length / pageSize)))].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i+1)}
+                      className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                        currentPage === i+1
+                          ? 'bg-[#003A40] text-white'
+                          : 'border border-[#E6EDF2] text-[#5F6B7A] hover:bg-[#F2FBFA]'
+                      }`}
+                    >
+                      {i+1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredExamsForTimetable.length / pageSize), p+1))}
+                    disabled={currentPage >= Math.ceil(filteredExamsForTimetable.length / pageSize)}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#E6EDF2] text-[#5F6B7A] disabled:opacity-40 hover:bg-[#F2FBFA] transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── RIGHT PANEL: Summary & Quick Info ── */}
+          <div className="w-72 xl:w-80 flex-shrink-0 flex flex-col min-h-0 bg-[#FAFBFC] overflow-y-auto">
+            
+            {/* Header */}
+            <div className="flex-shrink-0 px-5 py-4 border-b border-[#E6EDF2]">
+              <h3 className="text-sm font-bold text-[#003A40]">Exam Overview</h3>
+              <p className="text-xs text-[#5F6B7A] mt-0.5 font-medium">
+                {filteredExamsForTimetable.length} exam{filteredExamsForTimetable.length !== 1 ? 's' : ''} scheduled
+              </p>
+            </div>
+
+            {/* Status Breakdown */}
+            <div className="px-4 py-4 border-b border-[#E6EDF2] space-y-2.5">
+              <p className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-widest mb-2">Status Breakdown</p>
+              
+              {[
+                { label: 'Upcoming', count: stats.upcoming, color: 'bg-blue-500', light: 'bg-blue-50', text: 'text-blue-700', icon: 'schedule' },
+                { label: 'Completed', count: stats.completed, color: 'bg-emerald-500', light: 'bg-emerald-50', text: 'text-emerald-700', icon: 'check_circle' },
+                { label: 'Results Pending', count: stats.pending, color: 'bg-orange-400', light: 'bg-orange-50', text: 'text-orange-700', icon: 'pending' },
+                { label: 'Cancelled', count: filteredExamsForTimetable.filter(e => e.status && e.status !== 'Upcoming' && e.status !== 'Completed').length, color: 'bg-rose-400', light: 'bg-rose-50', text: 'text-rose-700', icon: 'cancel' },
+              ].map(s => (
+                <div key={s.label} className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg ${s.light} flex items-center justify-center flex-shrink-0`}>
+                    <span className={`material-symbols-outlined text-sm ${s.text}`}>{s.icon}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-slate-700">{s.label}</span>
+                      <span className={`text-xs font-extrabold ${s.text}`}>{s.count}</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${s.color} rounded-full transition-all duration-500`}
+                        style={{ width: filteredExamsForTimetable.length > 0 ? `${(s.count / filteredExamsForTimetable.length) * 100}%` : '0%' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Exam Types */}
+            <div className="px-4 py-4 border-b border-[#E6EDF2] space-y-2">
+              <p className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-widest mb-2">By Exam Type</p>
+              {['Internal', 'Mid-Sem', 'End-Sem', 'Practical', 'Quiz'].map(type => {
+                const cnt = filteredExamsForTimetable.filter(e => e.type === type).length;
+                if (cnt === 0) return null;
+                return (
+                  <div key={type} className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg border border-[#E6EDF2] hover:border-[#0A686A]/30 transition-colors">
+                    <span className="text-xs font-semibold text-slate-700">{type}</span>
+                    <span className="text-xs font-extrabold text-[#003A40] bg-[#F2FBFA] border border-[#0A686A]/20 px-2 py-0.5 rounded-full">{cnt}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Quick Actions */}
+            {isAdmin && (
+              <div className="px-4 py-4 space-y-2">
+                <p className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-widest mb-2">Quick Actions</p>
+                <button
+                  onClick={() => setShowScheduleWizard(true)}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-sm cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">add_circle</span>
+                  Create Exam Schedule
+                </button>
+                <button
+                  onClick={() => openAddModal()}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 bg-white text-[#003A40] border border-[#E6EDF2] rounded-xl text-xs font-bold hover:bg-[#F2FBFA] transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">edit_calendar</span>
+                  Add Single Exam
+                </button>
+              </div>
+            )}
+
+            {isStudent && (
+              <div className="px-4 py-4 space-y-2">
+                <p className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-widest mb-2">My Exam Actions</p>
+                <button
+                  onClick={handleOpenAllHallTickets}
+                  className="w-full flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all shadow-sm cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">badge</span>
+                  Download Hall Tickets
+                </button>
+              </div>
+            )}
+          </div>
+
+        </div>
       ) : (
-        /* Academic Marks Tab Content */
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        /* ── ACADEMIC MARKS TAB ─────────────────────────────── */
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
           {/* KPI Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="flex-shrink-0 px-5 py-3 border-b border-[#E6EDF2] bg-[#FAFBFC] grid grid-cols-4 gap-3">
             <KpiCard icon="military_tech" label="Overall CGPA" value={marksStats.cgpa} colorScheme="emerald" />
             <KpiCard icon="analytics" label="Semester GPA" value={marksStats.gpa} colorScheme="blue" />
             <KpiCard icon="menu_book" label="Total Subjects" value={marksStats.coursesCount} colorScheme="orange" />
             <KpiCard icon="verified" label="Passed Credits" value={`${marksStats.passedCredits} Credits`} colorScheme="purple" />
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white">
+            <div className="flex-shrink-0 px-6 py-3.5 border-b border-[#E6EDF2] bg-[#F8FAFC] flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Subject Performance Outcomes</h3>
-                <p className="text-[10px] text-slate-400 font-medium uppercase mt-1">Official Academic Record Card</p>
+                <h3 className="text-sm font-semibold text-[#003A40] uppercase tracking-wider">Subject Performance Outcomes</h3>
+                <p className="text-[10px] text-[#5F6B7A] font-medium uppercase mt-0.5">Official Academic Record Card</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 {/* Student Selector (Admin / Faculty only) */}
@@ -1083,8 +1288,8 @@ export default function ExamsPage({ noLayout = false }) {
             </div>
 
             {/* Scrollable Results Grid */}
-            <div className="overflow-x-auto overflow-y-hidden border-t border-slate-200">
-              <div style={{ minWidth: '1400px' }} className="w-full">
+            <div className="flex-1 overflow-auto min-h-0 border-t border-[#E6EDF2]">
+              <div style={{ minWidth: '1300px' }} className="w-full min-h-full">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase border-b border-slate-200">
@@ -1315,6 +1520,8 @@ export default function ExamsPage({ noLayout = false }) {
         </div>
       )}
 
+      {/* ── MODALS ─────────────────────────────────────── */}
+
       <Modal
         isOpen={showModal}
         onClose={closeModal}
@@ -1517,7 +1724,7 @@ export default function ExamsPage({ noLayout = false }) {
           onClose={() => setShowNotificationPanel(false)}
         />
       )}
-    </>
+    </div>
   )
-  return noLayout ? inner : <Layout title="Exams">{inner}</Layout>
+  return noLayout ? inner : <Layout title="Exams" noPadding>{inner}</Layout>
 }

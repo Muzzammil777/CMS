@@ -190,7 +190,8 @@ export default function EditStudentPage() {
   }
 
   return (
-    <Layout title="Edit Student">
+    <Layout title="Edit Student" showBack={true}>
+
       <div className="space-y-4">
         {/* Page Header */}
         <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between">

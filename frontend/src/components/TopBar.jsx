@@ -1,12 +1,12 @@
 import { getUserSession, getUserData, updateUserData } from '../auth/sessionController';
 import { cmsRoles } from '../data/roleConfig';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ProfileDropdown from './ProfileDropdown';
 import NotificationBell from './NotificationBell';
 import NotificationDropdown from './NotificationDropdown';
 import { buildApiUrl } from '../api/apiBase';
-import { Menu, Settings, ChevronDown } from 'lucide-react';
+import { Menu, Settings, ChevronDown, ArrowLeft } from 'lucide-react';
 
 export default function TopBar({ 
   title, 
@@ -14,6 +14,8 @@ export default function TopBar({
   isMobile = false,
   onToggleSidebar,
   userId = 'N/A',
+  showBack = false,
+  onBack,
   onProfilePrimaryAction,
   onProfileSecondaryAction 
 }) {
@@ -22,11 +24,28 @@ export default function TopBar({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isHomePage = location.pathname === '/' || location.pathname === '/dashboard';
+
   const session = getUserSession();
   const [userData, setUserData] = useState(getUserData());
   const dynamicUser = userData;
   const role = session?.role || 'student';
   const [systemSettings, setSystemSettings] = useState(null);
+  const [currentDateTime, setCurrentDateTime] = useState('');
+
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      setCurrentDateTime(`${dateStr} • ${timeStr}`);
+    };
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     function loadSettings() {
@@ -43,6 +62,7 @@ export default function TopBar({
     window.addEventListener('cms-settings-update', loadSettings);
     return () => window.removeEventListener('cms-settings-update', loadSettings);
   }, []);
+
 
   useEffect(() => {
     const loadUserData = () => {
@@ -142,7 +162,23 @@ export default function TopBar({
           </button>
         )}
         
+        {showBack && (
+          <button
+            type="button"
+            onClick={() => {
+              if (onBack) onBack();
+              else navigate(-1);
+            }}
+            className="w-9 h-9 rounded-xl border border-[#E6EDF2] bg-[#FAFBFC] hover:bg-[#F2FBFA] hover:border-[#003A40] text-[#003A40] transition-all flex items-center justify-center cursor-pointer shadow-2xs flex-shrink-0 active:scale-95"
+            title="Go back to previous page"
+          >
+            <ArrowLeft className="w-5 h-5 text-[#003A40]" />
+          </button>
+        )}
+
+
         <div className="min-w-0 flex flex-col justify-center">
+
           {(!isSidebarVisible || isMobile) && (
             <p className="text-[10px] md:text-[11px] font-bold text-[#003A40] tracking-wider uppercase leading-none mb-1">
               {systemSettings?.portalName || 'MIT Connect'}
@@ -154,8 +190,16 @@ export default function TopBar({
         </div>
       </div>
 
-      {/* Right Section: Notifications */}
-      <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+      {/* Right Section: Date & Notifications */}
+      <div className="flex items-center gap-2 md:gap-3.5 flex-shrink-0">
+        {/* Date & Time Badge */}
+        {currentDateTime && (
+          <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-[#E6EDF2] bg-[#FAFBFC] text-xs font-bold text-[#003A40] shadow-2xs">
+            <span className="material-symbols-outlined text-sm text-[#0A686A]">calendar_today</span>
+            <span>{currentDateTime}</span>
+          </div>
+        )}
+
         {/* Notification Bell & Dropdown */}
         <div className="relative flex items-center">
           <NotificationBell 
@@ -171,6 +215,7 @@ export default function TopBar({
           )}
         </div>
       </div>
+
     </header>
   );
 }

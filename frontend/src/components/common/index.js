@@ -7,6 +7,8 @@ export { default as StatusBadge } from './StatusBadge';
 export { default as ActionButtons } from './ActionButtons';
 export { default as TableContentSection } from './TableContentSection';
 export { default as Pagination } from './Pagination';
+export { default as EnterpriseWizardTemplate } from './EnterpriseWizardTemplate';
+
 export { 
   CardSkeleton, 
   TableSkeleton, 

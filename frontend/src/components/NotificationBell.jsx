@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BellRing } from 'lucide-react';
 import './NotificationBell.css';
 import { buildApiUrl } from '../api/apiBase';
 import { getUserSession } from '../auth/sessionController';
@@ -44,22 +45,18 @@ export default function NotificationBell({ role = 'student', onBellClick }) {
 
   return (
     <button
-      className="notification-bell"
+      className="relative p-2.5 rounded-xl border border-[#E6EDF2] bg-[#FAFBFC] hover:bg-[#F2FBFA] hover:border-[#003A40] text-[#003A40] transition-all cursor-pointer shadow-2xs flex items-center justify-center active:scale-95"
       onClick={onBellClick}
       title={`${unreadCount} unread notifications`}
       aria-label="Notifications"
     >
-      <svg
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-        className="bell-icon"
-        fill="currentColor"
-      >
-        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-      </svg>
+      <BellRing className="w-5 h-5 text-[#003A40]" />
       {unreadCount > 0 && (
-        <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+        <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-[20px] px-1 bg-rose-500 text-white text-[10px] font-black rounded-full ring-2 ring-white shadow-xs">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
       )}
     </button>
   );
 }
+

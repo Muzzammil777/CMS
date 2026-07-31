@@ -228,95 +228,93 @@ export default function FacilityPage({ noLayout = false }) {
   }
 
   const inner = (
-    <>
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
-        {(canAddFacility || canBookFacility) && (
-          <div className="flex items-center gap-3">
-            {canAddFacility && (
-              <button
-                onClick={() => setAddFacilityOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors"
-              >
-                <span className="material-symbols-outlined text-lg">add_circle</span>Add Facility
-              </button>
-            )}
-            {canBookFacility && (
-              <button
-                onClick={() => setBookingOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#3b0764] transition-colors"
-              >
-                <span className="material-symbols-outlined text-lg">add</span>Book Room
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-      <KpiGrid className="lg:grid-cols-3">
-        <KpiCard icon="meeting_room" label="Available Today" value={visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'Available').length} colorScheme="emerald" />
-        <KpiCard icon="groups" label="Booked Today" value={visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'In Use').length} colorScheme="green" />
-        <KpiCard icon="build" label="Maintenance" value={visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'Maintenance').length} colorScheme="red" />
-      </KpiGrid>
+    <div className="flex flex-col h-full min-h-0 gap-0 overflow-hidden bg-[#F8FAFC]">
+      
+      {/* ── TOP CONTROL BAR ─────────────────────────────────────── */}
+      <div className="flex-shrink-0 bg-white border-b border-[#E6EDF2] px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          
+          {/* Action buttons */}
+          {(canAddFacility || canBookFacility) && (
+            <div className="flex items-center gap-2">
+              {canAddFacility && (
+                <button
+                  onClick={() => setAddFacilityOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0A686A] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all cursor-pointer shadow-2xs"
+                >
+                  <span className="material-symbols-outlined text-sm">add_circle</span>
+                  Add Facility
+                </button>
+              )}
+              {canBookFacility && (
+                <button
+                  onClick={() => setBookingOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#003A40] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all cursor-pointer shadow-2xs"
+                >
+                  <span className="material-symbols-outlined text-sm">event_seat</span>
+                  Book Room
+                </button>
+              )}
+            </div>
+          )}
 
-      {/* Search & Filter — right-aligned like attendance page */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <button
-            onClick={() => {
-              setRefreshing(true)
-              loadFacilitiesData({ silent: true })
-            }}
-            disabled={loading || refreshing}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border bg-white text-slate-600 border-slate-200 hover:border-slate-300 shadow-sm disabled:opacity-60"
-          >
-            <span className="material-symbols-outlined text-lg">refresh</span>
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+          {/* Divider */}
+          <div className="w-px h-6 bg-[#E6EDF2] hidden sm:block" />
+
+          {/* Search Bar */}
+          <div className="relative flex-shrink-0">
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-[#9AAAB4] pointer-events-none">search</span>
             <input
               type="text"
-              placeholder="Search by name..."
+              placeholder="Search by facility name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 w-56 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4c1d95]/30 focus:border-[#4c1d95] transition-all duration-200"
+              className="pl-8 pr-3 py-1.5 text-xs font-medium border border-[#E6EDF2] rounded-xl bg-[#F8FAFC] text-[#003A40] placeholder-[#9AAAB4] outline-none focus:border-[#0A686A] focus:ring-2 focus:ring-[#0A686A]/10 w-56 transition-all"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9AAAB4] hover:text-[#003A40] transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            )}
           </div>
 
+          {/* Filter Dropdown */}
           <div className="relative" ref={filterRef}>
             <button
               onClick={() => setFilterOpen(prev => !prev)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 statusFilter !== 'All'
-                  ? 'bg-[#4c1d95] text-white border-[#4c1d95] shadow-sm'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 shadow-sm'
+                  ? 'bg-[#F2FBFA] text-[#0A686A] border border-[#0A686A]/30'
+                  : 'bg-[#F4F7FF] text-[#5F6B7A] border border-[#E6EDF2] hover:text-[#003A40]'
               }`}
             >
-              <span className="material-symbols-outlined text-lg">filter_list</span>
-              {statusFilter !== 'All' && <span>{statusFilter}</span>}
+              <span className="material-symbols-outlined text-sm">filter_alt</span>
+              {statusFilter === 'All' ? 'All Status' : statusFilter}
             </button>
 
             {filterOpen && (
-              <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 animate-dropIn origin-top-right">
+              <div className="absolute left-0 mt-1.5 w-44 bg-white border border-[#E6EDF2] rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
                 {['All', 'Available', 'In Use', 'Maintenance'].map((opt) => (
                   <button
                     key={opt}
                     onClick={() => { setStatusFilter(opt); setFilterOpen(false) }}
-                    className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm transition-colors duration-150 ${
+                    className={`w-full flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                       statusFilter === opt
-                        ? 'bg-[#4c1d95]/10 text-[#4c1d95] font-semibold'
-                        : 'text-slate-600 hover:bg-slate-50'
+                        ? 'bg-[#F2FBFA] text-[#0A686A]'
+                        : 'text-[#5F6B7A] hover:bg-[#F8FAFC]'
                     }`}
                   >
                     {opt !== 'All' && (
                       <span className={`w-2 h-2 rounded-full ${
-                        opt === 'Available' ? 'bg-green-500' : opt === 'In Use' ? 'bg-green-700' : 'bg-red-500'
+                        opt === 'Available' ? 'bg-emerald-500' : opt === 'In Use' ? 'bg-blue-500' : 'bg-rose-500'
                       }`} />
                     )}
                     {opt}
                     {statusFilter === opt && (
-                      <span className="material-symbols-outlined text-base ml-auto">check</span>
+                      <span className="material-symbols-outlined text-sm ml-auto text-[#0A686A]">check</span>
                     )}
                   </button>
                 ))}
@@ -324,92 +322,165 @@ export default function FacilityPage({ noLayout = false }) {
             )}
           </div>
         </div>
+
+        {/* Refresh button */}
+        <button
+          onClick={() => {
+            setRefreshing(true)
+            loadFacilitiesData({ silent: true })
+          }}
+          disabled={loading || refreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-[#E6EDF2] bg-[#FAFBFC] text-[#5F6B7A] hover:text-[#003A40] hover:bg-[#F2FBFA] transition-all cursor-pointer disabled:opacity-50"
+        >
+          <span className={`material-symbols-outlined text-sm ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </div>
 
-      {apiNotice && (
-        <div className={`mb-4 px-4 py-2.5 rounded-lg text-xs font-semibold border ${
-          apiNotice.toLowerCase().includes('failed')
-            ? 'bg-red-50 text-red-700 border-red-200'
-            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-        }`}>
-          {apiNotice}
-        </div>
-      )}
+      {/* ── MAIN CONTENT AREA ─────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto min-h-0 flex flex-col p-5 gap-4 custom-scrollbar">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {loading && (
-          <div className="col-span-full text-center text-slate-400 text-sm py-10">Loading facilities...</div>
-        )}
-        {!loading && filtered.length === 0 && (
-          <div className="col-span-full text-center text-slate-400 text-sm py-10">No facilities found</div>
-        )}
-        {!loading && filtered.map((f, i) => (
-          <div 
-            key={f.name} 
-            onClick={() => {
-              if (role === 'admin' || role === 'faculty') {
-                setEditingFacility(f)
-                setNewStatus(f.status || 'Available')
-                setNewCapacity(f.capacity || 0)
-              }
-            }}
-            className={`bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col gap-3 animate-fadeIn group relative ${
-              (role === 'admin' || role === 'faculty') 
-                ? 'cursor-pointer hover:border-green-500 hover:shadow-md transition-all duration-200' 
-                : ''
-            }`}
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            {(() => {
-              const displayStatus = displayStatusByRoom[f.name] || f.status || 'Available'
-              return (
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-slate-900">{f.name}</p>
-                  {(role === 'admin' || role === 'faculty') && (
-                    <span className="material-symbols-outlined text-[16px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                      edit
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500">{f.type}</p>
-              </div>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyle[displayStatus]}`}>{displayStatus}</span>
-            </div>
-              )
-            })()}
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="material-symbols-outlined text-sm text-slate-400">people</span>
-              Capacity: <span className="font-semibold text-slate-700">{f.capacity}</span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {f.amenities.map((a) => (
-                <span key={a} className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px] font-medium">{a}</span>
-              ))}
-            </div>
-
-            {(() => {
-              const roomBookings = bookingsByRoom[f.name] || []
-              if (roomBookings.length === 0) return null
-
-              return (
-                <div className="pt-2 border-t border-slate-100">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Booked Slots</p>
-                  <div className="space-y-1.5">
-                    {roomBookings.slice(0, 3).map((booking) => (
-                      <div key={booking.id || `${booking.date}-${booking.timeFrom}-${booking.timeTo}`} className="text-xs text-slate-600 bg-green-50 border border-green-100 rounded-md px-2 py-1.5">
-                        <span className="font-semibold text-green-700">{booking.date}</span>
-                        <span>{`  ${booking.timeFrom} - ${booking.timeTo}`}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
+        {apiNotice && (
+          <div className={`px-4 py-2.5 rounded-xl text-xs font-bold border ${
+            apiNotice.toLowerCase().includes('failed')
+              ? 'bg-rose-50 text-rose-700 border-rose-200'
+              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+          }`}>
+            {apiNotice}
           </div>
-        ))}
+        )}
+
+        {/* KPI Cards */}
+        <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-emerald-600">meeting_room</span>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-[#003A40] leading-none">
+                {visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'Available').length}
+              </p>
+              <p className="text-[10px] font-extrabold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Available Today</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-blue-600">groups</span>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-[#003A40] leading-none">
+                {visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'In Use').length}
+              </p>
+              <p className="text-[10px] font-extrabold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Booked Today</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-rose-600">build</span>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-[#003A40] leading-none">
+                {visibleFacilities.filter((f) => displayStatusByRoom[f.name] === 'Maintenance').length}
+              </p>
+              <p className="text-[10px] font-extrabold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Maintenance</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Facility Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {loading && (
+            <div className="col-span-full text-center text-[#5F6B7A] text-xs font-semibold py-12">
+              Loading facilities data...
+            </div>
+          )}
+          {!loading && filtered.length === 0 && (
+            <div className="col-span-full text-center text-[#5F6B7A] text-xs font-semibold py-12">
+              No facilities found matching filter parameters.
+            </div>
+          )}
+          {!loading && filtered.map((f, i) => (
+            <div 
+              key={f.name} 
+              onClick={() => {
+                if (role === 'admin' || role === 'faculty') {
+                  setEditingFacility(f)
+                  setNewStatus(f.status || 'Available')
+                  setNewCapacity(f.capacity || 0)
+                }
+              }}
+              className={`bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs flex flex-col gap-3 group relative transition-all duration-200 ${
+                (role === 'admin' || role === 'faculty') 
+                  ? 'cursor-pointer hover:border-[#0A686A] hover:shadow-md' 
+                  : ''
+              }`}
+            >
+              {(() => {
+                const displayStatus = displayStatusByRoom[f.name] || f.status || 'Available'
+                return (
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-[#003A40]">{f.name}</p>
+                        {(role === 'admin' || role === 'faculty') && (
+                          <span className="material-symbols-outlined text-sm text-[#9AAAB4] group-hover:text-[#0A686A] transition-colors">
+                            edit
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] font-semibold text-[#5F6B7A] mt-0.5">{f.type}</p>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${
+                      displayStatus === 'Available' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      displayStatus === 'In Use' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      'bg-rose-50 text-rose-700 border-rose-200'
+                    }`}>
+                      {displayStatus}
+                    </span>
+                  </div>
+                )
+              })()}
+
+              <div className="flex items-center gap-1.5 text-xs text-[#5F6B7A] font-semibold">
+                <span className="material-symbols-outlined text-sm text-[#9AAAB4]">people</span>
+                Capacity: <span className="font-bold text-[#003A40]">{f.capacity}</span>
+              </div>
+
+              {f.amenities && f.amenities.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {f.amenities.map((a) => (
+                    <span key={a} className="px-2 py-0.5 bg-[#F2FBFA] text-[#0A686A] border border-[#0A686A]/20 rounded-md text-[10px] font-extrabold">
+                      {a}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {(() => {
+                const roomBookings = bookingsByRoom[f.name] || []
+                if (roomBookings.length === 0) return null
+
+                return (
+                  <div className="pt-2 border-t border-[#E6EDF2] mt-auto">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B7A] mb-1.5">Booked Slots</p>
+                    <div className="space-y-1.5">
+                      {roomBookings.slice(0, 3).map((booking) => (
+                        <div key={booking.id || `${booking.date}-${booking.timeFrom}-${booking.timeTo}`} className="text-[11px] font-medium text-[#003A40] bg-[#F8FAFC] border border-[#E6EDF2] rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+                          <span className="font-bold text-[#0A686A]">{booking.date}</span>
+                          <span className="font-semibold text-[#5F6B7A]">{`${booking.timeFrom} - ${booking.timeTo}`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+          ))}
+        </div>
       </div>
+
 
       {/* Book Room Modal */}
       {canBookFacility && bookingOpen && (
@@ -718,7 +789,7 @@ export default function FacilityPage({ noLayout = false }) {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
-  return noLayout ? inner : <Layout title="Facility">{inner}</Layout>
+  return noLayout ? inner : <Layout title="Facility" noPadding>{inner}</Layout>
 }

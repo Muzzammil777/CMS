@@ -14,7 +14,6 @@ function useIsMobile(breakpoint = 768) {
   useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${breakpoint - 1}px)`)
     const handler = (e) => setIsMobile(e.matches)
-    // Set initial value
     setIsMobile(mql.matches)
     mql.addEventListener('change', handler)
     return () => mql.removeEventListener('change', handler)
@@ -28,6 +27,8 @@ export default function Layout({
   title, 
   userId = 'N/A',
   noPadding = false,
+  showBack = false,
+  onBack = null,
   onProfilePrimaryAction,
   onProfileSecondaryAction 
 }) {
@@ -38,14 +39,12 @@ export default function Layout({
     return localStorage.getItem('sidebar_collapsed') === 'true';
   })
 
-  // Auto-close sidebar on mobile when route changes
   useEffect(() => {
     if (isMobile) {
       setIsSidebarVisible(false)
     }
   }, [location.pathname, isMobile])
 
-  // Auto-close sidebar when switching to mobile, auto-open on desktop
   useEffect(() => {
     setIsSidebarVisible(!isMobile)
   }, [isMobile])
@@ -76,7 +75,6 @@ export default function Layout({
         isMobile={isMobile}
       />
 
-      {/* Mobile backdrop overlay */}
       {isSidebarVisible && isMobile && (
         <div
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
@@ -92,10 +90,12 @@ export default function Layout({
           isMobile={isMobile}
           onToggleSidebar={toggleSidebar}
           userId={userId}
+          showBack={showBack}
+          onBack={onBack}
           onProfilePrimaryAction={onProfilePrimaryAction}
           onProfileSecondaryAction={onProfileSecondaryAction}
         />
-        <div className={noPadding ? 'flex-1 flex flex-col w-full max-w-full overflow-y-auto custom-scrollbar' : 'flex-1 overflow-y-auto w-full max-w-full px-5 py-4 custom-scrollbar'}>
+        <div className={noPadding ? 'flex-1 flex flex-col w-full max-w-full overflow-hidden min-h-0' : 'flex-1 overflow-y-auto w-full max-w-full px-5 py-4 custom-scrollbar'}>
           {children}
         </div>
       </main>

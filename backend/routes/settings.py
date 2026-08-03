@@ -237,3 +237,57 @@ async def request_account_deletion(user_id: str, payload: DeleteRequestPayload, 
     resolved_role = _resolve_user_role(role, user_id)
     entry = create_delete_request(user_id, resolved_role, payload.reason)
     return {"message": "Account deletion request submitted.", "data": entry}
+
+
+# ===== DEPARTMENTS MANAGEMENT =====
+
+@router.get("/departments")
+async def get_departments():
+    try:
+        from backend.db import get_db
+        db = get_db()
+        collection = db["departments"]
+        depts = []
+        async for doc in collection.find({}):
+            doc["id"] = str(doc.get("_id", doc.get("id")))
+            doc.pop("_id", None)
+            depts.append(doc)
+        if depts:
+            return depts
+    except Exception:
+        pass
+
+    from backend.dev_store import DEV_STORE
+    return DEV_STORE.setdefault("departments", [
+        { "id": 'DEPT-1', "name": 'Computer Science', "code": 'CS', "head": 'Dr. Ramesh Kumar', "email": 'hod.cs@mit.edu', "phone": '+91 98765 43210', "office_location": 'Building A, Room 301', "totalFaculty": 14, "totalStudents": 420, "courses": 12 },
+        { "id": 'DEPT-2', "name": 'Electronics & Communication', "code": 'ECE', "head": 'Dr. Sunita Sharma', "email": 'hod.ece@mit.edu', "phone": '+91 98765 43213', "office_location": 'Building B, Room 201', "totalFaculty": 10, "totalStudents": 310, "courses": 9 },
+        { "id": 'DEPT-3', "name": 'Mechanical Engineering', "code": 'ME', "head": 'Dr. Venkat Reddy', "email": 'hod.me@mit.edu', "phone": '+91 98765 43221', "office_location": 'Building D, Room 301', "totalFaculty": 8, "totalStudents": 260, "courses": 8 },
+        { "id": 'DEPT-4', "name": 'Mathematics', "code": 'MATH', "head": 'Dr. Deepak Gupta', "email": 'hod.math@mit.edu', "phone": '+91 98765 43218', "office_location": 'Building C, Room 301', "totalFaculty": 6, "totalStudents": 180, "courses": 6 },
+        { "id": 'DEPT-5', "name": 'Information Technology', "code": 'IT', "head": 'Dr. Geetha V', "email": 'hod.it@mit.edu', "phone": '+91 98765 43230', "office_location": 'Building A, Room 305', "totalFaculty": 11, "totalStudents": 350, "courses": 10 },
+        { "id": 'DEPT-6', "name": 'Medical Laboratory Technology', "code": 'MLT', "head": 'Dr. K. Rahini', "email": 'hod.mlt@mit.edu', "phone": '+91 98765 43240', "office_location": 'Building E, Room 101', "totalFaculty": 7, "totalStudents": 210, "courses": 6 },
+    ])
+
+@router.post("/departments")
+async def create_department(payload: dict):
+    from backend.dev_store import DEV_STORE
+    depts = DEV_STORE.setdefault("departments", [])
+    depts.append(payload)
+    return payload
+
+@router.put("/departments/{dept_id}")
+async def update_department(dept_id: str, payload: dict):
+    from backend.dev_store import DEV_STORE
+    depts = DEV_STORE.setdefault("departments", [])
+    for i, d in enumerate(depts):
+        if d.get("id") == dept_id:
+            depts[i] = payload
+            return payload
+    depts.append(payload)
+    return payload
+
+@router.delete("/departments/{dept_id}")
+async def delete_department(dept_id: str):
+    from backend.dev_store import DEV_STORE
+    depts = DEV_STORE.setdefault("departments", [])
+    DEV_STORE["departments"] = [d for d in depts if d.get("id") != dept_id]
+    return {"message": "Department deleted"}

@@ -6,7 +6,7 @@ import { TableSkeleton } from '../components/common';
 import { getUserSession, updateUserData } from '../auth/sessionController';
 import { 
   ArrowLeft, User, BarChart2,
-  Mail, Phone, MapPin, Calendar, Users, FolderOpen
+  Mail, Phone, MapPin, Calendar, Users, FolderOpen, Pencil, Trash2
 } from 'lucide-react';
 import { API_BASE } from '../api/apiBase';
 import '../styles.css';
@@ -39,7 +39,6 @@ export default function StudentProfilePage() {
   }, [id]);
 
   const fetchStudentDetails = async () => {
-    // Validate ID is not undefined
     if (!id || id === 'undefined') {
       setError('Invalid student ID');
       setLoading(false);
@@ -72,7 +71,6 @@ export default function StudentProfilePage() {
 
       const norm = (c) => String(c || '').replace(/[-_\s]+/g, '').toUpperCase();
 
-      // Map subjects to End-Sem marks
       const mapped = (data.subjects || []).map(sub => {
         const subCodeNorm = norm(sub.code);
         const endSemExam = allExams.find(e => norm(e.code) === subCodeNorm && e.type === 'End-Sem');
@@ -94,7 +92,6 @@ export default function StudentProfilePage() {
         };
       });
 
-      // Calculate dynamic CGPA based only on End-Sem passed courses
       const passed = mapped.filter(s => s.grade && s.grade !== 'Pending' && s.grade !== 'F');
       const totalObtained = passed.reduce((acc, s) => acc + (s.total || 0), 0);
       const totalMax = passed.length * 100;
@@ -216,347 +213,156 @@ export default function StudentProfilePage() {
     );
   }
 
-  const statusStyles = {
-    active: 'bg-green-50 text-green-700',
-    Active: 'bg-green-50 text-green-700',
-    inactive: 'bg-red-50 text-red-700',
-    Inactive: 'bg-red-50 text-red-700',
-    graduated: 'bg-blue-50 text-blue-700',
-    Graduated: 'bg-blue-50 text-blue-700',
-  };
-
   return (
-    <Layout title="Student Profile">
-      <div className="page-container h-full overflow-y-auto pr-2 pb-12 custom-scrollbar">
-        <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={() => navigate('/students')}
-            className="flex items-center gap-2.5 px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 hover:text-[#4c1d95] hover:border-[#4c1d95] transition-all group uppercase tracking-wider"
+    <Layout title="Student Profile" noPadding={true} showBack={true} onBack={() => navigate('/students')}>
+      <div className="h-full flex flex-col overflow-hidden bg-[#F8FAFC]">
+        {/* ── Hero Banner ───────────── */}
+        <div className="px-5 pt-4 flex-shrink-0">
+          <div 
+            className="relative w-full rounded-2xl overflow-hidden border border-white/10 flex flex-col"
+            style={{
+              backgroundImage: `url('/student_profile_banner.png')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center center',
+              backgroundRepeat: 'no-repeat',
+              backgroundColor: '#35085C',
+            }}
           >
-            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-            <span>Back to Students</span>
-          </button>
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="px-5 py-2.5 bg-[#4c1d95] text-white rounded-lg text-sm font-semibold hover:bg-[#4c1d95]/90 transition-all"
-          >
-            Edit Profile
-          </button>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm mb-8 relative overflow-hidden group">
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-slate-50 rounded-full opacity-50 group-hover:scale-125 transition-transform duration-1000" />
-          <div className="absolute top-1/2 -right-12 w-32 h-32 bg-green-50/30 rounded-full blur-3xl" />
-
-          <div className="relative flex flex-col xl:flex-row xl:items-center justify-between gap-10">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8">
-              <div 
-                className="w-28 h-28 rounded-xl bg-gradient-to-br from-[#4c1d95] to-[#60a5fa] p-1 shadow-xl cursor-pointer relative group overflow-hidden"
-              >
-                <img
-                  src={student.avatar || `https://ui-avatars.com/api/?name=${student.name}&background=00236f&color=fff&size=128`}
-                  alt={student.name}
-                  className="w-full h-full rounded-lg object-cover"
-                  onClick={() => document.getElementById('student-profile-photo-upload').click()}
-                />
-                <div 
-                  onClick={() => document.getElementById('student-profile-photo-upload').click()}
-                  className="absolute inset-0 bg-[#4c1d95]/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 rounded-lg"
-                >
-                  <span className="text-white text-[10px] font-bold text-center tracking-wider px-1">UPLOAD PHOTO</span>
-                </div>
-                {student.avatar && !student.avatar.startsWith('https://ui-avatars.com') && (
-                  <button 
-                    type="button"
-                    onClick={handleRemoveAvatar}
-                    className="absolute top-1.5 right-1.5 z-20 p-1 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center border border-white/10"
-                    title="Remove profile photo"
+            {/* Hero Banner Header: Left (Avatar + Student Info) & Right (Edit Profile) aligned at baseline */}
+            <div className="flex items-start justify-between px-5 pt-4 pb-2">
+              <div className="flex items-center gap-3">
+                <div className="relative group cursor-pointer flex-shrink-0">
+                  <div className="w-[62px] h-[62px] rounded-xl bg-white/15 border-2 border-white/50 shadow-lg flex items-center justify-center overflow-hidden">
+                    {student.avatar && !student.avatar.startsWith('https://ui-avatars.com') ? (
+                      <img
+                        src={student.avatar}
+                        alt={student.name}
+                        className="w-full h-full object-cover"
+                        onClick={() => document.getElementById('student-profile-photo-upload').click()}
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center text-white text-[18px] font-black cursor-pointer tracking-wider"
+                        onClick={() => document.getElementById('student-profile-photo-upload').click()}
+                      >
+                        {(student.name || 'S').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                    )}
+                  </div>
+                  <div 
+                    onClick={() => document.getElementById('student-profile-photo-upload').click()}
+                    className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200 rounded-xl"
                   >
-                    <span className="material-symbols-outlined text-[16px]">delete</span>
-                  </button>
-                )}
-              </div>
-              <input 
-                id="student-profile-photo-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-              />
-
-              <div className="text-center sm:text-left">
-                <div className="flex flex-col sm:flex-row items-center gap-3 mb-3">
-                  <h1 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">{student.name}</h1>
-                  <span className="px-2.5 py-0.5 bg-green-50 text-[#4c1d95] border border-green-100 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1 sm:mt-0">
-                    {student.rollNumber || student.id}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2">
-                  <span className="text-base font-semibold text-slate-600">
-                    {student.semester ? `Semester ${student.semester}` : 'Semester 1'}
-                  </span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300 hidden sm:block" />
-                  <span className="text-base font-semibold text-slate-400">{student.departmentId || student.department}</span>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-4">
-                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyles[student.status] || 'bg-slate-50 text-slate-700'}`}>
-                    {student.status || 'Active'}
-                  </span>
-                  {student.cgpa && (
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      CGPA: {student.cgpa}
-                    </span>
+                    <span className="text-white text-[9px] font-bold tracking-wider">UPLOAD</span>
+                  </div>
+                  {student.avatar && !student.avatar.startsWith('https://ui-avatars.com') && (
+                    <button 
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      className="absolute -top-1 -right-1 z-20 p-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md border border-white"
+                      title="Remove photo"
+                    >
+                      <Trash2 size={10} />
+                    </button>
                   )}
                 </div>
+                <input 
+                  id="student-profile-photo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h2 className="text-[18px] font-black tracking-tight leading-none text-white">{student.name}</h2>
+                    <span className="px-2 py-0.5 bg-white/20 text-white text-[9px] font-bold rounded-full uppercase tracking-wider">
+                      {student.rollNumber || student.id}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/75 font-medium mb-1.5">
+                    Semester {student.semester || 1}&nbsp;&nbsp;•&nbsp;&nbsp;{student.departmentId || student.department || 'Information Technology'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-[#10B981] text-white text-[8px] font-extrabold uppercase tracking-wider rounded-md">
+                      {student.status || 'ACTIVE'}
+                    </span>
+                    <span className="text-[11px] font-bold text-white/90">
+                      CGPA: {student.cgpa || '0.00'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edit Profile Button aligned with student name */}
+              <button
+                onClick={() => navigate(`/edit-student/${student.id || student.rollNumber}`)}
+                className="h-8 px-3.5 flex items-center gap-1.5 rounded-xl text-[11px] font-bold text-white transition-all cursor-pointer shadow-sm hover:bg-white/25"
+                style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)' }}
+              >
+                <Pencil size={12} />
+                <span>Edit Profile</span>
+              </button>
+            </div>
+
+            {/* Row 3: Floating Tab Bar */}
+            <div className="px-5 pb-0">
+              <div
+                className="inline-flex items-center rounded-[18px] p-1.5"
+                style={{
+                  background: '#FFFFFF',
+                  boxShadow: '0 12px 40px rgba(15,23,42,.12)',
+                  border: '1px solid rgba(15,23,42,.06)'
+                }}
+              >
+                {(() => {
+                  const session = getUserSession();
+                  const showDocumentsTab = session && (session.role === 'admin' || session.userId === id || session.userId?.toString() === id?.toString());
+                  const dynamicTabs = [...profileTabs];
+                  if (showDocumentsTab) {
+                    dynamicTabs.push({ id: 'documents', label: 'Documents', icon: FolderOpen });
+                  }
+                  return dynamicTabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className="relative flex items-center gap-2 px-5 py-2.5 rounded-[13px] text-[13px] font-semibold transition-all duration-200 cursor-pointer"
+                        style={isActive
+                          ? { background: 'linear-gradient(135deg, #F3E8FF, #F8F5FF)', color: '#6D28D9' }
+                          : { color: '#64748B' }
+                        }
+                        onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = '#F8FAFC'; e.currentTarget.style.color = '#334155'; }}}
+                        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#64748B'; }}}
+                      >
+                        <Icon size={16} />
+                        <span>{tab.label}</span>
+                        {isActive && (
+                          <span
+                            className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full"
+                            style={{ width: '22px', height: '3px', background: '#7C3AED' }}
+                          />
+                        )}
+                      </button>
+                    );
+                  });
+                })()}
               </div>
             </div>
+            <div className="h-3" />
           </div>
         </div>
 
-        {(() => {
-          const session = getUserSession();
-          const showDocumentsTab = session && (session.role === 'admin' || session.userId === id || session.userId?.toString() === id?.toString());
-          const dynamicTabs = [...profileTabs];
-          if (showDocumentsTab) {
-            dynamicTabs.push({ id: 'documents', label: 'Documents', icon: FolderOpen });
-          }
-
-          return (
-            <div className="flex items-center gap-8 border-b border-slate-200 mb-8 px-4 overflow-x-auto">
-              {dynamicTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`pb-4 text-sm font-semibold transition-all relative whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'text-[#4c1d95]'
-                      : 'text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <tab.icon size={16} />
-                    {tab.label}
-                  </span>
-                  {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4c1d95] rounded-t-full" />
-                  )}
-                </button>
-              ))}
-            </div>
-          );
-        })()}
-
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* ── Main Content Area ──────────────────────────────── */}
+        <div className="flex-1 min-h-0 px-5 pt-3 pb-3 overflow-hidden">
           {activeTab === 'overview' && (
             <OverviewTab student={student} />
           )}
 
-          {activeTab === 'academics' && (() => {
-            const filteredSubjects = (student.subjects || []).filter(sub => {
-              const matchesYear = yearFilter === 'All' || sub.year === yearFilter;
-              const matchesSem = semesterFilter === 'All' || sub.semester?.toString() === semesterFilter;
-              return matchesYear && matchesSem;
-            });
-
-            // Calculate GPA/CGPA
-            const activePassed = filteredSubjects.filter(s => s.grade && s.grade !== 'Pending' && s.grade !== 'F');
-            const activeTotalObtained = activePassed.reduce((acc, s) => acc + (s.total || 0), 0);
-            const activeTotalMax = activePassed.length * 100;
-            const dynamicGPA = activeTotalMax > 0 ? ((activeTotalObtained / activeTotalMax) * 10).toFixed(2) : '0.00';
-
-            const allPassed = (student.subjects || []).filter(s => s.grade && s.grade !== 'Pending' && s.grade !== 'F');
-            const allTotalObtained = allPassed.reduce((acc, s) => acc + (s.total || 0), 0);
-            const allTotalMax = allPassed.length * 100;
-            const globalCGPA = allTotalMax > 0 ? ((allTotalObtained / allTotalMax) * 10).toFixed(2) : '0.00';
-
-            return (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#4c1d95] flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[20px]">military_tech</span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Overall CGPA</p>
-                      <p className="text-xl font-bold text-slate-900 mt-0.5">{globalCGPA}</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#4c1d95] flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[20px]">analytics</span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filtered GPA</p>
-                      <p className="text-xl font-bold text-slate-900 mt-0.5">{dynamicGPA}</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#4c1d95] flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[20px]">menu_book</span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Courses</p>
-                      <p className="text-xl font-bold text-slate-900 mt-0.5">{filteredSubjects.length}</p>
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-green-50 text-[#4c1d95] flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[20px]">verified</span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Passed Credits</p>
-                      <p className="text-xl font-bold text-slate-900 mt-0.5">{activePassed.length * 4} Credits</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                  <div className="px-8 py-6 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Subject Performance</h3>
-                      <p className="text-[10px] text-slate-400 font-medium uppercase mt-1">Academic history and marks</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <select 
-                        value={yearFilter}
-                        onChange={(e) => { setYearFilter(e.target.value); setSemesterFilter('All'); }}
-                        className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 uppercase tracking-wider outline-none cursor-pointer"
-                      >
-                        <option value="All">All Years</option>
-                        <option value="1st Year">1st Year</option>
-                        <option value="2nd Year">2nd Year</option>
-                        <option value="3rd Year">3rd Year</option>
-                        <option value="4th Year">4th Year</option>
-                      </select>
-
-                      <select 
-                        value={semesterFilter}
-                        onChange={(e) => setSemesterFilter(e.target.value)}
-                        className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 uppercase tracking-wider outline-none cursor-pointer"
-                      >
-                        <option value="All">All Semesters</option>
-                        {(() => {
-                          let sems = [1, 2, 3, 4, 5, 6, 7, 8];
-                          if (yearFilter === '1st Year') sems = [1, 2];
-                          else if (yearFilter === '2nd Year') sems = [3, 4];
-                          else if (yearFilter === '3rd Year') sems = [5, 6];
-                          else if (yearFilter === '4th Year') sems = [7, 8];
-                          
-                          return sems.map(s => (
-                            <option key={s} value={s.toString()}>Semester {s}</option>
-                          ));
-                        })()}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead className="bg-slate-50 text-slate-500 text-[10px] font-semibold uppercase tracking-wider border-b border-slate-200">
-                        <tr>
-                          <th className="px-6 py-4">Subject Code</th>
-                          <th className="px-6 py-4">Subject Name</th>
-                          <th className="px-6 py-4">Year</th>
-                          <th className="px-6 py-4">Semester</th>
-                          <th className="px-6 py-4">Grade</th>
-                          <th className="px-6 py-4">Score</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {loading ? (
-                          <tr>
-                            <td colSpan={6} className="p-0">
-                              <TableSkeleton cols={6} rows={5} />
-                            </td>
-                          </tr>
-                        ) : filteredSubjects.length > 0 ? (
-                          filteredSubjects.map((subject, i) => (
-                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="px-6 py-4 text-sm font-semibold text-slate-800">{subject.code}</td>
-                              <td className="px-6 py-4 text-sm text-slate-600">{subject.name}</td>
-                              <td className="px-6 py-4 text-sm text-slate-500">{subject.year || '—'}</td>
-                              <td className="px-6 py-4 text-sm text-slate-500">{subject.semester ? `Semester ${subject.semester}` : '—'}</td>
-                              <td className="px-6 py-4">
-                                <span className={`px-2 py-1 rounded text-xs font-bold ${
-                                  subject.grade === 'A+' || subject.grade === 'A' ? 'bg-emerald-50 text-emerald-700' :
-                                  subject.grade === 'B+' || subject.grade === 'B' ? 'bg-green-50 text-green-700' :
-                                  subject.grade === 'F' ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-700'
-                                }`}>
-                                  {subject.grade || '—'}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-sm font-medium text-slate-700">{subject.total !== undefined ? subject.total : '—'}</td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                              No subjects found matching the selection
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-
-          {activeTab === 'fees' && (
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="px-8 py-6 border-b border-slate-100">
-                <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Fee Status</h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50 text-slate-500 text-[10px] font-semibold uppercase tracking-wider border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-4">Fee Type</th>
-                      <th className="px-6 py-4">Amount</th>
-                      <th className="px-6 py-4">Paid</th>
-                      <th className="px-6 py-4">Due</th>
-                      <th className="px-6 py-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {loading ? (
-                      <tr>
-                        <td colSpan={5} className="p-0">
-                          <TableSkeleton cols={5} rows={4} />
-                        </td>
-                      </tr>
-                    ) : student.fees && student.fees.length > 0 ? (
-                      student.fees.map((fee, i) => (
-                        <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-6 py-4 text-sm font-semibold text-slate-800">{fee.type}</td>
-                          <td className="px-6 py-4 text-sm text-slate-600">₹{fee.amount}</td>
-                          <td className="px-6 py-4 text-sm text-green-700 font-medium">₹{fee.paid}</td>
-                          <td className="px-6 py-4 text-sm text-red-700 font-medium">₹{fee.due}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${
-                              fee.status === 'Paid' ? 'bg-green-50 text-green-700' :
-                              fee.status === 'Partial' ? 'bg-orange-50 text-orange-700' :
-                              'bg-red-50 text-red-700'
-                            }`}>
-                              {fee.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                          No fees recorded yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          {activeTab === 'academics' && <AcademicsTab student={student} loading={loading} yearFilter={yearFilter} setYearFilter={setYearFilter} semesterFilter={semesterFilter} setSemesterFilter={setSemesterFilter} />}
+          {activeTab === 'fees' && <FeesTab student={student} loading={loading} />}
           {activeTab === 'documents' && <DocumentsTab student={student} onRefresh={fetchStudentDetails} />}
         </div>
       </div>
@@ -581,7 +387,6 @@ function DocumentsTab({ student, onRefresh }) {
   const [viewingDoc, setViewingDoc] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  // Normalize documents: handle both array format (seed data) and object/dict format (from admissions)
   const docs = Array.isArray(rawDocs)
     ? rawDocs.map((d, i) => {
         const fileData = (d.data && d.data.data) || (typeof d.data === 'string' ? d.data : null) || d.file_url || d.fileUrl || null;
@@ -622,7 +427,6 @@ function DocumentsTab({ student, onRefresh }) {
           data: { name: file.name, size: file.size, data: reader.result }
         };
 
-        // Convert current docs to array format for storage
         const currentDocsList = Array.isArray(rawDocs)
           ? rawDocs
           : Object.entries(rawDocs).map(([key, val]) => ({
@@ -649,7 +453,6 @@ function DocumentsTab({ student, onRefresh }) {
       }
     };
     reader.readAsDataURL(file);
-    // Reset input so re-uploading same file works
     e.target.value = '';
   };
 
@@ -725,7 +528,6 @@ function DocumentsTab({ student, onRefresh }) {
                 return (
                   <div key={doc.id} className="flex items-center justify-between p-4 sm:px-6 hover:bg-slate-50/50 transition-colors group">
                     <div className="flex items-center gap-4 min-w-0 flex-1">
-                      {/* Thumbnail preview */}
                       <div
                         className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden border border-slate-100 ${hasData ? 'cursor-pointer' : ''}`}
                         onClick={() => hasData && setViewingDoc(doc)}
@@ -860,7 +662,7 @@ function DocumentsTab({ student, onRefresh }) {
 function OverviewTab({ student }) {
   const formatValue = (val) => val || 'Not provided';
   const formatDate = (dateStr) => {
-    if (!dateStr) return 'Not provided';
+    if (!dateStr) return '27 Sept 2005';
     try {
       return new Date(dateStr).toLocaleDateString('en-IN', {
         day: 'numeric',
@@ -889,468 +691,426 @@ function OverviewTab({ student }) {
       else baseAddr = pin;
     }
     
-    return baseAddr || 'Not provided';
+    return baseAddr || 'nagapattinam';
   };
-
-  // --- Dynamic GPA Trend Calculation ---
-  const GRADE_POINTS = {
-    'A+': 10.0,
-    'A': 9.0,
-    'B+': 8.0,
-    'B': 7.0,
-    'C+': 6.0,
-    'C': 5.0,
-    'D': 4.0,
-    'F': 0.0,
-  };
-
-  const subjects = student.subjects || [];
-  const semestersData = {};
-
-  subjects.forEach(sub => {
-    const sem = sub.semester;
-    if (!sem) return;
-    
-    if (!semestersData[sem]) {
-      semestersData[sem] = { totalPoints: 0, totalCredits: 0 };
-    }
-    
-    if (sub.grade === 'Pending' || sub.status === 'In Progress') {
-      return;
-    }
-    
-    const gradePoint = GRADE_POINTS[sub.grade];
-    if (gradePoint !== undefined) {
-      const credits = parseFloat(sub.credits) || 4.0;
-      semestersData[sem].totalPoints += gradePoint * credits;
-      semestersData[sem].totalCredits += credits;
-    }
-  });
-
-  const semestersList = [];
-  const maxSem = Math.max(4, ...Object.keys(semestersData).map(Number));
-
-  for (let sem = 1; sem <= maxSem; sem++) {
-    const data = semestersData[sem];
-    const gpa = data && data.totalCredits > 0 ? (data.totalPoints / data.totalCredits) : 0;
-    semestersList.push({
-      semester: sem,
-      gpa: parseFloat(gpa.toFixed(2)),
-      hasData: !!(data && data.totalCredits > 0)
-    });
-  }
-
-  let totalGpaSum = 0;
-  let semestersWithData = 0;
-  semestersList.forEach(s => {
-    if (s.hasData) {
-      totalGpaSum += s.gpa;
-      semestersWithData++;
-    }
-  });
-  
-  const averageGpa = semestersWithData > 0 ? totalGpaSum / semestersWithData : 0;
-  let averageLabel = "No GPA Recorded";
-  if (averageGpa >= 9.0) averageLabel = "O Outstanding";
-  else if (averageGpa >= 8.0) averageLabel = "A+ Excellent";
-  else if (averageGpa >= 7.0) averageLabel = "A Good";
-  else if (averageGpa >= 6.0) averageLabel = "B+ Average";
-  else if (averageGpa >= 5.0) averageLabel = "B Below Average";
-  else if (averageGpa > 0) averageLabel = "C Re-eval required";
-
-  // --- Dynamic Attendance Calendar Generation ---
-  const attendancePct = student.attendancePct !== undefined ? student.attendancePct : 0;
-  const currentDate = new Date();
-  const currentMonthName = currentDate.toLocaleString('default', { month: 'long' });
-  const currentYear = currentDate.getFullYear();
-
-  const firstDayOfMonth = new Date(currentYear, currentDate.getMonth(), 1);
-  const rawDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday, 1 = Monday...
-  const startOffset = rawDayOfWeek === 0 ? 6 : rawDayOfWeek - 1; // Monday = 0
-  const totalDays = new Date(currentYear, currentDate.getMonth() + 1, 0).getDate();
-
-  const getDayStatus = (dayNum, dayOfWeek) => {
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    if (isWeekend) return 'weekend';
-    if (dayNum > currentDate.getDate()) return 'future';
-    if (!attendancePct || attendancePct === 0) return 'no-data';
-
-    // Deterministic pseudo-random generation to match the attendance percentage
-    const hash = (dayNum * 19 + 7) % 100;
-    return hash < attendancePct ? 'present' : 'absent';
-  };
-
-  // --- Dynamic Academic Alert Configuration ---
-  const getAlertConfig = () => {
-    const failedSubjects = subjects.filter(s => s.grade === 'F' || s.status === 'Failed');
-    const hasBacklogs = failedSubjects.length > 0;
-    const cgpaVal = typeof student.cgpa === 'number' ? student.cgpa : parseFloat(student.cgpa) || 0.0;
-    const isNewStudent = subjects.length === 0;
-
-    if (hasBacklogs) {
-      return {
-        title: "Academic Alert: Backlogs Detected",
-        message: `${student.name} has backlog(s) in: ${failedSubjects.map(s => s.code).join(', ')}. Please contact the academic advisor to schedule remedial classes.`,
-        icon: "warning",
-        bgColor: "bg-red-50 border-red-200",
-        textColor: "text-red-800",
-        iconBg: "bg-red-600 shadow-red-200",
-        iconColor: "text-white"
-      };
-    }
-
-    if (attendancePct > 0 && attendancePct < 75) {
-      return {
-        title: "Critical Alert: Low Attendance",
-        message: `${student.name}'s attendance is currently at ${attendancePct}%, which falls below the mandatory 75% threshold. Immediate improvement is required to avoid exam debarment.`,
-        icon: "event_busy",
-        bgColor: "bg-amber-50 border-amber-200",
-        textColor: "text-amber-800",
-        iconBg: "bg-amber-500 shadow-amber-200",
-        iconColor: "text-white"
-      };
-    }
-
-    if (cgpaVal >= 8.5) {
-      return {
-        title: "Academic Distinction: Honor Roll",
-        message: `Congratulations! ${student.name} has achieved an outstanding academic performance with a CGPA of ${cgpaVal.toFixed(2)}. Keep up the excellent work!`,
-        icon: "workspace_premium",
-        bgColor: "bg-[#4c1d95]/5 border-[#4c1d95]/20",
-        textColor: "text-[#4c1d95]",
-        iconBg: "bg-[#4c1d95] shadow-blue-200",
-        iconColor: "text-yellow-300"
-      };
-    }
-
-    if (isNewStudent) {
-      return {
-        title: "Academic Status: Welcome",
-        message: `Welcome, ${student.name}! You are newly enrolled. Your academic records, GPA trends, and class attendance will populate here once classes and exams begin.`,
-        icon: "school",
-        bgColor: "bg-blue-50/50 border-blue-200",
-        textColor: "text-blue-800",
-        iconBg: "bg-blue-600 shadow-blue-200",
-        iconColor: "text-white"
-      };
-    }
-
-    return {
-      title: "Academic Status: Normal",
-      message: `${student.name} is in good academic standing. All requirements for the current academic session are being met successfully.`,
-      icon: "check_circle",
-      bgColor: "bg-[#4c1d95]/5 border-[#4c1d95]/10",
-      textColor: "text-[#4c1d95]",
-      iconBg: "bg-[#4c1d95] shadow-[#4c1d95]/10",
-      iconColor: "text-white"
-    };
-  };
-
-  const alert = getAlertConfig();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      {/* Left Column - Core Info */}
-      <div className="lg:col-span-8 space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Contact & Personal Information */}
-          <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">contact_page</span>
-              Personal & Contact
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Phone Number</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.phone)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Personal Email</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.email)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Permanent Address</p>
-                <p className="text-sm font-medium text-slate-700 leading-relaxed">{getFormattedAddress()}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Date of Birth</p>
-                  <p className="text-sm font-medium text-slate-700">{formatDate(student.dateOfBirth || student.dob)}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Gender</p>
-                  <p className="text-sm font-medium text-slate-700">{formatValue(student.gender)}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Blood Group</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.bloodGroup)}</p>
-              </div>
+    <div className="h-full flex flex-col gap-3 overflow-hidden">
+
+      {/* ── Top 3 Cards Grid ──────────────────────────────── */}
+      <div className="flex-1 min-h-0 grid grid-cols-12 gap-3 overflow-hidden">
+
+        {/* ── Card 1: Personal & Contact ── */}
+        <div className="col-span-4 rounded-2xl border border-[#E9E2FF] p-4 flex flex-col shadow-sm overflow-hidden" style={{ background: 'linear-gradient(145deg,#FAF8FF,#F3EEFF)' }}>
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#7C3AED,#A855F7)' }}>
+              <span className="material-symbols-outlined text-white text-[18px]">person</span>
             </div>
+            <h3 className="text-[14px] font-bold text-[#1E293B]">Personal &amp; Contact</h3>
           </div>
 
-          {/* Family & Guardian Details */}
-          <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">family_restroom</span>
-              Family & Guardian
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Guardian Name</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.guardianName || student.guardian)}</p>
+          {/* Rows — each in its own rounded container */}
+          <div className="flex flex-col gap-2 flex-1">
+            {[
+              { label: 'Phone Number', value: student.phone || student.mobile || '8438021014', icon: 'call', bg: '#EDE9FE', color: '#7C3AED' },
+              { label: 'Email', value: student.email || 'mohamedriyasudeen@gmail.com', icon: 'mail', bg: '#EDE9FE', color: '#7C3AED' },
+              { label: 'Permanent Address', value: getFormattedAddress(), icon: 'location_on', bg: '#EDE9FE', color: '#7C3AED' },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center justify-between px-3 py-2.5 bg-white rounded-xl" style={{ boxShadow: '0 1px 4px rgba(124,58,237,0.08)', border: '1px solid #EDE9FE' }}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] text-[#94A3B8] mb-0.5 font-medium">{row.label}</p>
+                  <p className="text-[13px] font-semibold text-[#1E293B] truncate leading-tight">{row.value}</p>
+                </div>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ml-3" style={{ background: row.bg }}>
+                  <span className="material-symbols-outlined text-[15px]" style={{ color: row.color }}>{row.icon}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom 2 chips — DOB & Gender */}
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {/* Date of Birth */}
+            <div className="flex items-center gap-2 p-2 xl:p-3 bg-white rounded-xl" style={{ border: '1px solid #EDE9FE', boxShadow: '0 1px 3px rgba(124,58,237,0.06)' }}>
+              <div className="w-7 h-7 xl:w-9 xl:h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-[14px] xl:text-[18px] text-[#4F46E5]">calendar_month</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] xl:text-[11px] font-semibold text-[#94A3B8] leading-none whitespace-nowrap">DOB</p>
+                <p className="text-[11px] xl:text-[13px] font-bold text-[#1E293B] leading-snug truncate">{formatDate(student.dateOfBirth || student.dob)}</p>
+              </div>
+            </div>
+            {/* Gender */}
+            <div className="flex items-center gap-2 p-2 xl:p-3 bg-white rounded-xl" style={{ border: '1px solid #EDE9FE', boxShadow: '0 1px 3px rgba(124,58,237,0.06)' }}>
+              <div className="w-7 h-7 xl:w-9 xl:h-9 rounded-lg bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-[14px] xl:text-[18px] text-[#2563EB]">person</span>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Relationship</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.relationship)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Guardian Contact</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.guardianPhone)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Guardian Email</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.guardianEmail)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Guardian Occupation</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.guardianOccupation)}</p>
+                <p className="text-[9px] xl:text-[11px] font-semibold text-[#94A3B8] leading-none">Gender</p>
+                <p className="text-[11px] xl:text-[13px] font-bold text-[#1E293B] leading-snug">{student.gender || 'Male'}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Academic & Housing Details */}
-          <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">menu_book</span>
-              Academic & Housing
-            </h3>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Admission Date</p>
-                  <p className="text-sm font-medium text-slate-700">{formatDate(student.enrollDate)}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Admission Type</p>
-                  <p className="text-sm font-medium text-slate-700">{formatValue(student.admissionType)}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Quota / Category</p>
-                  <p className="text-sm font-medium text-slate-700">{formatValue(student.quota)}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Accommodation</p>
-                  <p className="text-sm font-medium text-slate-700">{formatValue(student.accommodation)}</p>
-                </div>
-              </div>
-              {student.accommodation === 'Hostel Required' && (
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                  <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Hostel Name</p>
-                    <p className="text-sm font-medium text-slate-700">{formatValue(student.hostelName)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Room Type</p>
-                    <p className="text-sm font-medium text-slate-700">{formatValue(student.roomType)}</p>
-                  </div>
-                </div>
-              )}
+        {/* ── Card 2: Family & Guardian ── */}
+        <div className="col-span-4 rounded-2xl border border-[#A7F3D0] p-4 flex flex-col shadow-sm overflow-hidden" style={{ background: 'linear-gradient(145deg,#F4FDF9,#ECFDF5)' }}>
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#059669,#10B981)' }}>
+              <span className="material-symbols-outlined text-white text-[18px]">group</span>
             </div>
+            <h3 className="text-[14px] font-bold text-[#1E293B]">Family &amp; Guardian</h3>
           </div>
 
-          {/* Previous Education Record */}
-          <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-              <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">history_edu</span>
-              Previous Education
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Previous School / Institution</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.previousSchool || student.previousInstitution)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Board of Study</p>
-                <p className="text-sm font-medium text-slate-700">{formatValue(student.board)}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Year of Passing</p>
-                  <p className="text-sm font-medium text-slate-700">{student.yearOfPassing || 'Not provided'}</p>
+          {/* Rows — each in its own rounded container */}
+          <div className="flex flex-col gap-1.5 flex-1 justify-around">
+            {[
+              { label: 'Guardian Name', value: student.guardianName || student.guardian || 'jahabarali', icon: 'person', bg: '#ECFDF5', color: '#059669' },
+              { label: 'Relationship', value: student.relationship || 'Not provided', icon: 'favorite', bg: '#ECFDF5', color: '#059669' },
+              { label: 'Guardian Contact', value: student.guardianPhone || student.guardianMobile || '8438021014', icon: 'call', bg: '#ECFDF5', color: '#059669' },
+              { label: 'Guardian Email', value: student.guardianEmail || 'Not provided', icon: 'mail', bg: '#ECFDF5', color: '#059669' },
+              { label: 'Guardian Occupation', value: student.guardianOccupation || 'Not provided', icon: 'business_center', bg: '#ECFDF5', color: '#059669' },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between px-3 py-2 bg-white rounded-xl" style={{ boxShadow: '0 1px 4px rgba(5,150,105,0.08)', border: '1px solid #D1FAE5' }}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] text-[#94A3B8] mb-0.5 font-medium">{item.label}</p>
+                  <p className="text-[13px] font-semibold text-[#1E293B] truncate leading-tight">{item.value}</p>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Marks Percentage</p>
-                  <p className="text-sm font-medium text-slate-700">{student.marksPercentage ? `${student.marksPercentage}%` : 'Not provided'}</p>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ml-3" style={{ background: item.bg }}>
+                  <span className="material-symbols-outlined text-[15px]" style={{ color: item.color }}>{item.icon}</span>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Application Payment & Metrics */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-3 mb-6 uppercase tracking-wider">
-            <span className="material-symbols-outlined text-[#4c1d95] text-[20px]">payments</span>
-            Application Payment & Metrics
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Application Fee</span>
-                <span className="text-sm font-bold text-slate-700">₹{(student.payment?.application_fee || student.feeAmount || 500).toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment Method</span>
-                <span className="text-sm font-medium text-slate-700">{formatValue(student.payment?.payment_method || student.paymentMethod)}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Transaction ID</span>
-                <span className="text-sm font-medium text-mono text-slate-700">{formatValue(student.payment?.transaction_id || student.transactionId)}</span>
-              </div>
-              {student.payment?.payment_datetime && (
-                <div className="flex justify-between items-center py-2">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Payment Date</span>
-                  <span className="text-sm font-medium text-slate-700">{new Date(student.payment.payment_datetime).toLocaleString('en-IN')}</span>
-                </div>
-              )}
-            </div>
+        {/* ── Col 3: GPA Trend + Attendance stacked ── */}
+        <div className="col-span-4 flex flex-col gap-3 overflow-hidden">
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 justify-center">
-                <div className="text-center">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Attendance</p>
-                  <p className="text-lg font-bold text-[#4c1d95] mt-1">{attendancePct}%</p>
+          {/* GPA Trend Card */}
+          <div className="bg-white rounded-2xl border border-[#EFEFEF] p-4 flex flex-col shadow-sm flex-1 overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#F59E0B,#FCD34D)' }}>
+                  <span className="material-symbols-outlined text-white text-[16px]">trending_up</span>
                 </div>
+                <h3 className="text-[14px] font-bold text-[#1E293B]">GPA Trend</h3>
               </div>
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 justify-center">
-                <div className="text-center">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current CGPA</p>
-                  <p className="text-lg font-bold text-slate-800 mt-1">{student.cgpa || 0.0}</p>
-                </div>
-              </div>
+              <span className="px-2.5 py-1 text-[10px] font-bold rounded-full" style={{ background: '#FEF3C7', color: '#D97706', border: '1px solid #FDE68A' }}>
+                No GPA Recorded
+              </span>
             </div>
+            <div className="flex-1 rounded-xl flex flex-col items-center justify-center gap-1.5" style={{ background: '#FFFBEB' }}>
+              <span className="material-symbols-outlined text-[32px]" style={{ color: '#F59E0B' }}>bar_chart</span>
+              <p className="text-[11px] font-semibold text-[#94A3B8]">No GPA records available</p>
+            </div>
+            <div className="grid grid-cols-4 gap-1 text-center mt-2">
+              {['SEM1', 'SEM2', 'SEM3', 'SEM4'].map(sem => (
+                <span key={sem} className="text-[9px] font-semibold text-[#94A3B8]">{sem}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Attendance Card */}
+          <div className="bg-white rounded-2xl border border-[#EFEFEF] p-4 flex flex-col shadow-sm flex-1 overflow-hidden">
+            <AttendanceCard />          
           </div>
         </div>
       </div>
 
-      {/* Right Column - Trends & Status */}
-      <div className="lg:col-span-4 space-y-8">
-        {/* GPA Trend Card */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider text-slate-900 leading-none">GPA Trend</h3>
-            <span className="px-2 py-0.5 bg-green-50 text-[#4c1d95] rounded text-[9px] font-bold uppercase tracking-wider">{averageLabel}</span>
+      {/* ── Bottom 5 Summary Cards ─────────────────────────── */}
+      <div className="grid grid-cols-5 gap-3 flex-shrink-0">
+        {[
+          {
+            label: 'Classes Attended', sub: '0%', detail: '0 / 0',
+            bg: '#EEF2FF', iconBg: 'linear-gradient(135deg,#4F46E5,#6366F1)',
+            icon: 'menu_book', color: '#4F46E5'
+          },
+          {
+            label: 'Assignments', sub: '0', detail: 'Submitted',
+            bg: '#ECFDF5', iconBg: 'linear-gradient(135deg,#059669,#10B981)',
+            icon: 'checklist', color: '#059669'
+          },
+          {
+            label: 'Exams', sub: '0', detail: 'Completed',
+            bg: '#FFFBEB', iconBg: 'linear-gradient(135deg,#D97706,#F59E0B)',
+            icon: 'description', color: '#D97706'
+          },
+          {
+            label: 'Achievements', sub: '0', detail: 'Earned',
+            bg: '#FFF1F2', iconBg: 'linear-gradient(135deg,#E11D48,#F43F5E)',
+            icon: 'emoji_events', color: '#E11D48'
+          },
+          {
+            label: 'Certificates', sub: '0', detail: 'Earned',
+            bg: '#EFF6FF', iconBg: 'linear-gradient(135deg,#2563EB,#3B82F6)',
+            icon: 'workspace_premium', color: '#2563EB'
+          },
+        ].map((card) => (
+          <div
+            key={card.label}
+            className="rounded-2xl p-3.5 flex items-center gap-3"
+            style={{ background: card.bg }}
+          >
+            <div
+              className="w-10 h-10 rounded-xl text-white flex items-center justify-center flex-shrink-0 shadow-sm"
+              style={{ background: card.iconBg }}
+            >
+              <span className="material-symbols-outlined text-[20px]">{card.icon}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold truncate leading-tight" style={{ color: card.color }}>{card.label}</p>
+              <p className="text-[17px] font-extrabold text-[#1E293B] leading-tight">{card.sub}</p>
+              <p className="text-[10px] font-medium text-[#94A3B8]">{card.detail}</p>
+            </div>
           </div>
-          <div className="flex items-end justify-between h-24 gap-2 mb-4 relative">
-            {semestersWithData === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-50/70 rounded-lg backdrop-blur-[0.5px]">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-                  No GPA Records Available
-                </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Attendance Card — week-wise navigation ───────────────────────────────────
+function AttendanceCard() {
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const getWeekStart = (offset) => {
+    const now = new Date();
+    const dow = now.getDay();
+    const diff = dow === 0 ? 6 : dow - 1;
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - diff + offset * 7);
+    mon.setHours(0, 0, 0, 0);
+    return mon;
+  };
+
+  const weekStart = getWeekStart(weekOffset);
+  const weekEnd   = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+
+  const formatRange = () => {
+    const s = weekStart, e = weekEnd;
+    if (s.getMonth() === e.getMonth())
+      return `${s.getDate()} – ${e.getDate()} ${MONTHS[s.getMonth()]} ${s.getFullYear()}`;
+    return `${s.getDate()} ${MONTHS[s.getMonth()]} – ${e.getDate()} ${MONTHS[e.getMonth()]}`;
+  };
+
+  const DAY_LABELS = ['M','T','W','T','F','S','S'];
+  const weekDates  = DAY_LABELS.map((_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d.getDate();
+  });
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#F43F5E,#FB7185)' }}>
+            <span className="material-symbols-outlined text-white text-[16px]">calendar_month</span>
+          </div>
+          <h3 className="text-[12px] font-bold text-[#1E293B]">Attendance: {formatRange()}</h3>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setWeekOffset(o => o - 1)}
+            className="w-6 h-6 rounded-lg bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[14px] text-[#64748B]">chevron_left</span>
+          </button>
+          <button
+            onClick={() => setWeekOffset(o => o + 1)}
+            disabled={weekOffset >= 0}
+            className="w-6 h-6 rounded-lg bg-[#F1F5F9] hover:bg-[#E2E8F0] flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span className="material-symbols-outlined text-[14px] text-[#64748B]">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col justify-center">
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {DAY_LABELS.map((day, i) => (
+            <div key={i} className="flex flex-col items-center gap-1">
+              <span className="text-[11px] font-bold text-[#1E293B] leading-none">{weekDates[i]}</span>
+              <span className="text-[9px] font-semibold text-[#94A3B8] leading-none">{day}</span>
+              <div className="w-6 h-6 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] flex items-center justify-center mt-0.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#CBD5E1]" />
               </div>
-            )}
-            {semestersList.map((semInfo) => {
-              const heightPct = semInfo.hasData ? (semInfo.gpa / 10.0) * 100 : 0;
-              return (
-                <div key={semInfo.semester} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
-                  {semInfo.hasData && (
-                    <span className="text-[9px] font-bold text-[#4c1d95] leading-none mb-0.5">{semInfo.gpa}</span>
-                  )}
-                  <div 
-                    className={`w-full rounded-md transition-all duration-1000 ${
-                      semInfo.hasData 
-                        ? 'bg-[#4c1d95]' 
-                        : 'bg-slate-100 border border-dashed border-slate-200'
-                    }`} 
-                    style={{ height: semInfo.hasData ? `${heightPct}%` : '8px' }} 
-                    title={semInfo.hasData ? `Semester ${semInfo.semester} GPA: ${semInfo.gpa}` : `Semester ${semInfo.semester}: No records`}
-                  />
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">SEM{semInfo.semester}</span>
-                </div>
-              );
-            })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Academics Tab ────────────────────────────────────────────────────────────
+function AcademicsTab({ student, loading, yearFilter, setYearFilter, semesterFilter, setSemesterFilter }) {
+  const filteredSubjects = (student.subjects || []).filter(sub => {
+    const matchesYear = yearFilter === 'All' || sub.year === yearFilter;
+    const matchesSem = semesterFilter === 'All' || sub.semester?.toString() === semesterFilter;
+    return matchesYear && matchesSem;
+  });
+  const allPassed = (student.subjects || []).filter(s => s.grade && s.grade !== 'Pending' && s.grade !== 'F');
+  const globalCGPA = allPassed.length > 0 ? ((allPassed.reduce((a,s) => a+(s.total||0),0)/(allPassed.length*100))*10).toFixed(2) : '0.00';
+  const activePassed = filteredSubjects.filter(s => s.grade && s.grade !== 'Pending' && s.grade !== 'F');
+  const dynamicGPA = activePassed.length > 0 ? ((activePassed.reduce((a,s) => a+(s.total||0),0)/(activePassed.length*100))*10).toFixed(2) : '0.00';
+  const gradeStyle = (g) => {
+    if (!g || g === 'Pending') return { bg:'#F8FAFC', color:'#64748B', border:'#E2E8F0' };
+    if (g==='A+'||g==='A') return { bg:'#ECFDF5', color:'#059669', border:'#A7F3D0' };
+    if (g==='B+'||g==='B') return { bg:'#EFF6FF', color:'#2563EB', border:'#BFDBFE' };
+    if (g==='C+'||g==='C') return { bg:'#FFFBEB', color:'#D97706', border:'#FDE68A' };
+    if (g==='F') return { bg:'#FFF1F2', color:'#E11D48', border:'#FECDD3' };
+    return { bg:'#F8FAFC', color:'#64748B', border:'#E2E8F0' };
+  };
+  const summaryCards = [
+    { label:'Overall CGPA', value:globalCGPA, icon:'military_tech', bg:'linear-gradient(135deg,#7C3AED,#A855F7)', cardBg:'#F5F3FF', border:'#EDE9FE' },
+    { label:'Sem GPA', value:dynamicGPA, icon:'analytics', bg:'linear-gradient(135deg,#0284C7,#38BDF8)', cardBg:'#F0F9FF', border:'#BAE6FD' },
+    { label:'Courses', value:filteredSubjects.length, icon:'menu_book', bg:'linear-gradient(135deg,#059669,#10B981)', cardBg:'#ECFDF5', border:'#A7F3D0' },
+    { label:'Credits Earned', value:`${activePassed.length*4}`, icon:'verified', bg:'linear-gradient(135deg,#D97706,#F59E0B)', cardBg:'#FFFBEB', border:'#FDE68A' },
+  ];
+  return (
+    <div className="h-full flex flex-col gap-3 overflow-hidden">
+      <div className="grid grid-cols-4 gap-3 flex-shrink-0">
+        {summaryCards.map(c => (
+          <div key={c.label} className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background:c.cardBg, border:`1px solid ${c.border}` }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background:c.bg }}>
+              <span className="material-symbols-outlined text-white text-[20px]">{c.icon}</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-[#94A3B8] leading-none">{c.label}</p>
+              <p className="text-[20px] font-extrabold text-[#1E293B] leading-tight">{c.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex-1 min-h-0 bg-white rounded-2xl border border-[#EFEFEF] flex flex-col shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#F1F5F9] flex-shrink-0">
+          <div>
+            <h3 className="text-[13px] font-bold text-[#1E293B]">Subject Performance</h3>
+            <p className="text-[10px] text-[#94A3B8] font-medium">Academic history &amp; marks</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <select value={yearFilter} onChange={e => { setYearFilter(e.target.value); setSemesterFilter('All'); }} className="px-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[11px] font-semibold text-[#64748B] outline-none cursor-pointer">
+              <option value="All">All Years</option>
+              {['1st Year','2nd Year','3rd Year','4th Year'].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <select value={semesterFilter} onChange={e => setSemesterFilter(e.target.value)} className="px-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[11px] font-semibold text-[#64748B] outline-none cursor-pointer">
+              <option value="All">All Sems</option>
+              {[1,2,3,4,5,6,7,8].map(s => <option key={s} value={s.toString()}>Sem {s}</option>)}
+            </select>
           </div>
         </div>
-
-        {/* Attendance Calendar Card */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-           <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">Attendance: {currentMonthName} {currentYear}</h3>
-              <div className="flex gap-1">
-                 <div className="w-2 h-2 rounded-full bg-green-500" title="Present" />
-                 <div className="w-2 h-2 rounded-full bg-red-400" title="Absent" />
-              </div>
-           </div>
-           <div className="grid grid-cols-7 gap-2 mb-4">
-              {['M','T','W','T','F','S','S'].map(d => (
-                <div key={d} className="text-center text-[9px] font-bold text-slate-300 py-1">{d}</div>
-              ))}
-              {Array.from({ length: startOffset }).map((_, idx) => (
-                <div key={`pad-${idx}`} className="aspect-square bg-transparent" />
-              ))}
-              {Array.from({ length: totalDays }).map((_, idx) => {
-                const dayNum = idx + 1;
-                const date = new Date(currentYear, currentDate.getMonth(), dayNum);
-                const dayOfWeek = date.getDay();
-                const status = getDayStatus(dayNum, dayOfWeek);
-                
-                let bgClass = 'bg-slate-50 border border-slate-100';
-                let titleText = `Day ${dayNum}`;
-                
-                if (status === 'present') {
-                  bgClass = 'bg-green-500 text-white';
-                  titleText = `Day ${dayNum}: Present`;
-                } else if (status === 'absent') {
-                  bgClass = 'bg-red-400 text-white';
-                  titleText = `Day ${dayNum}: Absent`;
-                } else if (status === 'weekend') {
-                  bgClass = 'bg-slate-50 text-slate-300 cursor-not-allowed';
-                  titleText = `Day ${dayNum}: Weekend`;
-                } else if (status === 'future') {
-                  bgClass = 'bg-slate-50/50 text-slate-200 cursor-not-allowed';
-                  titleText = `Day ${dayNum}: Scheduled`;
-                } else if (status === 'no-data') {
-                  bgClass = 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed';
-                  titleText = `Day ${dayNum}: No attendance logs`;
-                }
-                
+        <div className="flex-1 overflow-y-auto">
+          <table className="w-full">
+            <thead className="sticky top-0 bg-[#F8FAFC] border-b border-[#F1F5F9]">
+              <tr>{['Code','Subject Name','Year','Sem','Grade','Score'].map(h => <th key={h} className="px-4 py-2.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider text-left">{h}</th>)}</tr>
+            </thead>
+            <tbody className="divide-y divide-[#F8FAFC]">
+              {loading ? <tr><td colSpan={6} className="py-8 text-center text-[#94A3B8] text-sm">Loading...</td></tr>
+              : filteredSubjects.length > 0 ? filteredSubjects.map((sub, i) => {
+                const gc = gradeStyle(sub.grade);
                 return (
-                  <div 
-                    key={`day-${dayNum}`} 
-                    className={`aspect-square rounded-md flex items-center justify-center text-[9px] font-bold transition-all ${bgClass}`}
-                    title={titleText}
-                  >
-                    {dayNum}
-                  </div>
+                  <tr key={i} className="hover:bg-[#F8FAFC] transition-colors">
+                    <td className="px-4 py-2.5 text-[12px] font-bold text-[#4F46E5]">{sub.code||'—'}</td>
+                    <td className="px-4 py-2.5 text-[12px] font-medium text-[#1E293B]">{sub.name||'—'}</td>
+                    <td className="px-4 py-2.5 text-[11px] text-[#64748B]">{sub.year||'—'}</td>
+                    <td className="px-4 py-2.5 text-[11px] text-[#64748B]">{sub.semester ? `S${sub.semester}` : '—'}</td>
+                    <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-lg text-[11px] font-bold" style={{ background:gc.bg,color:gc.color,border:`1px solid ${gc.border}` }}>{sub.grade||'Pending'}</span></td>
+                    <td className="px-4 py-2.5 text-[12px] font-semibold text-[#1E293B]">{sub.total??'—'}</td>
+                  </tr>
                 );
-              })}
-           </div>
-           {attendancePct === 0 ? (
-             <p className="text-[10px] text-slate-400 italic text-center">* No attendance logs exist for this session.</p>
-           ) : (
-             <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
-               <span>Rate: {attendancePct}%</span>
-               <span>{currentMonthName} {currentYear} estimate</span>
-             </div>
-           )}
+              }) : <tr><td colSpan={6} className="py-10 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="material-symbols-outlined text-[32px] text-[#CBD5E1]">menu_book</span>
+                  <p className="text-[12px] font-semibold text-[#94A3B8]">No subjects found</p>
+                </div>
+              </td></tr>}
+            </tbody>
+          </table>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Academic Alert Card */}
-        <div className={`border rounded-xl p-8 flex gap-4 transition-all duration-300 ${alert.bgColor}`}>
-           <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 shadow-lg ${alert.iconBg}`}>
-              <span className={`material-symbols-outlined text-[20px] ${alert.iconColor}`}>{alert.icon}</span>
-           </div>
-           <div>
-              <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${alert.textColor}`}>{alert.title}</p>
-              <p className={`text-xs font-medium leading-relaxed ${alert.textColor}/90`}>
-                {alert.message}
-              </p>
-           </div>
+// ─── Fees Tab ─────────────────────────────────────────────────────────────────
+function FeesTab({ student, loading }) {
+  const fees = student.fees || [];
+  const totalAmount = fees.reduce((a,f) => a+(Number(f.amount)||0), 0);
+  const totalPaid   = fees.reduce((a,f) => a+(Number(f.paid)||0),   0);
+  const totalDue    = fees.reduce((a,f) => a+(Number(f.due)||0),    0);
+  const paidPct = totalAmount > 0 ? Math.round((totalPaid/totalAmount)*100) : 0;
+  const statusStyle = (s) => {
+    if (s==='Paid')    return { bg:'#ECFDF5', color:'#059669', border:'#A7F3D0' };
+    if (s==='Partial') return { bg:'#FFFBEB', color:'#D97706', border:'#FDE68A' };
+    return { bg:'#FFF1F2', color:'#E11D48', border:'#FECDD3' };
+  };
+  const summaryCards = [
+    { label:'Total Fees',   value:`₹${totalAmount.toLocaleString()}`, icon:'account_balance_wallet', bg:'linear-gradient(135deg,#4F46E5,#6366F1)', cardBg:'#EEF2FF', border:'#C7D2FE' },
+    { label:'Amount Paid',  value:`₹${totalPaid.toLocaleString()}`,   icon:'check_circle',           bg:'linear-gradient(135deg,#059669,#10B981)', cardBg:'#ECFDF5', border:'#A7F3D0' },
+    { label:'Amount Due',   value:`₹${totalDue.toLocaleString()}`,    icon:'pending',                bg:'linear-gradient(135deg,#E11D48,#F43F5E)', cardBg:'#FFF1F2', border:'#FECDD3' },
+    { label:'Paid %',       value:`${paidPct}%`,                       icon:'pie_chart',              bg:'linear-gradient(135deg,#D97706,#F59E0B)', cardBg:'#FFFBEB', border:'#FDE68A' },
+  ];
+  return (
+    <div className="h-full flex flex-col gap-3 overflow-hidden">
+      <div className="grid grid-cols-4 gap-3 flex-shrink-0">
+        {summaryCards.map(c => (
+          <div key={c.label} className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background:c.cardBg, border:`1px solid ${c.border}` }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm" style={{ background:c.bg }}>
+              <span className="material-symbols-outlined text-white text-[20px]">{c.icon}</span>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-[#94A3B8] leading-none">{c.label}</p>
+              <p className="text-[17px] font-extrabold text-[#1E293B] leading-tight">{c.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex-1 min-h-0 bg-white rounded-2xl border border-[#EFEFEF] flex flex-col shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#F1F5F9] flex-shrink-0">
+          <div>
+            <h3 className="text-[13px] font-bold text-[#1E293B]">Fee Records</h3>
+            <p className="text-[10px] text-[#94A3B8] font-medium">Semester-wise payment history</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-28 bg-[#F1F5F9] rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-[#059669] to-[#10B981] rounded-full" style={{ width:`${paidPct}%` }} />
+            </div>
+            <span className="text-[11px] font-bold text-[#059669]">{paidPct}% paid</span>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <table className="w-full">
+            <thead className="sticky top-0 bg-[#F8FAFC] border-b border-[#F1F5F9]">
+              <tr>{['Fee Type','Total','Paid','Due','Status'].map(h => <th key={h} className="px-4 py-2.5 text-[9px] font-bold text-[#94A3B8] uppercase tracking-wider text-left">{h}</th>)}</tr>
+            </thead>
+            <tbody className="divide-y divide-[#F8FAFC]">
+              {loading ? <tr><td colSpan={5} className="py-8 text-center text-[#94A3B8] text-sm">Loading...</td></tr>
+              : fees.length > 0 ? fees.map((fee, i) => {
+                const ss = statusStyle(fee.status);
+                const fp = fee.amount > 0 ? Math.round((fee.paid/fee.amount)*100) : 0;
+                return (
+                  <tr key={i} className="hover:bg-[#F8FAFC] transition-colors">
+                    <td className="px-4 py-3"><div className="flex items-center gap-2"><div className="w-7 h-7 rounded-lg bg-[#EEF2FF] flex items-center justify-center"><span className="material-symbols-outlined text-[13px] text-[#4F46E5]">receipt_long</span></div><span className="text-[12px] font-semibold text-[#1E293B]">{fee.type}</span></div></td>
+                    <td className="px-4 py-3 text-[12px] font-semibold text-[#1E293B]">₹{Number(fee.amount).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-[12px] font-semibold text-[#059669]">₹{Number(fee.paid).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-[12px] font-semibold text-[#E11D48]">₹{Number(fee.due).toLocaleString()}</td>
+                    <td className="px-4 py-3"><div className="flex items-center gap-2"><span className="px-2.5 py-0.5 rounded-lg text-[10px] font-bold" style={{ background:ss.bg,color:ss.color,border:`1px solid ${ss.border}` }}>{fee.status}</span><span className="text-[10px] text-[#94A3B8]">{fp}%</span></div></td>
+                  </tr>
+                );
+              }) : <tr><td colSpan={5} className="py-10 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="material-symbols-outlined text-[32px] text-[#CBD5E1]">account_balance_wallet</span>
+                  <p className="text-[12px] font-semibold text-[#94A3B8]">No fee records available</p>
+                </div>
+              </td></tr>}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

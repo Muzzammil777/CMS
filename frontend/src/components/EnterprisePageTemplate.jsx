@@ -195,6 +195,7 @@ export default function EnterprisePageTemplate({
   filterOptions = [],
   activeFilters = {},
   onFilterChange,
+  customFilters = null,
   onExportCSV,
   onExportPDF,
   onAdd,
@@ -242,7 +243,7 @@ export default function EnterprisePageTemplate({
         style={{ boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}
       >
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-[#EEF4F7] bg-white flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-[#EEF4F7] bg-[#FFFFFF] flex-shrink-0">
           {/* Search */}
           <div className="flex items-center gap-2 h-8 px-3 bg-[#F8FAFC] border border-[#E6EDF2] rounded-lg flex-1 min-w-[180px] max-w-xs focus-within:border-[#0A686A] focus-within:ring-1 focus-within:ring-[#0A686A]/20 transition-all">
             <Search className="w-3.5 h-3.5 text-[#8C98A5] flex-shrink-0" />
@@ -270,6 +271,10 @@ export default function EnterprisePageTemplate({
               onChange={v => { onFilterChange?.(fo.key, v); setPage(1); }}
             />
           ))}
+
+          {/* Custom Filters / Toggle Switches */}
+          {customFilters}
+
 
           {/* Spacer */}
           <div className="flex-1" />

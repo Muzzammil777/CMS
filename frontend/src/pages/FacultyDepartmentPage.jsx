@@ -7,8 +7,10 @@ import {
 } from 'lucide-react';
 import { getUserData, getUserSession } from '../auth/sessionController';
 import { settingsApi } from '../api/settingsApi';
-import { buildApiUrl } from '../api/apiBase';
 import { useNavigate } from 'react-router-dom';
+import Pagination from '../components/common/Pagination';
+import EnterpriseWizardTemplate from '../components/common/EnterpriseWizardTemplate';
+import { API_BASE } from '../api/apiBase';
 
 // Helper to generate clean 2-4 letter uppercase short code
 function getCleanCode(dept) {
@@ -23,116 +25,366 @@ function getCleanCode(dept) {
   return name.slice(0, 3).toUpperCase();
 }
 
-/* ── Add Department Modal ────────────────────────────────────────────────── */
-function AddDepartmentModal({ isOpen, onClose, onSave }) {
+/* ── Full Page Enterprise Add Department View ──────────────────────────── */
+function AddDepartmentFullView({ onCancel, onSave, allFaculty = [] }) {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    category: 'Engineering & Technology',
+    established_year: new Date().getFullYear().toString(),
+    office_location: 'Academic Building A, Room 301',
+    description: '',
     head: '',
+    head_id: '',
     email: '',
     phone: '',
-    office_location: '',
-    description: '',
-    totalFaculty: 10,
-    totalStudents: 280,
-    courses: 8,
+    deputy_head: '',
+    programs: ['B.Tech', 'M.Tech'],
+    totalStudents: 300,
+    totalFaculty: 15,
+    courses: 10,
+    accreditation: 'NBA Tier-1 Accredited',
+    budget: '5000000',
   });
 
-  if (!isOpen) return null;
+  const steps = [
+    { title: 'General Info', label: 'General Info' },
+    { title: 'HOD & Leadership', label: 'HOD & Leadership' },
+    { title: 'Intake & Academics', label: 'Intake & Academics' },
+    { title: 'Facilities & Budget', label: 'Facilities & Budget' },
+  ];
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.name) return alert('Department name is required');
-    const code = formData.code ? formData.code.toUpperCase() : getCleanCode({ name: formData.name });
-    onSave({ ...formData, code, id: `DEPT-${Date.now()}` });
-    onClose();
+  const handleHodSelect = (facId) => {
+    if (!facId) {
+      setFormData(prev => ({ ...prev, head_id: '', head: '', email: '', phone: '' }));
+      return;
+    }
+    const fac = allFaculty.find(f => (f.id === facId || f._id === facId));
+    if (fac) {
+      setFormData(prev => ({
+        ...prev,
+        head_id: facId,
+        head: fac.name || fac.fullName || '',
+        email: fac.email || prev.email,
+        phone: fac.phone || fac.contactNumber || prev.phone,
+      }));
+    }
   };
 
+  const handleProgramToggle = (prog) => {
+    setFormData(prev => {
+      const exists = prev.programs.includes(prog);
+      return {
+        ...prev,
+        programs: exists ? prev.programs.filter(p => p !== prog) : [...prev.programs, prog]
+      };
+    });
+  };
+
+  const handleNext = async () => {
+    if (currentStep === 1 && !formData.name) {
+      alert('Department name is required');
+      return;
+    }
+    if (currentStep < 4) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      setIsSubmitting(true);
+      const code = formData.code ? formData.code.toUpperCase() : getCleanCode({ name: formData.name });
+      await onSave({ ...formData, code, id: `DEPT-${Date.now()}` });
+      setIsSubmitting(false);
+      onCancel();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    } else {
+      onCancel();
+    }
+  };
+
+  const code = formData.code || (formData.name ? getCleanCode({ name: formData.name }) : 'DEPT');
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-[#E6EDF2] p-6 max-w-lg w-full shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-[#EEF4F7] pb-3">
-          <h3 className="text-base font-bold text-[#003A40] font-['Outfit'] flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-[#0A686A]" /> Add New Department
-          </h3>
-          <button type="button" onClick={onClose} className="text-[#8C98A5] hover:text-rose-500 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <EnterpriseWizardTemplate
+      noLayout={true}
+      title="Create New Academic Department"
+      subtitle="Configure department metadata, assign HOD leadership, and set academic intake capacity"
+      steps={steps}
+      currentStep={currentStep}
+      totalSteps={4}
+      stepTitle={steps[currentStep - 1].title}
+      stepIcon={currentStep === 1 ? 'domain' : currentStep === 2 ? 'person_search' : currentStep === 3 ? 'school' : 'verified'}
+      onBack={handleBack}
+      onNext={handleNext}
+      isFirstStep={currentStep === 1}
+      isLastStep={currentStep === 4}
+      isSubmitting={isSubmitting}
+      helpTitle="Department Setup Guidance"
+      helpText="Ensure department short code matches official academic records. Selected HOD faculty member will receive administrative permissions."
+    >
+      <div className="space-y-6">
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Department Name</label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => {
-                const name = e.target.value;
-                setFormData({ ...formData, name, code: getCleanCode({ name }) });
-              }}
-              className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
-              placeholder="e.g. Artificial Intelligence"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Short Code</label>
-            <input
-              type="text"
-              required
-              value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-              className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
-              placeholder="e.g. AI"
-            />
-          </div>
-        </div>
+        {/* STEP 1: GENERAL INFO */}
+        {currentStep === 1 && (
+          <div className="space-y-4">
+            <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl flex items-center gap-3">
+              <span className="material-symbols-outlined text-[#003A40]">info</span>
+              <p className="text-xs text-slate-700">Enter basic identity and building location details for the new academic department.</p>
+            </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Head of Department (HOD)</label>
-            <input
-              type="text"
-              value={formData.head}
-              onChange={(e) => setFormData({ ...formData, head: e.target.value })}
-              className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
-              placeholder="Dr. HOD Name"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Contact Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
-              placeholder="hod@mit.edu"
-            />
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Department Name <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setFormData({ ...formData, name, code: getCleanCode({ name }) });
+                  }}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A] focus:ring-2 focus:ring-[#0A686A]/20"
+                  placeholder="e.g. Computer Science & Engineering"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Short Code / Prefix <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono font-bold outline-none focus:border-[#0A686A] focus:ring-2 focus:ring-[#0A686A]/20"
+                  placeholder="e.g. CSE"
+                />
+              </div>
+            </div>
 
-        <div className="flex gap-2 pt-2 border-t border-[#EEF4F7]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2 border border-[#E6EDF2] text-[#5F6B7A] rounded-xl font-bold text-xs hover:bg-[#F4F7FF]"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="flex-1 py-2 bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white rounded-xl font-bold text-xs hover:from-[#0A686A] hover:to-[#003A40]"
-          >
-            Create Department
-          </button>
-        </div>
-      </form>
-    </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Academic Category / Discipline</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A] bg-white cursor-pointer"
+                >
+                  <option value="Engineering & Technology">Engineering & Technology</option>
+                  <option value="Medical & Allied Health">Medical & Allied Health</option>
+                  <option value="Basic & Applied Sciences">Basic & Applied Sciences</option>
+                  <option value="Management & Commerce">Management & Commerce</option>
+                  <option value="Humanities & Social Sciences">Humanities & Social Sciences</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Establishment Year</label>
+                <input
+                  type="text"
+                  value={formData.established_year}
+                  onChange={(e) => setFormData({ ...formData, established_year: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                  placeholder="e.g. 2016"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-[#003A40] block mb-1">Building & Office Location</label>
+              <input
+                type="text"
+                value={formData.office_location}
+                onChange={(e) => setFormData({ ...formData, office_location: e.target.value })}
+                className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                placeholder="e.g. Academic Block A, 3rd Floor, Room 301"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-[#003A40] block mb-1">Department Description & Scope</label>
+              <textarea
+                rows={4}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A] resize-none"
+                placeholder="Detailed department overview, academic mission, research vision..."
+              />
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: LEADERSHIP & HOD */}
+        {currentStep === 2 && (
+          <div className="space-y-4">
+            <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#EEF4F7]">
+              <label className="text-xs font-bold text-[#003A40] block mb-2 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[20px] text-[#0A686A]">person_search</span>
+                Select Head of Department (HOD) from Faculty Directory
+              </label>
+              <select
+                value={formData.head_id}
+                onChange={(e) => handleHodSelect(e.target.value)}
+                className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
+              >
+                <option value="">-- Choose Assigned Faculty Member --</option>
+                {allFaculty.map((fac) => (
+                  <option key={fac.id || fac._id} value={fac.id || fac._id}>
+                    {fac.name || fac.fullName} ({fac.designation || 'Faculty'} - {fac.department || 'General'})
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1.5">Selecting a faculty member automatically fills HOD profile details.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">HOD Display Name</label>
+                <input
+                  type="text"
+                  value={formData.head}
+                  onChange={(e) => setFormData({ ...formData, head: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                  placeholder="Dr. HOD Name"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Deputy HOD / Vice Chair</label>
+                <input
+                  type="text"
+                  value={formData.deputy_head}
+                  onChange={(e) => setFormData({ ...formData, deputy_head: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                  placeholder="Dr. Vice Chair Name"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Official Department Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                  placeholder="hod.cse@mit.edu"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Direct Phone / Extension</label>
+                <input
+                  type="text"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: INTAKE & ACADEMICS */}
+        {currentStep === 3 && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-[#003A40] block mb-2">Degree Programs Offered</label>
+              <div className="flex flex-wrap gap-2">
+                {['B.Tech', 'M.Tech', 'Ph.D.', 'B.Sc', 'M.Sc', 'Diploma', 'Post-Doc'].map((prog) => {
+                  const isSelected = formData.programs.includes(prog);
+                  return (
+                    <button
+                      key={prog}
+                      type="button"
+                      onClick={() => handleProgramToggle(prog)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-[#003A40] text-white shadow-2xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {isSelected && <span className="material-symbols-outlined text-[16px]">check</span>}
+                      <span>{prog}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Sanctioned Student Intake</label>
+                <input
+                  type="number"
+                  value={formData.totalStudents}
+                  onChange={(e) => setFormData({ ...formData, totalStudents: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Sanctioned Faculty Cadre</label>
+                <input
+                  type="number"
+                  value={formData.totalFaculty}
+                  onChange={(e) => setFormData({ ...formData, totalFaculty: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Curriculum Courses</label>
+                <input
+                  type="number"
+                  value={formData.courses}
+                  onChange={(e) => setFormData({ ...formData, courses: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: FACILITIES & ACCREDITATION */}
+        {currentStep === 4 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Accreditation Status</label>
+                <select
+                  value={formData.accreditation}
+                  onChange={(e) => setFormData({ ...formData, accreditation: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A] bg-white cursor-pointer"
+                >
+                  <option value="NBA Tier-1 Accredited">NBA Tier-1 Accredited</option>
+                  <option value="NAAC Grade A++">NAAC Grade A++</option>
+                  <option value="ABET Certified">ABET Certified</option>
+                  <option value="Provisional Approval">Provisional Approval</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-[#003A40] block mb-1">Annual Department Budget (₹)</label>
+                <input
+                  type="text"
+                  value={formData.budget}
+                  onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]"
+                  placeholder="e.g. 5000000"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </EnterpriseWizardTemplate>
   );
 }
 
-/* ── Edit Department Modal ────────────────────────────────────────────────── */
-function EditDepartmentModal({ isOpen, onClose, department, onSave }) {
+/* ── Enterprise Edit Department Modal ─────────────────────────────────────── */
+function EditDepartmentModal({ isOpen, onClose, department, onSave, allFaculty = [] }) {
   const [formData, setFormData] = useState(department || {});
 
   useEffect(() => {
@@ -140,6 +392,20 @@ function EditDepartmentModal({ isOpen, onClose, department, onSave }) {
   }, [department]);
 
   if (!isOpen || !department) return null;
+
+  const handleHodSelect = (facId) => {
+    if (!facId) return;
+    const fac = allFaculty.find(f => (f.id === facId || f._id === facId));
+    if (fac) {
+      setFormData(prev => ({
+        ...prev,
+        head_id: facId,
+        head: fac.name || fac.fullName || '',
+        email: fac.email || prev.email,
+        phone: fac.phone || fac.contactNumber || prev.phone,
+      }));
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -182,9 +448,25 @@ function EditDepartmentModal({ isOpen, onClose, department, onSave }) {
           </div>
         </div>
 
+        <div>
+          <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Select HOD from Faculty Directory</label>
+          <select
+            value={formData.head_id || ''}
+            onChange={(e) => handleHodSelect(e.target.value)}
+            className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A] bg-white cursor-pointer"
+          >
+            <option value="">-- Choose Assigned Faculty Member --</option>
+            {allFaculty.map((fac) => (
+              <option key={fac.id || fac._id} value={fac.id || fac._id}>
+                {fac.name || fac.fullName} ({fac.designation || 'Faculty'})
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">HOD Name</label>
+            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">HOD Display Name</label>
             <input
               type="text"
               value={formData.head || ''}
@@ -393,34 +675,43 @@ export default function FacultyDepartmentPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingDept, setEditingDept] = useState(null);
 
+  const DEFAULT_DEPARTMENTS = [
+    { id: 'DEPT-1', name: 'Computer Science', code: 'CS', head: 'Dr. Ramesh Kumar', email: 'hod.cs@mit.edu', phone: '+91 98765 43210', office_location: 'Building A, Room 301', totalFaculty: 14, totalStudents: 420, courses: 12 },
+    { id: 'DEPT-2', name: 'Electronics & Communication', code: 'ECE', head: 'Dr. Sunita Sharma', email: 'hod.ece@mit.edu', phone: '+91 98765 43213', office_location: 'Building B, Room 201', totalFaculty: 10, totalStudents: 310, courses: 9 },
+    { id: 'DEPT-3', name: 'Mechanical Engineering', code: 'ME', head: 'Dr. Venkat Reddy', email: 'hod.me@mit.edu', phone: '+91 98765 43221', office_location: 'Building D, Room 301', totalFaculty: 8, totalStudents: 260, courses: 8 },
+    { id: 'DEPT-4', name: 'Mathematics', code: 'MATH', head: 'Dr. Deepak Gupta', email: 'hod.math@mit.edu', phone: '+91 98765 43218', office_location: 'Building C, Room 301', totalFaculty: 6, totalStudents: 180, courses: 6 },
+    { id: 'DEPT-5', name: 'Information Technology', code: 'IT', head: 'Dr. Geetha V', email: 'hod.it@mit.edu', phone: '+91 98765 43230', office_location: 'Building A, Room 305', totalFaculty: 11, totalStudents: 350, courses: 10 },
+    { id: 'DEPT-6', name: 'Medical Laboratory Technology', code: 'MLT', head: 'Dr. K. Rahini', email: 'hod.mlt@mit.edu', phone: '+91 98765 43240', office_location: 'Building E, Room 101', totalFaculty: 7, totalStudents: 210, courses: 6 },
+  ];
+
   // Fetch departments & faculty
   const loadData = async () => {
     setLoading(true);
     try {
-      const [deptsData, facRes] = await Promise.all([
-        settingsApi.getDepartments(),
-        fetch(buildApiUrl('/faculty')),
-      ]);
-      const deptsList = Array.isArray(deptsData) ? deptsData : [];
-      const facData = facRes.ok ? await facRes.json() : [];
+      let deptsData = [];
+      try {
+        deptsData = await settingsApi.getDepartments();
+      } catch (e) {
+        console.warn('Departments API error:', e);
+      }
+
+      let facData = [];
+      try {
+        const facRes = await fetch(`${API_BASE}/faculty/dropdown`);
+        if (facRes.ok) facData = await facRes.json();
+      } catch (e) {
+        console.warn('Faculty API error:', e);
+      }
 
       setAllFaculty(facData || []);
 
-      const finalDepts = deptsList.length
-        ? deptsList
-        : [
-            { id: 'DEPT-1', name: 'Computer Science', code: 'CS', head: 'Dr. Ramesh Kumar', email: 'hod.cs@mit.edu', phone: '+91 98765 43210', office_location: 'Building A, Room 301', totalFaculty: 14, totalStudents: 420, courses: 12 },
-            { id: 'DEPT-2', name: 'Electronics & Communication', code: 'ECE', head: 'Dr. Sunita Sharma', email: 'hod.ece@mit.edu', phone: '+91 98765 43213', office_location: 'Building B, Room 201', totalFaculty: 10, totalStudents: 310, courses: 9 },
-            { id: 'DEPT-3', name: 'Mechanical Engineering', code: 'ME', head: 'Dr. Venkat Reddy', email: 'hod.me@mit.edu', phone: '+91 98765 43221', office_location: 'Building D, Room 301', totalFaculty: 8, totalStudents: 260, courses: 8 },
-            { id: 'DEPT-4', name: 'Mathematics', code: 'MATH', head: 'Dr. Deepak Gupta', email: 'hod.math@mit.edu', phone: '+91 98765 43218', office_location: 'Building C, Room 301', totalFaculty: 6, totalStudents: 180, courses: 6 },
-            { id: 'DEPT-5', name: 'Information Technology', code: 'IT', head: 'Dr. Geetha V', email: 'hod.it@mit.edu', phone: '+91 98765 43230', office_location: 'Building A, Room 305', totalFaculty: 11, totalStudents: 350, courses: 10 },
-            { id: 'DEPT-6', name: 'Medical Laboratory Technology', code: 'MLT', head: 'Dr. K. Rahini', email: 'hod.mlt@mit.edu', phone: '+91 98765 43240', office_location: 'Building E, Room 101', totalFaculty: 7, totalStudents: 210, courses: 6 },
-          ];
+      const deptsList = Array.isArray(deptsData) ? deptsData : [];
+      const finalDepts = deptsList.length ? deptsList : DEFAULT_DEPARTMENTS;
 
       setDepartments(finalDepts);
     } catch (err) {
       console.error('Failed to load department metrics:', err);
-      setDepartments([]);
+      setDepartments(DEFAULT_DEPARTMENTS);
     } finally {
       setLoading(false);
     }
@@ -468,6 +759,9 @@ export default function FacultyDepartmentPage() {
     });
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(3);
+
   // Filtered list
   const filteredDepartments = useMemo(() => {
     return departments.filter((d) => {
@@ -476,8 +770,31 @@ export default function FacultyDepartmentPage() {
     });
   }, [departments, searchQuery]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const totalItems = filteredDepartments.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedDepartments = useMemo(() => {
+    return filteredDepartments.slice(startIndex, startIndex + pageSize);
+  }, [filteredDepartments, startIndex, pageSize]);
+
   const totalFacultyCount = departments.reduce((sum, d) => sum + (d.totalFaculty || 10), 0);
   const totalStudentCount = departments.reduce((sum, d) => sum + (d.totalStudents || 300), 0);
+
+  if (isAddOpen) {
+    return (
+      <Layout title="Add Department">
+        <AddDepartmentFullView
+          onCancel={() => setIsAddOpen(false)}
+          onSave={handleAddDepartment}
+          allFaculty={allFaculty}
+        />
+      </Layout>
+    );
+  }
 
   return (
     <Layout title="Departments">
@@ -566,101 +883,128 @@ export default function FacultyDepartmentPage() {
               <p className="text-xs font-bold text-[#003A40]">No departments match your search query.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-6">
-              {filteredDepartments.map((dept) => {
-                const code = getCleanCode(dept);
-                const facCount = dept.totalFaculty || getFilteredFaculty(dept).length || 10;
-                return (
-                  <div
-                    key={dept.id}
-                    className="relative overflow-hidden bg-white border border-[#E6EDF2] rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group"
-                  >
-                    {/* Top gradient accent line */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#003A40] to-[#0A686A] rounded-t-2xl" />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-2">
+                {paginatedDepartments.map((dept) => {
+                  const code = getCleanCode(dept);
+                  const facCount = dept.totalFaculty || getFilteredFaculty(dept).length || 10;
+                  return (
+                    <div
+                      key={dept.id}
+                      className="relative overflow-hidden bg-white border border-[#E6EDF2] rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group"
+                    >
+                      {/* Top gradient accent line */}
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#003A40] to-[#0A686A] rounded-t-2xl" />
 
-                    <div>
-                      {/* Header row */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#003A40] to-[#0A686A] text-white flex items-center justify-center font-extrabold text-xs font-['Outfit'] shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
-                            {code}
+                      <div>
+                        {/* Header row */}
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#003A40] to-[#0A686A] text-white flex items-center justify-center font-extrabold text-xs font-['Outfit'] shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                              {code}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-sm font-extrabold text-[#003A40] font-['Outfit'] truncate leading-tight group-hover:text-[#0A686A] transition-colors">
+                                {dept.name}
+                              </h3>
+                              <span className="inline-block mt-0.5 px-2 py-0.5 bg-[#F2FBFA] border border-[#0A686A]/20 rounded-md text-[10px] font-bold text-[#0A686A] uppercase">
+                                Code: {code}
+                              </span>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <h3 className="text-sm font-extrabold text-[#003A40] font-['Outfit'] truncate leading-tight group-hover:text-[#0A686A] transition-colors">
-                              {dept.name}
-                            </h3>
-                            <span className="inline-block mt-0.5 px-2 py-0.5 bg-[#F2FBFA] border border-[#0A686A]/20 rounded-md text-[10px] font-bold text-[#0A686A] uppercase">
-                              Code: {code}
+
+                          {role !== 'student' && (
+                            <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => {
+                                  setEditingDept(dept);
+                                  setIsEditOpen(true);
+                                }}
+                                className="w-7 h-7 rounded-lg text-[#5F6B7A] hover:text-[#003A40] hover:bg-[#F4F7FF] flex items-center justify-center transition-colors cursor-pointer"
+                                title="Edit Department"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDepartment(dept.id)}
+                                className="w-7 h-7 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
+                                title="Delete Department"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* HOD & Contact Info */}
+                        <div className="p-3.5 bg-[#F9FBFF] rounded-xl border border-[#EEF4F7] space-y-1.5 mb-3 text-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-semibold text-[#003A40] flex items-center gap-1.5 truncate">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#0A686A]" />
+                              HOD: <span className="font-bold">{dept.head || 'Dr. Department Head'}</span>
+                            </p>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wider flex-shrink-0">
+                              NBA Tier-1
                             </span>
                           </div>
-                        </div>
-
-                        {role !== 'student' && (
-                          <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => {
-                                setEditingDept(dept);
-                                setIsEditOpen(true);
-                              }}
-                              className="w-7 h-7 rounded-lg text-[#5F6B7A] hover:text-[#003A40] hover:bg-[#F4F7FF] flex items-center justify-center transition-colors cursor-pointer"
-                              title="Edit Department"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteDepartment(dept.id)}
-                              className="w-7 h-7 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
-                              title="Delete Department"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                          <p className="text-[11px] text-[#5F6B7A] flex items-center gap-1.5 truncate">
+                            <Mail className="w-3 h-3 text-[#8C98A5]" /> {dept.email || `${code.toLowerCase()}@mit.edu`}
+                          </p>
+                          <div className="flex items-center justify-between text-[11px] text-[#5F6B7A] gap-2">
+                            <p className="flex items-center gap-1.5 truncate">
+                              <MapPin className="w-3 h-3 text-[#8C98A5]" /> {dept.office_location || 'Main Academic Bldg'}
+                            </p>
+                            <p className="flex items-center gap-1 truncate font-mono text-[10px] text-[#0A686A]">
+                              <Phone className="w-3 h-3 text-[#8C98A5]" /> {dept.phone || '+91 98765 43210'}
+                            </p>
                           </div>
-                        )}
+                          <p className="text-[11px] text-[#5F6B7A] leading-relaxed pt-1.5 border-t border-slate-200/60 italic line-clamp-2">
+                            {dept.description || `Specialized curriculum & advanced research labs in ${dept.name} equipped with state-of-the-art academic facilities.`}
+                          </p>
+                        </div>
+
+                        {/* Stats Pills */}
+                        <div className="grid grid-cols-3 gap-2 text-center mb-4">
+                          <div className="p-2 bg-slate-50 rounded-lg border border-[#EEF4F7]">
+                            <span className="text-[9px] font-bold text-[#8C98A5] uppercase block">Faculty</span>
+                            <span className="text-xs font-extrabold text-[#003A40]">{facCount} Staff</span>
+                          </div>
+                          <div className="p-2 bg-slate-50 rounded-lg border border-[#EEF4F7]">
+                            <span className="text-[9px] font-bold text-[#8C98A5] uppercase block">Students</span>
+                            <span className="text-xs font-extrabold text-[#003A40]">{dept.totalStudents || 280}</span>
+                          </div>
+                          <div className="p-2 bg-slate-50 rounded-lg border border-[#EEF4F7]">
+                            <span className="text-[9px] font-bold text-[#8C98A5] uppercase block">Courses</span>
+                            <span className="text-xs font-extrabold text-[#003A40]">{dept.courses || 8} Units</span>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* HOD & Contact Info */}
-                      <div className="p-3 bg-[#F9FBFF] rounded-xl border border-[#EEF4F7] space-y-1.5 mb-4 text-xs">
-                        <p className="font-semibold text-[#003A40] flex items-center gap-1.5 truncate">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#0A686A]" />
-                          HOD: <span className="font-bold">{dept.head || 'Dr. Department Head'}</span>
-                        </p>
-                        <p className="text-[11px] text-[#5F6B7A] flex items-center gap-1.5 truncate">
-                          <Mail className="w-3 h-3 text-[#8C98A5]" /> {dept.email || `${code.toLowerCase()}@mit.edu`}
-                        </p>
-                        <p className="text-[11px] text-[#5F6B7A] flex items-center gap-1.5 truncate">
-                          <MapPin className="w-3 h-3 text-[#8C98A5]" /> {dept.office_location || 'Main Academic Building'}
-                        </p>
-                      </div>
-
-                      {/* Stats Pills */}
-                      <div className="grid grid-cols-3 gap-2 text-center mb-4">
-                        <div className="p-2 bg-slate-50 rounded-lg border border-[#EEF4F7]">
-                          <span className="text-[9px] font-bold text-[#8C98A5] uppercase block">Faculty</span>
-                          <span className="text-xs font-extrabold text-[#003A40]">{facCount} Staff</span>
-                        </div>
-                        <div className="p-2 bg-slate-50 rounded-lg border border-[#EEF4F7]">
-                          <span className="text-[9px] font-bold text-[#8C98A5] uppercase block">Students</span>
-                          <span className="text-xs font-extrabold text-[#003A40]">{dept.totalStudents || 280}</span>
-                        </div>
-                        <div className="p-2 bg-slate-50 rounded-lg border border-[#EEF4F7]">
-                          <span className="text-[9px] font-bold text-[#8C98A5] uppercase block">Courses</span>
-                          <span className="text-xs font-extrabold text-[#003A40]">{dept.courses || 8} Units</span>
-                        </div>
-                      </div>
+                      {/* Footer CTA */}
+                      <button
+                        onClick={() => setSelectedDept(dept)}
+                        className="w-full py-2.5 px-3 rounded-xl border border-[#E6EDF2] bg-white text-xs font-bold text-[#003A40] hover:bg-[#F2FBFA] hover:border-[#0A686A]/40 transition-all flex items-center justify-between cursor-pointer group/btn mt-2"
+                      >
+                        <span>Explore Department</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#0A686A] group-hover/btn:translate-x-1 transition-transform" />
+                      </button>
                     </div>
+                  );
+                })}
+              </div>
 
-                    {/* Footer CTA */}
-                    <button
-                      onClick={() => setSelectedDept(dept)}
-                      className="w-full py-2.5 px-3 rounded-xl border border-[#E6EDF2] bg-white text-xs font-bold text-[#003A40] hover:bg-[#F2FBFA] hover:border-[#0A686A]/40 transition-all flex items-center justify-between cursor-pointer group/btn mt-2"
-                    >
-                      <span>Explore Department</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#0A686A] group-hover/btn:translate-x-1 transition-transform" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+              {/* Bottom Pagination Bar */}
+              <div className="mt-auto pb-4">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
+            </>
           )}
 
           {/* Detail Inspector Modal */}
@@ -672,9 +1016,6 @@ export default function FacultyDepartmentPage() {
             />
           )}
 
-          {/* Add Modal */}
-          <AddDepartmentModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onSave={handleAddDepartment} />
-
           {/* Edit Modal */}
           <EditDepartmentModal
             isOpen={isEditOpen}
@@ -684,6 +1025,7 @@ export default function FacultyDepartmentPage() {
             }}
             department={editingDept}
             onSave={handleEditSave}
+            allFaculty={allFaculty}
           />
         </div>
       )}

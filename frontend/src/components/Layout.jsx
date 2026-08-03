@@ -25,6 +25,7 @@ function useIsMobile(breakpoint = 768) {
 export default function Layout({ 
   children, 
   title, 
+  headerExtra = null,
   userId = 'N/A',
   noPadding = false,
   showBack = false,
@@ -86,6 +87,7 @@ export default function Layout({
       <main className={`flex-1 flex flex-col min-w-0 overflow-hidden transition-all duration-300 ${isSidebarVisible && !isMobile ? (isCollapsed ? 'ml-20' : 'ml-64') : 'ml-0'}`}>
         <TopBar 
           title={title} 
+          headerExtra={headerExtra}
           isSidebarVisible={isSidebarVisible}
           isMobile={isMobile}
           onToggleSidebar={toggleSidebar}

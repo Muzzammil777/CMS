@@ -45,13 +45,23 @@ export default function RequestLeaveModal({ isOpen, onClose, onSuccess, facultyI
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to submit leave request');
+        let msg = 'Failed to submit leave request';
+        if (typeof data.detail === 'string') {
+          msg = data.detail;
+        } else if (Array.isArray(data.detail)) {
+          msg = data.detail.map(d => `${d.loc ? d.loc[d.loc.length - 1] + ': ' : ''}${d.msg}`).join(', ');
+        } else if (data.detail && typeof data.detail === 'object') {
+          msg = JSON.stringify(data.detail);
+        } else if (data.message) {
+          msg = data.message;
+        }
+        throw new Error(msg);
       }
       
-      onSuccess();
+      if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to submit leave request');
     } finally {
       setLoading(false);
     }

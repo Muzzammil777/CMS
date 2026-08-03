@@ -10,6 +10,7 @@ import { Menu, Settings, ChevronDown, ArrowLeft } from 'lucide-react';
 
 export default function TopBar({ 
   title, 
+  headerExtra = null,
   isSidebarVisible = true,
   isMobile = false,
   onToggleSidebar,
@@ -178,15 +179,17 @@ export default function TopBar({
 
 
         <div className="min-w-0 flex flex-col justify-center">
-
           {(!isSidebarVisible || isMobile) && (
             <p className="text-[10px] md:text-[11px] font-bold text-[#003A40] tracking-wider uppercase leading-none mb-1">
               {systemSettings?.portalName || 'MIT Connect'}
             </p>
           )}
-          <h2 className="text-xl md:text-2xl font-bold text-[#003A40] tracking-wide truncate leading-tight">
-            {title || 'Dashboard'}
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl md:text-2xl font-bold text-[#003A40] tracking-wide truncate leading-tight">
+              {title || 'Dashboard'}
+            </h2>
+            {headerExtra}
+          </div>
         </div>
       </div>
 

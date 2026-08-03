@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import EnterpriseWizardTemplate from '../components/common/EnterpriseWizardTemplate';
 import { API_BASE } from '../api/apiBase';
 import { settingsApi } from '../api/settingsApi';
+import { saveLocalDraft, getLocalDrafts, deleteLocalDraft } from '../utils/draftManager';
 
 const initialData = {
   // Step 1: Personal
@@ -61,6 +62,9 @@ const initialData = {
 
 export default function AddStudentPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const draftId = searchParams.get('draftId');
+
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,6 +86,18 @@ export default function AddStudentPage() {
     };
     fetchDepts();
   }, []);
+
+  useEffect(() => {
+    if (draftId) {
+      const drafts = getLocalDrafts('student');
+      const found = drafts.find(d => d.id === draftId);
+      if (found && found.formData) {
+        setFormData(found.formData);
+        if (found.currentStep) setStep(found.currentStep);
+        if (found.formData.avatarPreview) setAvatarPreview(found.formData.avatarPreview);
+      }
+    }
+  }, [draftId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -163,8 +179,29 @@ export default function AddStudentPage() {
   };
 
   const handleSaveDraft = () => {
-    localStorage.setItem('add_student_draft', JSON.stringify(formData));
-    alert('Progress saved to draft!');
+    const draftName = formData.name || 'Untitled Student Admission';
+    const filledCount = [
+      formData.name, formData.email, formData.phone, formData.dob, formData.gender,
+      formData.department, formData.quota, formData.guardianName
+    ].filter(Boolean).length;
+    const completionPercentage = Math.round((filledCount / 8) * 100);
+
+    saveLocalDraft('student', {
+      id: draftId || `DRAFT-STU-${Date.now()}`,
+      title: draftName,
+      name: draftName,
+      email: formData.email,
+      department: formData.department || 'Unassigned',
+      rollNumber: formData.id || 'Pending',
+      currentStep: step,
+      totalSteps: 8,
+      completionPercentage,
+      stepName: steps[step - 1]?.title || 'Personal',
+      type: 'Student Admission',
+      formData: { ...formData, avatarPreview },
+    });
+    alert(`Draft saved for "${draftName}"! You can resume admission anytime from the Student Drafts tab.`);
+    navigate('/students?view=drafts');
   };
 
   const handleSubmit = async () => {
@@ -222,8 +259,9 @@ export default function AddStudentPage() {
       });
 
       if (!res.ok) throw new Error('Failed to create student enrollment');
-      alert('Student enrolled successfully!');
+      if (draftId) deleteLocalDraft('student', draftId);
       localStorage.removeItem('add_student_draft');
+      alert('Student enrolled successfully!');
       navigate('/students');
     } catch (error) {
       console.error('Submit error:', error);
@@ -358,16 +396,127 @@ export default function AddStudentPage() {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Permanent Address</label>
-            <textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              rows="2"
-              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#0A686A] bg-[#FAFBFC] focus:bg-white transition-all resize-none"
-              placeholder="Enter complete residential address..."
-            />
+          {/* Permanent Address Section */}
+          <div className="bg-[#FAF8FF] border border-[#E9E2FF] p-4 rounded-2xl space-y-3 mt-2">
+            <div className="flex items-center gap-2 text-[#7C3AED]">
+              <div className="w-7 h-7 rounded-lg bg-[#EDE9FE] flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-[16px] text-[#7C3AED]">location_on</span>
+              </div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#1E293B]">Permanent Address</h4>
+            </div>
+
+            {/* Row 1: Address Line 1 */}
+            <div>
+              <label className="text-[11px] font-semibold text-[#64748B] block mb-1">Address Line 1</label>
+              <input
+                type="text"
+                name="addressLine1"
+                value={formData.addressLine1 || formData.address || ''}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#7C3AED] bg-white transition-all"
+                placeholder="45, Anna Nagar 3rd Street"
+              />
+            </div>
+
+            {/* Row 2: Address Line 2 & Landmark */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">Address Line 2 (Optional)</label>
+                <input
+                  type="text"
+                  name="addressLine2"
+                  value={formData.addressLine2 || ''}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#7C3AED] bg-white transition-all"
+                  placeholder="Near Bus Stand"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">Landmark (Optional)</label>
+                <input
+                  type="text"
+                  name="landmark"
+                  value={formData.landmark || ''}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#7C3AED] bg-white transition-all"
+                  placeholder="Opp. City Hospital"
+                />
+              </div>
+            </div>
+
+            {/* Row 3: City, District, State */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">City</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={formData.city || ''}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#7C3AED] bg-white transition-all"
+                  placeholder="Nagapattinam"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">District</label>
+                <input
+                  type="text"
+                  name="district"
+                  value={formData.district || ''}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#7C3AED] bg-white transition-all"
+                  placeholder="Nagapattinam"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">State</label>
+                <select
+                  name="state"
+                  value={formData.state || 'Tamil Nadu'}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#7C3AED] bg-white transition-all"
+                >
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Kerala">Kerala</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Row 4: Country, PIN Code */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">Country</label>
+                <select
+                  name="country"
+                  value={formData.country || 'India'}
+                  onChange={handleChange}
+                  className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#7C3AED] bg-white transition-all"
+                >
+                  <option value="India">India</option>
+                  <option value="United States">United States</option>
+                  <option value="United Kingdom">United Kingdom</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-[#64748B] block mb-1">PIN Code</label>
+                <input
+                  type="text"
+                  name="pincode"
+                  value={formData.pincode || formData.pinCode || ''}
+                  onChange={handleChange}
+                  maxLength="6"
+                  className="w-full px-3.5 py-2 text-xs font-semibold rounded-xl border border-[#E6EDF2] focus:outline-none focus:border-[#7C3AED] bg-white transition-all"
+                  placeholder="611001"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="bg-amber-50/60 border border-amber-200 p-4 rounded-xl space-y-3">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import EnterprisePageTemplate from '../components/EnterprisePageTemplate'
 import DashboardSkeleton from '../components/DashboardSkeleton'
@@ -8,10 +8,16 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { getUserSession } from '../auth/sessionController'
 import { Eye, Pencil, Trash2, Users, UserCheck, UserPlus, Filter } from 'lucide-react'
+import { getLocalDrafts, deleteLocalDraft } from '../utils/draftManager'
 
 export default function StudentsPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialView = searchParams.get('view') === 'drafts' ? 'drafts' : 'all'
+  const [viewMode, setViewMode] = useState(initialView)
+
   const [studentsList, setStudentsList] = useState([])
+  const [draftList, setDraftList] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -20,24 +26,23 @@ export default function StudentsPage() {
 
   const session = getUserSession()
   const role = session?.role || 'admin'
-  const userId = session?.userId
+
+  // ── Sync URL view ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const currentUrlView = searchParams.get('view') === 'drafts' ? 'drafts' : 'all'
+    if (currentUrlView !== viewMode) {
+      setViewMode(currentUrlView)
+    }
+  }, [searchParams])
 
   // ── Data Fetch ──────────────────────────────────────────────────────────
   const fetchStudents = async () => {
     try {
       setLoading(true)
-      const [studentsRes, admissionsRes] = await Promise.all([
-        fetch(buildApiUrl('/students')),
-        role !== 'faculty' ? fetch(buildApiUrl('/admissions/students')) : Promise.resolve(null)
-      ])
+      const studentsRes = await fetch(buildApiUrl('/students'))
       if (!studentsRes.ok) throw new Error('Failed to fetch students')
       const data = await studentsRes.json()
-      setStudentsList(data)
-
-      if (admissionsRes?.ok) {
-        const admData = await admissionsRes.json()
-        setNewAdmissionsCount(admData.filter(a => (a.status || '').toLowerCase() === 'pending').length)
-      }
+      setStudentsList(Array.isArray(data) ? data : [])
       setError(null)
     } catch (err) {
       console.error('Error fetching students:', err)
@@ -47,11 +52,37 @@ export default function StudentsPage() {
     }
   }
 
+  const loadDrafts = () => {
+    const drafts = getLocalDrafts('student')
+    setDraftList(drafts)
+  }
+
+  const fetchAdmissionsCount = async () => {
+    if (role === 'faculty') return
+    try {
+      const res = await fetch(buildApiUrl('/admissions/students'))
+      if (res.ok) {
+        const admData = await res.json()
+        setNewAdmissionsCount(admData.filter(a => (a.status || '').toLowerCase() === 'pending').length)
+      }
+    } catch {
+      // silently fail
+    }
+  }
+
   useEffect(() => {
     fetchStudents()
+    fetchAdmissionsCount()
+    loadDrafts()
     window.addEventListener('studentApproved', fetchStudents)
     return () => window.removeEventListener('studentApproved', fetchStudents)
   }, [])
+
+  useEffect(() => {
+    if (viewMode === 'drafts') {
+      loadDrafts()
+    }
+  }, [viewMode])
 
   // ── Actions ─────────────────────────────────────────────────────────────
   const handleDelete = async (student) => {
@@ -65,11 +96,23 @@ export default function StudentsPage() {
     }
   }
 
+  const handleDeleteDraft = (draft) => {
+    if (window.confirm(`Discard draft for "${draft.name || draft.title || 'this record'}"?`)) {
+      deleteLocalDraft('student', draft.id)
+      loadDrafts()
+    }
+  }
+
   const handleExportCSV = () => {
-    const rows = filtered.map(s => ({
-      Name: s.name || '', Roll: s.rollNumber || s.id || '',
-      Email: s.email || '', Department: s.department || s.departmentId || '',
-      Semester: s.semester || '', Status: s.status || '', 'Fee Status': s.feeStatus || ''
+    const targetRows = viewMode === 'drafts' ? filteredDrafts : filtered
+    const rows = targetRows.map(s => ({
+      Name: s.name || s.title || '',
+      Roll: s.rollNumber || s.id || '',
+      Email: s.email || '',
+      Department: s.department || s.departmentId || '',
+      Semester: s.semester || '',
+      Status: viewMode === 'drafts' ? 'Draft' : (s.status || ''),
+      'Fee Status': s.feeStatus || ''
     }))
     if (!rows.length) return alert('No data to export')
     const header = Object.keys(rows[0]).join(',')
@@ -77,21 +120,29 @@ export default function StudentsPage() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = `students_${new Date().toISOString().slice(0, 10)}.csv`
+    a.href = url; a.download = `students_${viewMode}_${new Date().toISOString().slice(0, 10)}.csv`
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
   }
 
   const handleExportPDF = async () => {
-    const rows = filtered.map(s => [s.name || '', s.rollNumber || s.id || '', s.department || s.departmentId || '', `Sem ${s.semester || 1}`, s.status || '', s.feeStatus || ''])
+    const targetRows = viewMode === 'drafts' ? filteredDrafts : filtered
+    const rows = targetRows.map(s => [
+      s.name || s.title || '',
+      s.rollNumber || s.id || '',
+      s.department || s.departmentId || '',
+      viewMode === 'drafts' ? `Step ${s.currentStep || 1} of 8` : `Sem ${s.semester || 1}`,
+      viewMode === 'drafts' ? 'Draft' : (s.status || ''),
+      s.feeStatus || '—'
+    ])
     if (!rows.length) return alert('No data to export')
     const doc = new jsPDF()
-    doc.setFontSize(14); doc.text('Students Directory', 14, 20)
+    doc.setFontSize(14); doc.text(`Students Directory (${viewMode.toUpperCase()})`, 14, 20)
     if (typeof autoTable === 'function') {
-      autoTable(doc, { head: [['Name', 'Roll No', 'Department', 'Semester', 'Status', 'Fee Status']], body: rows, startY: 28, styles: { fontSize: 8 } })
+      autoTable(doc, { head: [['Name', 'ID/Roll', 'Department', 'Semester/Step', 'Status', 'Fee Status']], body: rows, startY: 28, styles: { fontSize: 8 } })
     } else {
-      doc.autoTable?.({ head: [['Name', 'Roll No', 'Department', 'Semester', 'Status', 'Fee Status']], body: rows, startY: 28 })
+      doc.autoTable?.({ head: [['Name', 'ID/Roll', 'Department', 'Semester/Step', 'Status', 'Fee Status']], body: rows, startY: 28 })
     }
-    doc.save(`students_${new Date().toISOString().slice(0, 10)}.pdf`)
+    doc.save(`students_${viewMode}_${new Date().toISOString().slice(0, 10)}.pdf`)
   }
 
   // ── Filter Logic ────────────────────────────────────────────────────────
@@ -113,7 +164,17 @@ export default function StudentsPage() {
     })
   }, [studentsList, searchQuery, activeFilters])
 
-  // ── KPI Cards ────────────────────────────────────────────────────────────
+  const filteredDrafts = useMemo(() => {
+    return draftList.filter(d => {
+      const q = searchQuery.trim().toLowerCase()
+      const titleStr = (d.name || d.title || '').toLowerCase()
+      const idStr = (d.id || '').toLowerCase()
+      const deptStr = (d.department || '').toLowerCase()
+      return !q || titleStr.includes(q) || idStr.includes(q) || deptStr.includes(q)
+    })
+  }, [draftList, searchQuery])
+
+  // ── Main KPI Cards ────────────────────────────────────────────────────────
   const activeCount = studentsList.filter(s => (s.status || '').toLowerCase() === 'active').length
   const paidCount = studentsList.filter(s => (s.feeStatus || '').toLowerCase() === 'paid').length
 
@@ -141,7 +202,35 @@ export default function StudentsPage() {
     },
   ]
 
-  // ── Status Badge Render ──────────────────────────────────────────────────
+  // ── Draft KPI Cards ────────────────────────────────────────────────────────
+  const avgDraftProgress = draftList.length
+    ? Math.round(draftList.reduce((acc, d) => acc + (d.completionPercentage || 0), 0) / draftList.length)
+    : 0
+
+  const draftKpiCards = [
+    {
+      title: 'Saved Drafts', value: draftList.length.toString(),
+      sub: 'Incomplete enrollments', trend: 'Saved locally', trendUp: true,
+      icon: <span className="material-symbols-outlined text-lg">drafts</span>, gradient: 'amber'
+    },
+    {
+      title: 'Action Required', value: draftList.length > 0 ? `${draftList.length} Pending` : 'None',
+      sub: draftList.length > 0 ? 'Resume enrollment' : 'All students registered', trend: 'Needs completion', trendUp: true,
+      icon: <span className="material-symbols-outlined text-lg">pending_actions</span>, gradient: 'indigo'
+    },
+    {
+      title: 'Avg Progress', value: `${avgDraftProgress}%`,
+      sub: 'Form completion rate', trend: 'Partial info saved', trendUp: true,
+      icon: <span className="material-symbols-outlined text-lg">donut_large</span>, gradient: 'emerald'
+    },
+    {
+      title: 'Latest Draft', value: draftList[0] ? (draftList[0].name?.split(' ')[0] || 'Draft') : 'None',
+      sub: draftList[0] ? `Step ${draftList[0].currentStep || 1} of 8` : 'No active draft', trend: 'Ready to continue', trendUp: true,
+      icon: <span className="material-symbols-outlined text-lg">history</span>, gradient: 'purple'
+    },
+  ]
+
+  // ── Status Badges ────────────────────────────────────────────────────────
   const StatusBadge = ({ value, styles }) => {
     const s = (value || '').toUpperCase()
     const cls = styles[s] || 'bg-slate-100 text-slate-600 border-slate-200'
@@ -228,6 +317,73 @@ export default function StudentsPage() {
     },
   ]
 
+  // ── Draft Columns ────────────────────────────────────────────────────────
+  const draftColumns = [
+    {
+      key: 'title', label: 'Draft Subject',
+      render: (_, d) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 flex-shrink-0 font-bold text-xs shadow-2xs">
+            <span className="material-symbols-outlined text-base">edit_note</span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-[#003A40] truncate leading-tight">
+              {d.name || d.title || 'Untitled Draft'}
+            </p>
+            <p className="text-[10px] text-[#8C98A5] font-medium truncate">{d.id}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'type', label: 'Type',
+      render: (_, d) => (
+        <span className="text-xs font-bold text-[#5F6B7A]">{d.type || 'Student Admission'}</span>
+      )
+    },
+    {
+      key: 'progress', label: 'Form Progress',
+      render: (_, d) => (
+        <div className="w-36 space-y-1">
+          <div className="flex justify-between text-[10px] font-bold text-[#003A40]">
+            <span>Step {d.currentStep || 1} of {d.totalSteps || 8}</span>
+            <span>{d.completionPercentage || 0}%</span>
+          </div>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all duration-300"
+              style={{ width: `${d.completionPercentage || 20}%` }}
+            />
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'department', label: 'Department',
+      render: (_, d) => (
+        <span className="inline-block px-2.5 py-1 bg-[#F4F7FF] border border-[#E6EDF2] rounded-lg text-xs font-bold text-[#003A40]">
+          {d.department || 'Unassigned'}
+        </span>
+      )
+    },
+    {
+      key: 'lastSaved', label: 'Last Saved',
+      render: (_, d) => (
+        <span className="text-xs text-[#5F6B7A] font-medium">
+          {d.updatedAt ? new Date(d.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+        </span>
+      )
+    },
+    {
+      key: 'status', label: 'Status',
+      render: () => (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-amber-50 text-amber-700 border-amber-200 uppercase tracking-wider">
+          DRAFT
+        </span>
+      )
+    },
+  ]
+
   // ── Actions ─────────────────────────────────────────────────────────────
   const tableActions = role === 'faculty' ? [] : [
     {
@@ -247,6 +403,19 @@ export default function StudentsPage() {
     {
       icon: <Trash2 className="w-3.5 h-3.5" />, label: 'Delete Student', color: 'red',
       onClick: handleDelete
+    },
+  ]
+
+  const draftTableActions = [
+    {
+      icon: <span className="material-symbols-outlined text-sm">play_arrow</span>, label: 'Resume Admission', color: 'teal',
+      onClick: (d) => {
+        navigate(`/add-student?draftId=${encodeURIComponent(d.id)}`)
+      }
+    },
+    {
+      icon: <Trash2 className="w-3.5 h-3.5" />, label: 'Discard Draft', color: 'red',
+      onClick: handleDeleteDraft
     },
   ]
 
@@ -270,8 +439,39 @@ export default function StudentsPage() {
     ]},
   ]
 
+  // ── Header Toggle Switch ─────────────────────────────────────────────────
+  const headerExtraToggle = (
+    <div className="flex items-center bg-[#F1F5F9] p-1 rounded-xl border border-[#E2E8F0] shadow-2xs">
+      <button
+        onClick={() => { setViewMode('all'); setSearchParams({}); }}
+        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+          viewMode === 'all'
+            ? 'bg-white text-[#003A40] shadow-xs'
+            : 'text-[#64748B] hover:text-[#003A40]'
+        }`}
+      >
+        All Students ({studentsList.length})
+      </button>
+      <button
+        onClick={() => { setViewMode('drafts'); setSearchParams({ view: 'drafts' }); }}
+        className={`px-3 py-1 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+          viewMode === 'drafts'
+            ? 'bg-[#003A40] text-white shadow-xs'
+            : 'text-[#64748B] hover:text-[#003A40]'
+        }`}
+      >
+        <span>Drafts</span>
+        <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+          viewMode === 'drafts' ? 'bg-amber-400 text-slate-900 font-extrabold' : 'bg-amber-100 text-amber-800 font-bold'
+        }`}>
+          {draftList.length}
+        </span>
+      </button>
+    </div>
+  )
+
   return (
-    <Layout title="Students">
+    <Layout title="Students" headerExtra={headerExtraToggle}>
       {error ? (
         <div className="bg-rose-50 border border-rose-100 rounded-2xl p-10 text-center">
           <p className="text-rose-700 font-semibold">{error}</p>
@@ -283,15 +483,15 @@ export default function StudentsPage() {
         <DashboardSkeleton />
       ) : (
         <EnterprisePageTemplate
-          kpiCards={kpiCards}
-          columns={columns}
-          rows={filtered}
-          actions={tableActions}
-          rowKey="rollNumber"
+          kpiCards={viewMode === 'drafts' ? draftKpiCards : kpiCards}
+          columns={viewMode === 'drafts' ? draftColumns : columns}
+          rows={viewMode === 'drafts' ? filteredDrafts : filtered}
+          actions={viewMode === 'drafts' ? draftTableActions : tableActions}
+          rowKey={viewMode === 'drafts' ? 'id' : 'rollNumber'}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          searchPlaceholder="Search by name, roll number, email..."
-          filterOptions={filterOptions}
+          searchPlaceholder={viewMode === 'drafts' ? "Search drafts by subject or ID..." : "Search by name, roll number, email..."}
+          filterOptions={viewMode === 'drafts' ? [] : filterOptions}
           activeFilters={activeFilters}
           onFilterChange={(key, val) => setActiveFilters(prev => ({ ...prev, [key]: val }))}
           onExportCSV={handleExportCSV}
@@ -300,7 +500,7 @@ export default function StudentsPage() {
           addLabel="Add Student"
           onBulkUpload={role === 'faculty' ? null : () => navigate('/bulk-upload-students')}
           loading={false}
-          emptyMessage="No students match your search or filter."
+          emptyMessage={viewMode === 'drafts' ? "No saved drafts found. Click 'Save Draft' during admission to create one." : "No students match your search or filter."}
         />
       )}
     </Layout>

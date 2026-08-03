@@ -4,22 +4,22 @@ import { buildApiUrl } from '../api/apiBase';
 
 export default function PerformanceEvaluationModal({ isOpen, onClose, onSuccess, facultyId, facultyName }) {
   const [formData, setFormData] = useState({
-    semester: '',
+    semester: 'Fall',
     academic_year: new Date().getFullYear().toString(),
-    evaluator_id: '',
-    course_content: 0,
-    teaching_methodology: 0,
-    student_engagement: 0,
-    feedback_responsiveness: 0,
-    research_output: 0,
-    publication_quality: 0,
-    research_collaboration: 0,
-    meeting_attendance: 0,
-    committee_participation: 0,
-    documentation: 0,
-    student_satisfaction: 0,
-    course_effectiveness: 0,
-    availability: 0,
+    evaluator_id: 'admin',
+    course_content: 4,
+    teaching_methodology: 4,
+    student_engagement: 4,
+    feedback_responsiveness: 4,
+    research_output: 4,
+    publication_quality: 4,
+    research_collaboration: 4,
+    meeting_attendance: 4,
+    committee_participation: 4,
+    documentation: 4,
+    student_satisfaction: 4,
+    course_effectiveness: 4,
+    availability: 4,
     strengths: '',
     areas_for_improvement: '',
     recommendations: ''
@@ -44,22 +44,39 @@ export default function PerformanceEvaluationModal({ isOpen, onClose, onSuccess,
     setError(null);
     
     try {
+      const payload = {
+        ...formData,
+        facultyId: facultyId,
+        faculty_id: facultyId,
+        evaluation_date: new Date().toISOString()
+      };
+
       const response = await fetch(buildApiUrl(`/faculty/${facultyId}/evaluations`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to save evaluation');
+        let msg = 'Failed to save evaluation';
+        if (typeof data.detail === 'string') {
+          msg = data.detail;
+        } else if (Array.isArray(data.detail)) {
+          msg = data.detail.map(d => `${d.loc ? d.loc[d.loc.length - 1] + ': ' : ''}${d.msg}`).join(', ');
+        } else if (data.detail && typeof data.detail === 'object') {
+          msg = JSON.stringify(data.detail);
+        } else if (data.message) {
+          msg = data.message;
+        }
+        throw new Error(msg);
       }
       
-      onSuccess();
+      if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'An error occurred while saving evaluation');
     } finally {
       setLoading(false);
     }

@@ -689,9 +689,6 @@ async def list_faculty(
 ):
     try:
         collection = await get_faculty_collection()
-        perf_col = await get_faculty_activity_collection("faculty_performance")
-        leave_col = await get_faculty_activity_collection("faculty_leave")
-        career_col = await get_faculty_activity_collection("career_pathways")
 
         query = {}
         if department_id:
@@ -707,72 +704,37 @@ async def list_faculty(
                 {"email": {"$regex": search, "$options": "i"}},
             ]
 
-        cursor = collection.find(query)
+        # Projection: only the fields needed for the list/table view.
+        # Skips heavy embedded arrays; per-faculty stats are fetched on detail page.
+        projection = {
+            "_id": 1,
+            "id": 1,
+            "employeeId": 1,
+            "name": 1,
+            "email": 1,
+            "phone": 1,
+            "department": 1,
+            "departmentId": 1,
+            "department_id": 1,
+            "designation": 1,
+            "qualification": 1,
+            "employment_status": 1,
+            "status": 1,
+            "experience_years": 1,
+            "yearsOfExperience": 1,
+            "attendance_rate": 1,
+            "pass_rate": 1,
+            "avatar": 1,
+            "joining_date": 1,
+            "office_location": 1,
+            "subject": 1,
+            "specialization": 1,
+        }
+
+        cursor = collection.find(query, projection)
         faculty_list = []
         async for doc in cursor:
             faculty_doc = serialize_doc(doc)
-            emp_id = faculty_doc.get("employeeId")
-
-            if emp_id:
-                try:
-                    performance_records = await perf_col.find({"facultyId": emp_id}).to_list(100)
-                    leave_records = await leave_col.find({"facultyId": emp_id}).to_list(200)
-                    career_path = await career_col.find_one({"faculty_id": emp_id, "status": "Active"})
-                    if not career_path:
-                        career_path = await career_col.find_one({"faculty_id": emp_id})
-                except Exception:
-                    performance_records, leave_records, career_path = [], [], None
-
-                avg_feedback = 0
-                if performance_records:
-                    scored = [float(record.get("student_feedback_score", 0) or 0) for record in performance_records]
-                    avg_feedback = round(sum(scored) / len(scored), 2)
-
-                approved_leaves = [r for r in leave_records if str(r.get("status", "")).lower() == "approved"]
-                pending_leaves = [r for r in leave_records if str(r.get("status", "")).lower() == "pending"]
-
-                total_leave_days = 0
-                for leave in approved_leaves:
-                    try:
-                        start_date = leave.get("start_date")
-                        end_date = leave.get("end_date")
-                        if isinstance(start_date, datetime) and isinstance(end_date, datetime):
-                            total_leave_days += max((end_date - start_date).days + 1, 0)
-                        else:
-                            total_leave_days += int(leave.get("number_of_days", 0) or 0)
-                    except Exception:
-                        continue
-
-                next_role = None
-                desig = str(faculty_doc.get("designation", "")).lower()
-                if desig:
-                    if "assistant" in desig: next_role = "Associate Professor"
-                    elif "associate" in desig: next_role = "Professor"
-                    elif "professor" in desig: next_role = "HOD / Dean Track"
-                    else: next_role = "Senior Faculty"
-
-                faculty_doc["performance_summary"] = {
-                    "overall_status": faculty_doc.get("status", "Good"),
-                    "pass_rate": faculty_doc.get("pass_rate", 0),
-                    "attendance_rate": faculty_doc.get("attendance_rate", 0),
-                    "avg_feedback_score": avg_feedback,
-                    "records_count": len(performance_records),
-                }
-                faculty_doc["career_path_summary"] = {
-                    "current_designation": faculty_doc.get("designation"),
-                    "next_role": (career_path or {}).get("target_designation") or next_role,
-                    "status": (career_path or {}).get("status") or "Not Started",
-                    "target_years": (career_path or {}).get("target_years"),
-                }
-                faculty_doc["leave_attendance_summary"] = {
-                    "employment_status": faculty_doc.get("employment_status", "Active"),
-                    "attendance_rate": faculty_doc.get("attendance_rate", 0),
-                    "leave_requests_count": len(leave_records),
-                    "approved_leaves": len(approved_leaves),
-                    "pending_leaves": len(pending_leaves),
-                    "total_leave_days": total_leave_days,
-                }
-
             faculty_list.append(faculty_doc)
 
         if faculty_list:
@@ -793,6 +755,66 @@ async def list_faculty(
         {"id": "FAC008", "employeeId": "FAC008", "name": "Prof. Rekha Joshi", "email": "rekha.joshi@mit.edu", "department": "Mathematics", "designation": "Associate Professor", "employment_status": "On Leave", "experience_years": 9, "qualification": "Ph.D. Math", "phone": "+91 98765 43217"},
     ]
     return fallback_faculty
+
+
+@router.get("/dropdown")
+async def list_faculty_dropdown(department: Optional[str] = None):
+    """
+    Highly optimized, lightweight backend endpoint for HOD selection & dropdown lists.
+    Projects only essential identity fields (id, name, designation, department, email, phone).
+    """
+    try:
+        collection = await get_faculty_collection()
+        query = {}
+        if department:
+            query["$or"] = [
+                {"department": department},
+                {"departmentId": department},
+                {"department_id": department}
+            ]
+
+        projection = {
+            "_id": 1,
+            "id": 1,
+            "employeeId": 1,
+            "name": 1,
+            "fullName": 1,
+            "email": 1,
+            "phone": 1,
+            "contactNumber": 1,
+            "designation": 1,
+            "department": 1,
+            "departmentId": 1,
+            "department_id": 1,
+        }
+
+        cursor = collection.find(query, projection)
+        faculty_list = []
+        async for doc in cursor:
+            fac_doc = serialize_doc(doc)
+            # Ensure name property exists
+            if not fac_doc.get("name") and fac_doc.get("fullName"):
+                fac_doc["name"] = fac_doc["fullName"]
+            faculty_list.append(fac_doc)
+
+        if faculty_list:
+            return faculty_list
+
+    except Exception as e:
+        print(f"Error fetching faculty dropdown: {e}")
+
+    # Standard HOD Faculty fallback list
+    return [
+        {"id": "FAC001", "employeeId": "FAC001", "name": "Dr. Ramesh Kumar", "designation": "Professor", "department": "Computer Science", "email": "ramesh.kumar@mit.edu", "phone": "+91 98765 43210"},
+        {"id": "FAC002", "employeeId": "FAC002", "name": "Prof. Lakshmi Nair", "designation": "Associate Professor", "department": "Computer Science", "email": "lakshmi.nair@mit.edu", "phone": "+91 98765 43211"},
+        {"id": "FAC004", "employeeId": "FAC004", "name": "Dr. Sunita Sharma", "designation": "Professor", "department": "Electronics & Communication", "email": "sunita.sharma@mit.edu", "phone": "+91 98765 43213"},
+        {"id": "FAC009", "employeeId": "FAC009", "name": "Dr. Deepak Gupta", "designation": "Professor", "department": "Mathematics", "email": "deepak.gupta@mit.edu", "phone": "+91 98765 43218"},
+        {"id": "FAC012", "employeeId": "FAC012", "name": "Dr. Venkat Reddy", "designation": "Professor", "department": "Mechanical Engineering", "email": "venkat.reddy@mit.edu", "phone": "+91 98765 43221"},
+        {"id": "FAC015", "employeeId": "FAC015", "name": "Prof. Rajesh Gupta", "designation": "Professor", "department": "Computer Science", "email": "rajesh.gupta@mit.edu", "phone": "+91 98765 43224"},
+        {"id": "FAC018", "employeeId": "FAC018", "name": "Dr. Geetha V", "designation": "Professor", "department": "Information Technology", "email": "geetha.v@mit.edu", "phone": "+91 98765 43230"},
+        {"id": "FAC026", "employeeId": "FAC026", "name": "Dr. K. Rahini", "designation": "Professor", "department": "Medical Laboratory Technology", "email": "rahini.k@mit.edu", "phone": "+91 98765 43240"},
+    ]
+
 
 
 @router.post("")

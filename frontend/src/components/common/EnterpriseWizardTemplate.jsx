@@ -30,10 +30,20 @@ export default function EnterpriseWizardTemplate({
   const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
+  const handleBack = () => {
+    if (currentStep > 1) {
+      if (onBack) onBack();
+    } else {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = '/dashboard';
+      }
+    }
+  };
+
   const inner = (
     <div className="flex flex-col h-full min-h-0 bg-[#F8FAFC] overflow-hidden">
-
-
       {/* ── MAIN SCROLL / VIEWPORT CONTAINER ─────────────────────────── */}
       <div className="flex-1 overflow-y-auto min-h-0 p-5 space-y-4 custom-scrollbar">
         {/* ── PROGRESS BAR CARD ────────────────────────────────────── */}
@@ -88,8 +98,8 @@ export default function EnterpriseWizardTemplate({
           {/* LEFT FORM PANEL (8 COLS) */}
           <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs space-y-5">
             <div className="flex items-center gap-2.5 pb-4 border-b border-[#E6EDF2]">
-              <div className="w-8 h-8 rounded-xl bg-[#E6F4F1] text-[#003A40] flex items-center justify-center">
-                <span className="material-symbols-outlined text-lg">{stepIcon}</span>
+              <div className="w-8 h-8 rounded-xl bg-[#E6F4F1] text-[#003A40] flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-lg leading-none">{stepIcon}</span>
               </div>
               <h3 className="text-base font-extrabold text-[#003A40]">{stepTitle}</h3>
             </div>
@@ -169,13 +179,8 @@ export default function EnterpriseWizardTemplate({
       <div className="flex-shrink-0 bg-white border-t border-[#E6EDF2] px-6 py-3 flex items-center justify-between shadow-xs">
         <button
           type="button"
-          onClick={onBack}
-          disabled={isFirstStep}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            isFirstStep
-              ? 'opacity-40 cursor-not-allowed text-slate-400'
-              : 'text-[#5F6B7A] hover:text-[#003A40] hover:bg-[#F4F7FF]'
-          }`}
+          onClick={handleBack}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer text-[#5F6B7A] hover:text-[#003A40] hover:bg-[#F4F7FF] active:scale-95"
         >
           <span className="material-symbols-outlined text-base">arrow_back</span>
           <span>BACK</span>
@@ -216,6 +221,5 @@ export default function EnterpriseWizardTemplate({
       </div>
     </div>
   );
-  return noLayout ? inner : <Layout title={title} noPadding showBack={true} onBack={onBack}>{inner}</Layout>;
-
+  return noLayout ? inner : <Layout title={title} noPadding showBack={true} onBack={handleBack}>{inner}</Layout>;
 }

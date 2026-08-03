@@ -88,8 +88,14 @@ async def list_attendance(role: Optional[str] = None, person_id: Optional[str] =
                 {"student_id": person_id}
             ]
 
-        async for student in db["students"].find(student_query):
-            present, total, pct = await compute_student_attendance_stats(student, db=db)
+        projection = {"_id": 1, "id": 1, "student_id": 1, "rollNumber": 1, "name": 1, "department": 1, "attendancePct": 1, "attendanceMonthly": 1}
+        async for student in db["students"].find(student_query, projection):
+            if person_id:
+                present, total, pct = await compute_student_attendance_stats(student, db=db)
+            else:
+                pct = student.get("attendancePct", 85)
+                total = 100
+                present = int(round(total * pct / 100))
 
             records.append({
                 "id": student.get("id") or student.get("rollNumber") or str(student["_id"]),
@@ -756,7 +762,11 @@ async def list_students_for_attendance(
             ]})
 
         query = {"$and": and_conditions} if and_conditions else {}
-        async for s in db["students"].find(query):
+        student_projection = {
+            "_id": 1, "id": 1, "student_id": 1, "rollNumber": 1, "name": 1,
+            "department": 1, "semester": 1, "section": 1, "avatar": 1
+        }
+        async for s in db["students"].find(query, student_projection):
             students_list.append(serialize_doc(s))
     else:
         from backend.routes.students import _seed_dev_students
@@ -816,7 +826,7 @@ async def get_admin_attendance_overview(
             sec_val = str(section).replace("Section", "").strip()
             sq_conditions.append({"$or": [{"section": section}, {"section": sec_val}, {"section": f"Section {sec_val}"}]})
         sq = {"$and": sq_conditions} if sq_conditions else {}
-        async for s in db["students"].find(sq):
+        async for s in db["students"].find(sq, {"_id": 1, "id": 1, "rollNumber": 1}):
             students_list.append(serialize_doc(s))
     else:
         from backend.routes.students import _seed_dev_students
@@ -1208,8 +1218,12 @@ async def get_finance_eligibility(
             sec_val = str(section).replace("Section", "").strip()
             sq_conditions.append({"$or": [{"section": section}, {"section": sec_val}, {"section": f"Section {sec_val}"}]})
         sq = {"$and": sq_conditions} if sq_conditions else {}
+        student_proj = {
+            "_id": 1, "id": 1, "rollNumber": 1, "name": 1, "department": 1,
+            "semester": 1, "section": 1, "attendancePct": 1
+        }
         
-        async for s in db["students"].find(sq):
+        async for s in db["students"].find(sq, student_proj):
             students_list.append(serialize_doc(s))
     else:
         from backend.routes.students import _seed_dev_students
@@ -1236,21 +1250,7 @@ async def get_finance_eligibility(
             if s_term not in sname.lower() and s_term not in sid.lower():
                 continue
 
-        # Get markings counts dynamically
-        markings = []
-        if use_db:
-            async for m in db["academic_attendance_markings"].find({"entries.studentId": sid}):
-                markings.append(serialize_doc(m))
-        else:
-            markings = [m for m in _dev_list("academic_attendance_markings")
-                        if any(str(e.get("studentId")) == str(sid) for e in m.get("entries", []))]
-
-        total_classes = len(markings)
-        classes_attended = sum(1 for m in markings if any(str(e.get("studentId")) == str(sid) and e.get("status") in {"Present", "On Duty"} for e in m.get("entries", [])))
-
-        db_pct = s.get("attendancePct")
-        db_pct = db_pct if db_pct is not None else 100.0
-        overall_pct = round((classes_attended / total_classes) * 100, 1) if total_classes > 0 else db_pct
+        overall_pct = float(s.get("attendancePct") if s.get("attendancePct") is not None else 88.0)
 
         # Eligibility Status Mapping
         if overall_pct >= 75.0:

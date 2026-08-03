@@ -325,38 +325,60 @@ async def list_students():
 
     if not use_db:
         students = deepcopy(DEV_STORE["students"])
-        for s in students:
-            present, total, pct = await compute_student_attendance_stats(s, db=None)
-            s["attendancePct"] = pct
-            s["attendance_present"] = present
-            s["attendance_total"] = total
-        return students
+        # Return only lightweight fields for list view
+        return [
+            {k: s.get(k) for k in (
+                "id", "student_id", "rollNumber", "name", "email", "phone",
+                "department", "departmentId", "year", "semester", "section",
+                "status", "feeStatus", "cgpa", "attendancePct", "avatar", "enrollDate"
+            )}
+            for s in students
+        ]
+
+    # Projection: only fetch the fields needed for the table view.
+    # This avoids transferring large arrays (subjects, fees, documents, etc.)
+    projection = {
+        "_id": 1,
+        "id": 1,
+        "student_id": 1,
+        "rollNumber": 1,
+        "name": 1,
+        "email": 1,
+        "phone": 1,
+        "department": 1,
+        "departmentId": 1,
+        "year": 1,
+        "semester": 1,
+        "section": 1,
+        "status": 1,
+        "feeStatus": 1,
+        "fee_status": 1,
+        "cgpa": 1,
+        "attendancePct": 1,
+        "avatar": 1,
+        "enrollDate": 1,
+    }
 
     rows = []
-    async for row in db["students"].find().sort("_id", -1):
+    async for row in db["students"].find({}, projection).sort("_id", -1):
         serialized = serialize_doc(row)
-        
+
         # Ensure student_id is always present
         if not serialized.get("student_id"):
-            serialized["student_id"] = serialized.get("id") or serialized.get("rollNumber") or str(serialized.get("_id"))
-        
+            serialized["student_id"] = serialized.get("id") or serialized.get("rollNumber") or str(row.get("_id", ""))
+
         # Ensure id field is present
         if not serialized.get("id"):
             serialized["id"] = serialized.get("student_id") or serialized.get("rollNumber")
-        
+
         # Ensure rollNumber is present
         if not serialized.get("rollNumber"):
             serialized["rollNumber"] = serialized.get("student_id") or serialized.get("id")
-        
-        # Calculate dynamic attendance stats
-        present, total, pct = await compute_student_attendance_stats(serialized, db=db)
-        serialized["attendancePct"] = pct
-        serialized["attendance_present"] = present
-        serialized["attendance_total"] = total
-        
+
         rows.append(serialized)
-    
+
     return rows
+
 
 
 @router.get("/{student_id}")

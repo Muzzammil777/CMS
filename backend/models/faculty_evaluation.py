@@ -3,11 +3,11 @@ from typing import Optional, List
 from datetime import datetime
 
 class PerformanceEvaluation(BaseModel):
-    faculty_id: str = Field(alias="facultyId")
-    semester: str
-    academic_year: str
-    evaluator_id: str
-    evaluation_date: str
+    faculty_id: Optional[str] = Field(None, alias="facultyId")
+    semester: str = "Fall 2026"
+    academic_year: str = "2026"
+    evaluator_id: Optional[str] = "admin"
+    evaluation_date: Optional[str] = None
     
     # Teaching Quality (1-5)
     course_content: float = 0

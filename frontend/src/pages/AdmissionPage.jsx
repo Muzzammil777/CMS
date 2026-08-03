@@ -272,57 +272,57 @@ export default function AdmissionPage() {
     },
   ];
 
+  const tabToggleFilter = (
+    <div className="flex items-center p-0.5 bg-[#F8FAFC] border border-[#E6EDF2] rounded-lg h-8">
+      <button
+        onClick={() => setActiveTab('students')}
+        className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+          activeTab === 'students'
+            ? 'bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white shadow-2xs'
+            : 'text-[#5F6B7A] hover:bg-slate-200/50'
+        }`}
+      >
+        Student Admissions ({studentApps.length})
+      </button>
+      <button
+        onClick={() => setActiveTab('faculty')}
+        className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+          activeTab === 'faculty'
+            ? 'bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white shadow-2xs'
+            : 'text-[#5F6B7A] hover:bg-slate-200/50'
+        }`}
+      >
+        Faculty Applications ({facultyApps.length})
+      </button>
+    </div>
+  );
+
   return (
     <Layout title="Admission Management">
       {loading ? (
         <DashboardSkeleton />
       ) : (
-        <div className="flex flex-col gap-3 h-full overflow-hidden">
-          {/* Custom Tab Switcher */}
-          <div className="flex items-center gap-2 bg-white border border-[#E6EDF2] p-1.5 rounded-xl self-start shadow-xs">
-            <button
-              onClick={() => setActiveTab('students')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'students'
-                  ? 'bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white shadow-sm'
-                  : 'text-[#5F6B7A] hover:bg-[#F4F7FF]'
-              }`}
-            >
-              Student Admissions ({studentApps.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('faculty')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'faculty'
-                  ? 'bg-gradient-to-r from-[#003A40] to-[#0A686A] text-white shadow-sm'
-                  : 'text-[#5F6B7A] hover:bg-[#F4F7FF]'
-              }`}
-            >
-              Faculty Applications ({facultyApps.length})
-            </button>
-          </div>
-
-          {/* Template */}
-          <EnterprisePageTemplate
-            kpiCards={kpiCards}
-            columns={columns}
-            rows={filteredApps}
-            actions={tableActions}
-            rowKey="id"
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            searchPlaceholder={`Search ${activeTab} by name, ID, email...`}
-            filterOptions={filterOptions}
-            activeFilters={activeFilters}
-            onFilterChange={(key, val) => setActiveFilters((prev) => ({ ...prev, [key]: val }))}
-            onExportCSV={handleExportCSV}
-            onAdd={() => navigate('/add-student')}
-            addLabel="New Admission"
-            loading={false}
-            emptyMessage={`No ${activeTab} applications match your search.`}
-          />
-        </div>
+        <EnterprisePageTemplate
+          kpiCards={kpiCards}
+          columns={columns}
+          rows={filteredApps}
+          actions={tableActions}
+          rowKey="id"
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder={`Search ${activeTab} by name, ID, email...`}
+          filterOptions={filterOptions}
+          activeFilters={activeFilters}
+          onFilterChange={(key, val) => setActiveFilters((prev) => ({ ...prev, [key]: val }))}
+          customFilters={tabToggleFilter}
+          onExportCSV={handleExportCSV}
+          onAdd={() => navigate('/add-student')}
+          addLabel="New Admission"
+          loading={false}
+          emptyMessage={`No ${activeTab} applications match your search.`}
+        />
       )}
+
 
       {/* Details Modal */}
       {showDetailsModal && selectedApp && (

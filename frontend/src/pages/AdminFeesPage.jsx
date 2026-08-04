@@ -2028,20 +2028,24 @@ function FeeBreakdownFullView({ fee, onCancel, onMakePayment }) {
       {/* Student Profile Header Card */}
       <div className="bg-[#003A40] text-white rounded-2xl p-6 shadow-md relative overflow-hidden flex flex-wrap items-center justify-between gap-6">
         <div className="flex items-center gap-4 z-10">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-black text-2xl shadow-inner">
-            {(fee.studentName || 'S').charAt(0)}
+          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-black text-xl shadow-inner shrink-0">
+            {(fee.studentName || fee.name || fee.fullName || 'S').charAt(0)}
           </div>
           <div>
-            <div className="flex items-center gap-2.5">
-              <h3 className="text-xl font-black tracking-tight">{fee.studentName}</h3>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h3 className="text-lg font-black tracking-tight text-white">
+                {fee.studentName || fee.name || fee.fullName || 'Student Record'}
+              </h3>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
-                fee.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                (fee.status || 'Pending').toLowerCase() === 'paid'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
               }`}>
                 {fee.status || 'Pending'}
               </span>
             </div>
-            <p className="text-xs text-emerald-100/90 font-semibold mt-1">
-              ID: <span className="font-mono">{fee.studentId || fee.rollNumber || 'N/A'}</span> • {fee.course || 'Department'} • Sem {fee.semester || 1}
+            <p className="text-xs text-emerald-100/90 font-semibold mt-0.5">
+              ID: <span className="font-mono">{fee.studentId || fee.rollNumber || fee.id || 'N/A'}</span> • {fee.course || fee.department || 'Department'} • Sem {fee.semester || 1}
             </p>
           </div>
         </div>

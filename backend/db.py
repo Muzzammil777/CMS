@@ -40,16 +40,17 @@ async def lifespan(app):
 
     print(f"Connecting to MongoDB at {mask_mongodb_uri(MONGODB_URI)}...")
     try:
+        import asyncio
         client = AsyncIOMotorClient(
             MONGODB_URI,
-            serverSelectionTimeoutMS=10000,
-            connectTimeoutMS=10000,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
             maxIdleTimeMS=60000,
             retryWrites=True,
             retryReads=True,
             readPreference="primaryPreferred"
         )
-        await client.admin.command("ping")
+        await asyncio.wait_for(client.admin.command("ping"), timeout=5.0)
 
         try:
             db = client["College_db"] if "mongodb.net" in str(MONGODB_URI) else client.get_database()
@@ -58,12 +59,11 @@ async def lifespan(app):
         except Exception:
             db = client["College_db"]
 
-
-
         print(f"Connected to MongoDB successfully (Database: {db.name})")
-        await ensure_indexes(db)
+        asyncio.create_task(ensure_indexes(db))
     except Exception as error:
         print(f"FAILED to connect to MongoDB: {error}")
+        db = None
         db = None
 
     yield

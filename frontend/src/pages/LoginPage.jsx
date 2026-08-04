@@ -392,7 +392,8 @@ export default function LoginPage() {
                         { id: 'DOC-03', name: 'Marksheet' },
                         { id: 'DOC-04', name: 'Transfer Certificate' }
                       ].map(docType => {
-                        const doc = (trackedApplication.documents || []).find(d => d.id === docType.id);
+                        const docs = Array.isArray(trackedApplication.documents) ? trackedApplication.documents : [];
+                        const doc = docs.find(d => d.id === docType.id);
                         const hasFile = doc && doc.data;
                         const isRequested = doc && doc.status === 'Pending Re-upload';
 

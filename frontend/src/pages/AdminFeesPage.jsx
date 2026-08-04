@@ -3,12 +3,13 @@ import Layout from '../components/Layout';
 import EnterprisePageTemplate from '../components/EnterprisePageTemplate';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { useAdmission } from '../context/AdmissionContext';
-import { getUserSession } from '../auth/sessionController';
+import { getUserSession, getUserData } from '../auth/sessionController';
 import { listFees, assignFee, deleteFeeAssignment } from '../api/feesApi';
 import { createInvoice } from '../api/invoicesApi';
 import { fetchStudents } from '../api/studentsApi';
-import { Eye, Plus, Trash2, DollarSign, CheckCircle2, Clock, AlertTriangle, X } from 'lucide-react';
+import { Eye, Plus, Trash2, DollarSign, CheckCircle2, Clock, AlertTriangle, X, Edit2, Check, Tag, Star, Award, Bus, Building2, ShieldCheck, Package } from 'lucide-react';
 import EnterpriseWizardTemplate from '../components/common/EnterpriseWizardTemplate';
+import { useDepartments } from '../hooks/useDepartments';
 
 export default function AdminFeesPage() {
   const session = getUserSession();
@@ -61,83 +62,9 @@ export default function AdminFeesPage() {
     fetchFees();
   }, [fetchFees]);
 
-  // Fee calculation helper
-  const calculateFees = (semester, isFirstGraduate, needsHostel, isAcHostel) => {
-    const semesterFee = isFirstGraduate ? 85000 : 110000;
-    const bookFee = 3950;
-    const examFee = 250;
-    const hostelFee = needsHostel ? (isAcHostel ? 115000 : 85000) : 0;
-    const miscFee = 10000;
-    return {
-      semesterFee,
-      bookFee,
-      examFee,
-      hostelFee,
-      miscFee,
-      totalFee: semesterFee + bookFee + examFee + hostelFee + miscFee,
-    };
-  };
-
-  const handleConfirmAssignFee = async () => {
-    if (!selectedStudent || !assignFormData.semester || !selectedEnrolledStudentId) {
-      alert('Please fill all required fields');
-      return;
-    }
-    const targetStudent = enrolledStudents.find((s) => (s._id || s.id || s.rollNumber) === selectedEnrolledStudentId);
-    const fees = calculateFees(
-      assignFormData.semester,
-      assignFormData.isFirstGraduate,
-      assignFormData.needsHostel,
-      assignFormData.isAcHostel
-    );
-
-    const newFeeRecord = {
-      id: `FEE-${Date.now()}`,
-      applicationId: selectedStudent.id,
-      studentId: targetStudent?.rollNumber || targetStudent?.id || selectedEnrolledStudentId,
-      studentName: targetStudent?.name || selectedStudent.name,
-      email: targetStudent?.email || selectedStudent.email,
-      course: targetStudent?.department || selectedStudent.course || 'Computer Science',
-      semester: assignFormData.semester,
-      totalFee: fees.totalFee,
-      components: fees,
-      options: {
-        isFirstGraduate: assignFormData.isFirstGraduate,
-        needsHostel: assignFormData.needsHostel,
-        isAcHostel: assignFormData.isAcHostel,
-      },
-      status: 'Pending',
-      paidAmount: 0,
-      assignedBy: session?.userId || 'Admin',
-      assignedDate: new Date().toISOString(),
-    };
-
-    try {
-      await assignFee(newFeeRecord);
-      alert('Fee structure assigned successfully!');
-      setShowAssignModal(false);
-      fetchFees();
-    } catch (err) {
-      alert(`Error assigning fee: ${err.message}`);
-    }
-  };
-
-  const handleDeleteFee = async (feeId) => {
-    if (!deleteReason) return alert('Reason is required');
-    try {
-      await deleteFeeAssignment(feeId, deleteReason);
-      setDeleteConfirm(null);
-      setDeleteReason('');
-      fetchFees();
-    } catch (err) {
-      alert(`Error deleting fee: ${err.message}`);
-    }
-  };
-
   const user = session?.user || getUserData();
   const role = session?.role || 'admin';
   const hodDepartment = user?.department || user?.departmentId || user?.department_id || '';
-
   // Filtered fee records
   const filteredFees = useMemo(() => {
     return feeAssignments.filter((f) => {
@@ -411,11 +338,132 @@ export default function AdminFeesPage() {
   );
 }
 
-/* ── Full Page Industry Standard Fee Structure Configuration View ────────── */
+/* ══════════════════════════════════════════════════════════════════════════
+   FULL PAGE FEE STRUCTURE DESIGNER — Indian Institute Grade
+   ══════════════════════════════════════════════════════════════════════════ */
 function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedStudents = [] }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { departments: dynamicDepts, loading: deptsLoading } = useDepartments();
 
+  // ── Scholarship state (DB-synced) ────────────────────────────────────────
+  const DEFAULT_SCHOLARSHIPS = [
+    { id: 'none', value: 'None', label: 'No Waiver / Standard Rate', sub: 'Full tuition fee applies', discount_type: 'fixed', discount_amount: 0, eligibility: 'All students', scheme_type: 'Standard' },
+    { id: 'merit', value: 'Merit Excellence (50% Tuition)', label: 'Merit Excellence Scheme', sub: '50% Waiver on Tuition Fee', discount_type: 'percent', discount_amount: 50, eligibility: 'Min 85% in qualifying exam', scheme_type: 'Merit' },
+    { id: 'first_grad', value: 'First Graduate Scheme (-₹25,000)', label: 'First Graduate Concession', sub: 'State Aid -₹25,000 / Semester', discount_type: 'fixed', discount_amount: 25000, eligibility: 'First in family to pursue higher education', scheme_type: 'Government' },
+    { id: 'ews', value: 'Single Parent / EWS Aid (-₹20,000)', label: 'EWS / Economic Need Support', sub: 'Special Financial Assistance -₹20,000', discount_type: 'fixed', discount_amount: 20000, eligibility: 'Annual family income < ₹2.5 Lakh', scheme_type: 'Government' },
+    { id: 'sports', value: 'Sports / NCC Excellence (-₹30,000)', label: 'Sports & NCC Fellowship', sub: 'State / National Player -₹30,000', discount_type: 'fixed', discount_amount: 30000, eligibility: 'State / National level sports or NCC "A" certificate', scheme_type: 'Sports' },
+  ];
+  const [scholarships, setScholarships] = useState(DEFAULT_SCHOLARSHIPS);
+  const [editScholarship, setEditScholarship] = useState(null);
+  const [addScholarship, setAddScholarship] = useState(false);
+  const [newScheme, setNewScheme] = useState({
+    label: '',
+    sub: '',
+    eligibility: '',
+    scheme_type: 'Government',
+    discount_type: 'fixed',
+    discount_amount: 0,
+    income_limit: '',
+    documentation: '',
+    applicable_communities: [],
+  });
+  const [savingScholarship, setSavingScholarship] = useState(false);
+  const [deleteScholarshipId, setDeleteScholarshipId] = useState(null);
+  const [deptTemplateLoaded, setDeptTemplateLoaded] = useState(false);
+
+  // ── Aux config state (transport, hostel) ─────────────────────────────────
+  const DEFAULT_AUX = {
+    transport_zones: [
+      { id: 'none', value: 'None', label: 'No Campus Transport / Self Arranged', amount: 0, distance: 'Self-arranged', pickup_points: [], icon: 'directions_walk' },
+      { id: 'zone1', value: 'Zone 1: Urban (≤ 15 km)', label: 'Zone 1: Urban City Lines (≤ 15 km)', amount: 18000, distance: 'Up to 15 km', pickup_points: ['City Bus Stand', 'Railway Station'], icon: 'directions_bus' },
+      { id: 'zone2', value: 'Zone 2: Suburban (15-30 km)', label: 'Zone 2: Metro Suburban (15–30 km)', amount: 28000, distance: '15 – 30 km', pickup_points: ['Suburban Hub A', 'Outer Ring Road'], icon: 'directions_bus' },
+      { id: 'zone3', value: 'Zone 3: Outstation Corridor (> 30 km)', label: 'Zone 3: Outstation Corridor (> 30 km)', amount: 38000, distance: 'Above 30 km', pickup_points: ['District Bus Terminal'], icon: 'directions_bus' },
+    ],
+    hostel_types: [
+      { id: 'day', value: 'Day Scholar', label: 'Day Scholar', amount: 0, occupancy: 'N/A', food_plan: 'Not Included', amenities: [], icon: 'home' },
+      { id: 'standard', value: 'Standard Quad Occupancy + Food', label: 'Standard Quad Occupancy + Mess', amount: 75000, occupancy: 'Quad (4 Students)', food_plan: 'Three Meals (Mess)', amenities: ['mess', 'fan', 'study_table'], icon: 'bed' },
+      { id: 'deluxe', value: 'Deluxe Double Occupancy + Food', label: 'Deluxe Double Occupancy + Mess', amount: 95000, occupancy: 'Double (2 Students)', food_plan: 'Three Meals + Snacks', amenities: ['mess', 'fan', 'wifi', 'attached_bath'], icon: 'king_bed' },
+      { id: 'executive', value: 'Executive Single AC Suite + Food', label: 'Executive Single AC Suite + Mess', amount: 135000, occupancy: 'Single Room', food_plan: 'Three Meals + Snacks + Room Service', amenities: ['mess', 'ac', 'wifi', 'laundry', 'attached_bath', 'tv'], icon: 'hotel' },
+    ],
+    payment_plans: [
+      { id: 'bisemester', value: 'Bi-Semester Installments', label: 'Bi-Semester Installments (50% Per Term)' },
+      { id: 'lumpsum', value: 'Lumpsum Single Payment', label: 'Full Lumpsum Annual Payment (100% Upfront)' },
+      { id: 'quarterly', value: 'Quarterly Installments', label: 'Quarterly Installments (4 Equal Terms)' },
+    ],
+  };
+  const [auxConfig, setAuxConfig] = useState(DEFAULT_AUX);
+  const [editTransport, setEditTransport] = useState(null);
+  const [editHostel, setEditHostel] = useState(null);
+  const [savingAux, setSavingAux] = useState(false);
+
+  // ── Charges config ───────────────────────────────────────────────────────
+  const DEFAULT_CHARGES = [
+    { id: 'exam_reg', label: 'Examination Registration Fee', amount: 2500, category: 'Academic', icon: 'assignment' },
+    { id: 'lab_deposit', label: 'Lab Deposit (Refundable)', amount: 5000, category: 'Academic', icon: 'science' },
+    { id: 'smart_card', label: 'Smart Card / College ID', amount: 350, category: 'Administrative', icon: 'badge' },
+    { id: 'medical_ins', label: 'Student Medical Insurance', amount: 1200, category: 'Welfare', icon: 'health_and_safety' },
+    { id: 'nss_fee', label: 'NSS / NCC Activity Fund', amount: 800, category: 'Activity', icon: 'military_tech' },
+    { id: 'alumni_fund', label: 'Alumni Association Fund', amount: 500, category: 'Alumni', icon: 'groups' },
+    { id: 'sports_kit', label: 'Sports Kit & Equipment Fee', amount: 1500, category: 'Activity', icon: 'sports_soccer' },
+    { id: 'caution_dep', label: 'Caution Deposit (Refundable)', amount: 3000, category: 'Administrative', icon: 'savings' },
+  ];
+  const [charges, setCharges] = useState(DEFAULT_CHARGES);
+  const [selectedChargeIds, setSelectedChargeIds] = useState([]);
+  const [editCharge, setEditCharge] = useState(null); // { id, label, amount, icon, category }
+  const [savingCharge, setSavingCharge] = useState(false);
+
+  // ── Load all configs from API ─────────────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/fees/scholarships')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data) && data.length > 0) setScholarships(data); })
+      .catch(() => {});
+
+    fetch('/api/fees/config/auxiliary')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data && data.transport_zones) setAuxConfig(data); })
+      .catch(() => {});
+
+    fetch('/api/fees/config/charges')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          // Strip out legacy mandatory field — all are freely toggleable now
+          const cleaned = data.map(({ mandatory, ...rest }) => rest);
+          setCharges(cleaned);
+          // Restore previously selected IDs if backend stored them
+          const savedSelected = data.filter(c => c.selected).map(c => c.id);
+          if (savedSelected.length > 0) setSelectedChargeIds(savedSelected);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // ── Form state ────────────────────────────────────────────────────────────
+  const [formData, setFormData] = useState({
+    assignmentType: 'individual',
+    studentId: '',
+    department: '',
+    semester: 'Semester 1',
+    academicYear: '2025-2026',
+    quota: 'Government Quota',
+    tuitionFee: 95000,
+    developmentFee: 15000,
+    libraryFee: 4500,
+    examFee: 2500,
+    activityFee: 3000,
+    customFeeComponents: [],
+    scholarshipType: 'None',
+    customWaiver: 0,
+    transportZone: 'None',
+    hostelType: 'Day Scholar',
+    laundryPass: false,
+    wifiPass: false,
+    paymentPlan: 'Bi-Semester Installments',
+  });
+
+  // ── Merge student list ────────────────────────────────────────────────────
   const allStudents = useMemo(() => {
     const combined = [...enrolledStudents];
     approvedStudents.forEach(app => {
@@ -429,78 +477,226 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
         });
       }
     });
-
-    if (combined.length === 0) {
-      return [];
-    }
     return combined;
   }, [enrolledStudents, approvedStudents]);
 
-  const [formData, setFormData] = useState({
-    assignmentType: 'individual',
-    studentId: '',
-    department: 'Medical Laboratory Technology',
-    semester: 'Semester 1',
-    academicYear: '2025-2026',
-    quota: 'Government Quota',
-    tuitionFee: 95000,
-    developmentFee: 15000,
-    libraryFee: 4500,
-    examFee: 2500,
-    activityFee: 3000,
-    scholarshipType: 'None',
-    customWaiver: 0,
-    transportZone: 'None',
-    hostelType: 'Day Scholar',
-    laundryPass: false,
-    wifiPass: false,
-    paymentPlan: 'Bi-Semester Installments',
-  });
-
+  // Set default student
   useEffect(() => {
     if (allStudents.length > 0 && !formData.studentId) {
+      const first = allStudents[0];
       setFormData(prev => ({
         ...prev,
-        studentId: allStudents[0]._id || allStudents[0].id || allStudents[0].rollNumber,
-        department: allStudents[0].department || allStudents[0].course || 'Computer Science & Engineering',
+        studentId: first._id || first.id || first.rollNumber,
+        department: prev.department || first.department || first.course || '',
       }));
     }
   }, [allStudents]);
+
+  // Load department fee template
+  useEffect(() => {
+    if (formData.department) {
+      fetch(`/api/fees/structures/department/${encodeURIComponent(formData.department)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          setDeptTemplateLoaded(false);
+          if (data) {
+            setFormData(prev => ({
+              ...prev,
+              tuitionFee: data.tuitionFee ?? prev.tuitionFee,
+              developmentFee: data.developmentFee ?? prev.developmentFee,
+              libraryFee: data.libraryFee ?? prev.libraryFee,
+              examFee: data.examFee ?? prev.examFee,
+              activityFee: data.activityFee ?? prev.activityFee,
+              customFeeComponents: data.customFeeComponents || [],
+              scholarshipType: data.scholarshipType || prev.scholarshipType,
+              transportZone: data.transportZone || prev.transportZone,
+              hostelType: data.hostelType || prev.hostelType,
+              paymentPlan: data.paymentPlan || prev.paymentPlan,
+            }));
+            setDeptTemplateLoaded(true);
+          }
+        })
+        .catch(() => setDeptTemplateLoaded(false));
+    }
+  }, [formData.department]);
 
   const selectedStudent = allStudents.find(
     s => (s._id || s.id || s.rollNumber) === formData.studentId
   ) || allStudents[0];
 
-  const grossAcademicFee = Number(formData.tuitionFee) + Number(formData.developmentFee) + Number(formData.libraryFee) + Number(formData.examFee) + Number(formData.activityFee);
+  // ── Fee calculations ──────────────────────────────────────────────────────
+  const chargesSum = charges
+    .filter(c => selectedChargeIds.includes(c.id))
+    .reduce((acc, c) => acc + Number(c.amount || 0), 0);
+  const customFeesSum = (formData.customFeeComponents || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+  const grossAcademicFee = Number(formData.tuitionFee) + Number(formData.developmentFee) + Number(formData.libraryFee) + Number(formData.examFee) + Number(formData.activityFee) + customFeesSum + chargesSum;
+
+  // ── Save charges list + selection to DB ─────────────────────────────────
+  const persistCharges = async (updatedCharges, updatedSelectedIds) => {
+    try {
+      const toSave = updatedCharges.map(c => ({ ...c, selected: (updatedSelectedIds ?? selectedChargeIds).includes(c.id) }));
+      await fetch('/api/fees/config/charges', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ charges: toSave }),
+      });
+    } catch (err) {
+      console.error('Failed to save charges:', err);
+    }
+  };
+
+  const handleSaveCharge = async () => {
+    if (!editCharge) return;
+    setSavingCharge(true);
+    try {
+      const updated = charges.map(c => c.id === editCharge.id ? { ...c, label: editCharge.label, amount: Number(editCharge.amount) } : c);
+      setCharges(updated);
+      setEditCharge(null);
+      await persistCharges(updated, selectedChargeIds);
+    } catch (err) {
+      console.error('Charge save error:', err);
+    } finally {
+      setSavingCharge(false);
+    }
+  };
   const quotaSurcharge = formData.quota === 'Management Quota' ? 35000 : formData.quota === 'NRI / Foreign National' ? 75000 : 0;
 
+  const selectedScheme = scholarships.find(s => s.value === formData.scholarshipType);
   let scholarshipDiscount = 0;
-  if (formData.scholarshipType === 'Merit Excellence (50% Tuition)') {
-    scholarshipDiscount = Number(formData.tuitionFee) * 0.5;
-  } else if (formData.scholarshipType === 'First Graduate Scheme (-₹25,000)') {
-    scholarshipDiscount = 25000;
-  } else if (formData.scholarshipType === 'Single Parent / EWS Aid (-₹20,000)') {
-    scholarshipDiscount = 20000;
-  } else if (formData.scholarshipType === 'Sports / NCC Excellence (-₹30,000)') {
-    scholarshipDiscount = 30000;
+  if (selectedScheme && selectedScheme.discount_type === 'full') {
+    scholarshipDiscount = Number(formData.tuitionFee);
+  } else if (selectedScheme && selectedScheme.discount_type === 'percent') {
+    scholarshipDiscount = Number(formData.tuitionFee) * (Number(selectedScheme.discount_amount) / 100);
+  } else if (selectedScheme && selectedScheme.discount_type === 'fixed') {
+    scholarshipDiscount = Number(selectedScheme.discount_amount);
   }
   scholarshipDiscount += Number(formData.customWaiver || 0);
 
-  const transportFee = formData.transportZone === 'Zone 1: Urban (≤ 15 km)' ? 18000
-    : formData.transportZone === 'Zone 2: Suburban (15-30 km)' ? 28000
-    : formData.transportZone === 'Zone 3: Outstation Corridor (> 30 km)' ? 38000 : 0;
+  const selectedTransport = auxConfig.transport_zones.find(t => t.value === formData.transportZone);
+  const transportFee = selectedTransport ? Number(selectedTransport.amount || 0) : 0;
 
-  const hostelFee = formData.hostelType === 'Standard Quad Occupancy + Food' ? 75000
-    : formData.hostelType === 'Deluxe Double Occupancy + Food' ? 95000
-    : formData.hostelType === 'Executive Single AC Suite + Food' ? 135000 : 0;
+  const selectedHostel = auxConfig.hostel_types.find(h => h.value === formData.hostelType);
+  const hostelFee = selectedHostel ? Number(selectedHostel.amount || 0) : 0;
 
   const amenitiesFee = (formData.laundryPass ? 6000 : 0) + (formData.wifiPass ? 3500 : 0);
   const netTotalFee = Math.max(0, grossAcademicFee + quotaSurcharge + transportFee + hostelFee + amenitiesFee - scholarshipDiscount);
 
+  // ── Scholarship CRUD ──────────────────────────────────────────────────────
+  const handleSaveScholarship = async () => {
+    if (!editScholarship) return;
+    setSavingScholarship(true);
+    try {
+      const res = await fetch(`/api/fees/scholarships/${editScholarship.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: editScholarship.label,
+          sub: editScholarship.sub,
+          eligibility: editScholarship.eligibility,
+          scheme_type: editScholarship.scheme_type,
+          discount_amount: Number(editScholarship.discount_amount),
+          discount_type: editScholarship.discount_type,
+        }),
+      });
+      if (res.ok) {
+        setScholarships(prev => prev.map(s => s.id === editScholarship.id ? { ...s, ...editScholarship } : s));
+        setEditScholarship(null);
+      }
+    } catch (err) {
+      console.error('Failed to save scholarship:', err);
+    } finally {
+      setSavingScholarship(false);
+    }
+  };
+
+  const handleAddScholarship = async () => {
+    if (!newScheme.label) return;
+    setSavingScholarship(true);
+    try {
+      const scheme_id = `custom_${Date.now()}`;
+      const payload = { ...newScheme, id: scheme_id, value: newScheme.label, discount_amount: Number(newScheme.discount_amount) };
+      const res = await fetch('/api/fees/scholarships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setScholarships(prev => [...prev, { ...payload, ...created }]);
+        setAddScholarship(false);
+        setNewScheme({ label: '', sub: '', eligibility: '', scheme_type: 'Institutional', discount_type: 'fixed', discount_amount: 0 });
+      }
+    } catch (err) {
+      console.error('Failed to add scholarship:', err);
+    } finally {
+      setSavingScholarship(false);
+    }
+  };
+
+  const handleDeleteScholarship = async (schemeId) => {
+    try {
+      const res = await fetch(`/api/fees/scholarships/${schemeId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setScholarships(prev => prev.filter(s => s.id !== schemeId));
+        if (formData.scholarshipType === scholarships.find(s => s.id === schemeId)?.value) {
+          setFormData(prev => ({ ...prev, scholarshipType: 'None' }));
+        }
+      } else {
+        const err = await res.json();
+        alert(err.detail || 'Cannot delete this scheme');
+      }
+    } catch (err) {
+      console.error('Failed to delete scholarship:', err);
+    }
+    setDeleteScholarshipId(null);
+  };
+
+  // ── Transport / Hostel edit ───────────────────────────────────────────────
+  const handleSaveTransport = async () => {
+    if (!editTransport) return;
+    setSavingAux(true);
+    try {
+      const res = await fetch(`/api/fees/config/auxiliary/transport/${editTransport.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: editTransport.label, amount: Number(editTransport.amount), distance: editTransport.distance }),
+      });
+      if (res.ok) {
+        setAuxConfig(prev => ({
+          ...prev,
+          transport_zones: prev.transport_zones.map(z => z.id === editTransport.id ? { ...z, ...editTransport } : z),
+        }));
+        setEditTransport(null);
+      }
+    } catch (err) { console.error(err); }
+    finally { setSavingAux(false); }
+  };
+
+  const handleSaveHostel = async () => {
+    if (!editHostel) return;
+    setSavingAux(true);
+    try {
+      const res = await fetch(`/api/fees/config/auxiliary/hostel/${editHostel.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: editHostel.label, amount: Number(editHostel.amount), occupancy: editHostel.occupancy, food_plan: editHostel.food_plan }),
+      });
+      if (res.ok) {
+        setAuxConfig(prev => ({
+          ...prev,
+          hostel_types: prev.hostel_types.map(h => h.id === editHostel.id ? { ...h, ...editHostel } : h),
+        }));
+        setEditHostel(null);
+      }
+    } catch (err) { console.error(err); }
+    finally { setSavingAux(false); }
+  };
+
+  // ── Wizard steps ──────────────────────────────────────────────────────────
   const steps = [
     { title: 'Department & Batch', label: 'Department & Batch' },
     { title: 'Academic & Lab Fees', label: 'Academic & Lab Fees' },
-    { title: 'Scholarships & Waivers', label: 'Scholarships & Waivers' },
+    { title: 'Fee Categories', label: 'Fee Categories' },
     { title: 'Transport & Hostel', label: 'Transport & Hostel' },
   ];
 
@@ -513,7 +709,9 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
         id: `FEE-${Date.now()}`,
         applicationId: selectedStudent?.id || `APP-${Date.now()}`,
         studentId: selectedStudent?.rollNumber || selectedStudent?.id || `STU-${Date.now()}`,
-        studentName: formData.assignmentType === 'individual' ? (selectedStudent?.name || selectedStudent?.fullName || 'Student') : `Entire ${formData.department} Batch`,
+        studentName: formData.assignmentType === 'individual'
+          ? (selectedStudent?.name || selectedStudent?.fullName || 'Student')
+          : `Entire ${formData.department} Batch`,
         email: selectedStudent?.email || '',
         course: formData.department,
         semester: formData.semester,
@@ -525,11 +723,13 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
           libraryFee: formData.libraryFee,
           examFee: formData.examFee,
           activityFee: formData.activityFee,
+          chargesSum,
           quotaSurcharge,
           transportFee,
           hostelFee,
           amenitiesFee,
           scholarshipDiscount,
+          chargeItems: charges.filter(c => selectedChargeIds.includes(c.id)).map(c => ({ label: c.label, amount: c.amount })),
         },
         options: {
           quota: formData.quota,
@@ -543,6 +743,33 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
         assignedDate: new Date().toISOString(),
       };
 
+      // Save department fee template to MongoDB
+      try {
+        await fetch('/api/fees/structures', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            department: formData.department,
+            semester: formData.semester,
+            academicYear: formData.academicYear,
+            tuitionFee: formData.tuitionFee,
+            developmentFee: formData.developmentFee,
+            libraryFee: formData.libraryFee,
+            examFee: formData.examFee,
+            activityFee: formData.activityFee,
+            customFeeComponents: formData.customFeeComponents || [],
+            scholarshipType: formData.scholarshipType,
+            transportZone: formData.transportZone,
+            hostelType: formData.hostelType,
+            paymentPlan: formData.paymentPlan,
+            grossAcademicFee,
+            netTotalFee,
+          }),
+        });
+      } catch (err) {
+        console.error('Error persisting department fee structure template:', err);
+      }
+
       await onSave(feeRecord);
       setIsSubmitting(false);
       onCancel();
@@ -550,90 +777,137 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    } else {
-      onCancel();
-    }
+    if (currentStep > 1) setCurrentStep(prev => prev - 1);
+    else onCancel();
   };
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const schemeTypeColor = {
+    Government: 'bg-blue-100 text-blue-700 border-blue-200',
+    Merit: 'bg-purple-100 text-purple-700 border-purple-200',
+    Sports: 'bg-orange-100 text-orange-700 border-orange-200',
+    Institutional: 'bg-teal-100 text-teal-700 border-teal-200',
+    Standard: 'bg-slate-100 text-slate-500 border-slate-200',
+  };
+  const amenityIcon = {
+    ac: '❄️', wifi: '📶', laundry: '👕', mess: '🍽️', fan: '💨', attached_bath: '🚿', tv: '📺', study_table: '📚',
+  };
+  const amenityLabel = {
+    ac: 'AC', wifi: 'Wi-Fi', laundry: 'Laundry', mess: 'Mess', fan: 'Fan', attached_bath: 'Attached Bath', tv: 'TV', study_table: 'Study Table',
+  };
+
+  // ── Live fee summary sidebar ──────────────────────────────────────────────
+  const departmentSidebarPanel = (
+    <div className="bg-[#003A40] text-white rounded-2xl p-6 shadow-md flex flex-col justify-between space-y-6 h-full">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-white/15">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#00E5FF]">DEPARTMENT FEE DESIGN</span>
+          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-extrabold px-2 py-0.5 rounded-full border border-emerald-400/30">DB TEMPLATE</span>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-extrabold text-white leading-tight">{formData.department || 'Selected Department'}</h4>
+          <p className="text-xs text-emerald-100/80 font-semibold mt-1">{formData.academicYear} • {formData.semester}</p>
+        </div>
+
+        <div className="space-y-2 pt-3 border-t border-white/15 text-xs font-semibold">
+          <div className="flex justify-between text-emerald-100/90">
+            <span>Base Tuition Fee:</span>
+            <span className="font-mono font-bold text-white">₹{Number(formData.tuitionFee || 0).toLocaleString('en-IN')}</span>
+          </div>
+          <div className="flex justify-between text-emerald-100/90">
+            <span>Gross Academic Fees:</span>
+            <span className="font-mono font-bold text-white">₹{grossAcademicFee.toLocaleString('en-IN')}</span>
+          </div>
+          {chargesSum > 0 && (
+            <div className="flex justify-between text-cyan-200">
+              <span>Misc Charges:</span>
+              <span className="font-mono font-bold">+₹{chargesSum.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+          {quotaSurcharge > 0 && (
+            <div className="flex justify-between text-amber-200">
+              <span>Quota Surcharge:</span>
+              <span className="font-mono font-bold">+₹{quotaSurcharge.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+          {(transportFee > 0 || hostelFee > 0) && (
+            <div className="flex justify-between text-cyan-200">
+              <span>Auxiliary Services:</span>
+              <span className="font-mono font-bold">+₹{(transportFee + hostelFee).toLocaleString('en-IN')}</span>
+            </div>
+          )}
+          {scholarshipDiscount > 0 && (
+            <div className="flex justify-between text-emerald-300">
+              <span>Waivers & Discounts:</span>
+              <span className="font-mono font-bold">-₹{scholarshipDiscount.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="pt-4 border-t border-white/15 space-y-1">
+        <div className="text-[10px] font-extrabold text-emerald-200 uppercase tracking-wider">Net Department Fee Payable</div>
+        <div className="text-2xl font-black text-white font-mono tracking-tight">₹{netTotalFee.toLocaleString('en-IN')}</div>
+        <p className="text-[11px] text-emerald-200/70 font-medium">Saves template directly to MongoDB department_fee_structures collection</p>
+      </div>
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════
+  //  RENDER
+  // ═══════════════════════════════════════════════════════════════
   return (
     <EnterpriseWizardTemplate
       noLayout={true}
-      title="Department Fee Structure Wizard"
-      subtitle="Design custom fee matrices, scholarship waivers, transport zones, and hostel plans"
+      title="Department Fee Structure Designer"
+      subtitle="Design custom fee matrices, scholarship waivers, transport zones, and hostel plans per department"
       steps={steps}
       currentStep={currentStep}
       totalSteps={4}
       stepTitle={steps[currentStep - 1].title}
       stepIcon={currentStep === 1 ? 'school' : currentStep === 2 ? 'payments' : currentStep === 3 ? 'card_membership' : 'directions_bus'}
+      customRightPanel={departmentSidebarPanel}
       onBack={handleBack}
       onNext={handleNext}
       isFirstStep={currentStep === 1}
       isLastStep={currentStep === 4}
       isSubmitting={isSubmitting}
-      helpTitle="Fee Structure Guide"
-      helpText="All fee structures are stored in central finance billing. Assigned students receive invoice notifications automatically on their portal."
+      helpTitle="Department Fee Guide"
+      helpText="Fee designs configured here serve as the dynamic template for the department. Submitting persists the structure to MongoDB and publishes it."
     >
       <div className="space-y-6">
 
-        {/* STEP 1: DEPARTMENT & BATCH */}
+        {/* ══════════════════════════════════════════════════
+            STEP 1: DEPARTMENT & BATCH
+            ══════════════════════════════════════════════════ */}
         {currentStep === 1 && (
           <div className="space-y-4">
             <div className="p-4 bg-[#F0FDFA] border border-[#0A686A]/20 rounded-xl flex items-center gap-3">
               <span className="material-symbols-outlined text-[#003A40]">verified</span>
-              <p className="text-xs text-slate-700">Select target academic department and specify whether to assign to an individual student or broadcast to an entire batch.</p>
+              <p className="text-xs text-slate-700">Select target academic department to configure its default fee structure design template. This template will be automatically loaded whenever a student enrolls in this department.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#003A40] block mb-1">Assignment Scope</label>
-                <select
-                  value={formData.assignmentType}
-                  onChange={(e) => setFormData({ ...formData, assignmentType: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
-                >
-                  <option value="individual">Single Student Assignment</option>
-                  <option value="department_batch">Entire Department Batch Surcharge</option>
-                </select>
-              </div>
-
-              {formData.assignmentType === 'individual' ? (
-                <div>
-                  <label className="text-xs font-bold text-[#003A40] block mb-1">Select Enrolled Student <span className="text-rose-500">*</span></label>
-                  <select
-                    value={formData.studentId}
-                    onChange={(e) => {
-                      const stId = e.target.value;
-                      const st = allStudents.find(s => (s._id || s.id || s.rollNumber) === stId);
-                      setFormData({
-                        ...formData,
-                        studentId: stId,
-                        department: st?.department || st?.course || formData.department
-                      });
-                    }}
-                    className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
-                  >
-                    {allStudents.map(s => (
-                      <option key={s._id || s.id || s.rollNumber} value={s._id || s.id || s.rollNumber}>
-                        {s.name || s.fullName} ({s.rollNumber || s.id || 'STU'}) — {s.department || 'CS'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label className="text-xs font-bold text-[#003A40] block mb-1">Target Department <span className="text-rose-500">*</span></label>
-                  <select
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
-                  >
-                    <option value="Medical Laboratory Technology">Medical Laboratory Technology</option>
-                    <option value="Operation Theatre & Anaesthesia Technology">Operation Theatre & Anaesthesia Technology</option>
-                    <option value="Radiography & Imaging Technology">Radiography & Imaging Technology</option>
-                  </select>
-                </div>
+            {/* Target Department Selection */}
+            <div>
+              <label className="text-xs font-bold text-[#003A40] block mb-1">Target Department <span className="text-rose-500">*</span></label>
+              <select
+                value={formData.department}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
+                disabled={deptsLoading}
+              >
+                {deptsLoading && <option value="">Loading departments…</option>}
+                {!deptsLoading && !formData.department && <option value="">— Select Department —</option>}
+                {!deptsLoading && dynamicDepts.map(dept => (
+                  <option key={dept.id || dept._id || dept.name} value={dept.name}>{dept.name}</option>
+                ))}
+              </select>
+              {formData.department && (
+                <p className="text-[10px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[12px]">cloud_download</span>
+                  Loading saved template for {formData.department} from MongoDB…
+                </p>
               )}
             </div>
 
@@ -658,9 +932,10 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
                   onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
                   className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
                 >
-                  <option value="2025-2026">2025-2026</option>
-                  <option value="2024-2025">2024-2025</option>
-                  <option value="2023-2024">2023-2024</option>
+                  <option value="2026-2027">2026–2027</option>
+                  <option value="2025-2026">2025–2026</option>
+                  <option value="2024-2025">2024–2025</option>
+                  <option value="2023-2024">2023–2024</option>
                 </select>
               </div>
 
@@ -681,9 +956,21 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
           </div>
         )}
 
-        {/* STEP 2: ACADEMIC & LAB FEES */}
+        {/* ══════════════════════════════════════════════════
+            STEP 2: ACADEMIC & LAB FEES
+            ══════════════════════════════════════════════════ */}
         {currentStep === 2 && (
-          <div className="space-y-4">
+          <div className="space-y-5">
+            {/* ── DB Template Banner ── */}
+            {deptTemplateLoaded && (
+              <div className="flex items-center gap-2.5 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <span className="material-symbols-outlined text-[16px] text-emerald-600">cloud_done</span>
+                <div>
+                  <span className="text-xs font-bold text-emerald-800">Fees loaded from saved department template</span>
+                  <p className="text-[10px] text-emerald-600 font-medium">All amounts below were auto-filled from the MongoDB <code className="bg-emerald-100 px-1 rounded">department_fee_structures</code> record for <strong>{formData.department}</strong>. You can still edit them.</p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-bold text-[#003A40] block mb-1">Base Semester Tuition Fee (₹)</label>
@@ -694,7 +981,6 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
                   className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono font-bold outline-none focus:border-[#0A686A]"
                 />
               </div>
-
               <div>
                 <label className="text-xs font-bold text-[#003A40] block mb-1">Infrastructure & Lab Development (₹)</label>
                 <input
@@ -709,33 +995,183 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="text-xs font-bold text-[#003A40] block mb-1">Digital Library & E-Journals (₹)</label>
-                <input
-                  type="number"
-                  value={formData.libraryFee}
-                  onChange={(e) => setFormData({ ...formData, libraryFee: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]"
-                />
+                <input type="number" value={formData.libraryFee} onChange={(e) => setFormData({ ...formData, libraryFee: Number(e.target.value) })} className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]" />
               </div>
-
               <div>
                 <label className="text-xs font-bold text-[#003A40] block mb-1">University Examination Fee (₹)</label>
-                <input
-                  type="number"
-                  value={formData.examFee}
-                  onChange={(e) => setFormData({ ...formData, examFee: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]"
-                />
+                <input type="number" value={formData.examFee} onChange={(e) => setFormData({ ...formData, examFee: Number(e.target.value) })} className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]" />
               </div>
-
               <div>
                 <label className="text-xs font-bold text-[#003A40] block mb-1">Student Activity & Sports (₹)</label>
-                <input
-                  type="number"
-                  value={formData.activityFee}
-                  onChange={(e) => setFormData({ ...formData, activityFee: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]"
-                />
+                <input type="number" value={formData.activityFee} onChange={(e) => setFormData({ ...formData, activityFee: Number(e.target.value) })} className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]" />
               </div>
+            </div>
+
+            {/* ── Charges & Misc Packages ──────────────────────────── */}
+            <div className="pt-3 border-t border-[#E6EDF2] space-y-3">
+              <div>
+                <h4 className="text-xs font-bold text-[#003A40]">Charges & Miscellaneous Packages</h4>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">Click a card to include / exclude. Hover and click ✏️ to edit label or amount — saves to DB instantly.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                {charges.map(charge => {
+                  const isSelected = selectedChargeIds.includes(charge.id);
+                  return (
+                    <div
+                      key={charge.id}
+                      onClick={() => {
+                        const next = isSelected
+                          ? selectedChargeIds.filter(id => id !== charge.id)
+                          : [...selectedChargeIds, charge.id];
+                        setSelectedChargeIds(next);
+                        persistCharges(charges, next);
+                      }}
+                      className={`p-3 rounded-xl border transition-all flex items-center gap-3 relative group cursor-pointer ${
+                        isSelected
+                          ? 'border-[#0A686A] bg-[#F0FDFA] shadow-sm'
+                          : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[13px] flex-shrink-0 ${
+                        isSelected ? 'bg-[#003A40] text-white' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        <span className="material-symbols-outlined text-[16px]">{charge.icon}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs font-bold text-[#003A40] leading-tight block truncate">{charge.label}</span>
+                        <span className="text-[11px] text-[#5F6B7A] font-semibold">₹{Number(charge.amount).toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border ${
+                        isSelected ? 'bg-[#0A686A] border-[#0A686A]' : 'border-[#E6EDF2] bg-white'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      {/* Edit button — stops propagation so clicking it won't toggle selection */}
+                      <button
+                        onClick={e => { e.stopPropagation(); setEditCharge({ ...charge }); }}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-white border border-[#E6EDF2] text-slate-400 hover:text-[#0A686A] hover:border-[#0A686A]/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xs cursor-pointer"
+                        title="Edit this charge"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">edit</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                <span className="text-xs font-semibold text-slate-600">Selected Charges Subtotal:</span>
+                <span className="text-sm font-extrabold text-[#003A40]">₹{chargesSum.toLocaleString('en-IN')}</span>
+              </div>
+
+              {/* ── Inline Edit Charge Modal ── */}
+              {editCharge && (
+                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setEditCharge(null)}>
+                  <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 w-full max-w-xs shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-sm font-bold text-[#003A40]">Edit Charge Item</h3>
+                      <button onClick={() => setEditCharge(null)} className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 cursor-pointer transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Charge Label</label>
+                        <input
+                          type="text"
+                          value={editCharge.label}
+                          onChange={e => setEditCharge(prev => ({ ...prev, label: e.target.value }))}
+                          className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]"
+                          placeholder="e.g. Examination Registration Fee"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Amount (₹)</label>
+                        <input
+                          type="number"
+                          value={editCharge.amount}
+                          onChange={e => setEditCharge(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                          className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-mono font-bold outline-none focus:border-[#0A686A]"
+                          placeholder="e.g. 2500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-5">
+                      <button onClick={() => setEditCharge(null)} className="flex-1 py-2 border border-[#E6EDF2] text-[#5F6B7A] rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50 transition-colors">Cancel</button>
+                      <button onClick={handleSaveCharge} disabled={savingCharge} className="flex-1 py-2 bg-[#003A40] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#0A686A] transition-colors disabled:opacity-60">
+                        {savingCharge ? 'Saving…' : 'Save to DB'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Custom Fee Heads ─────────────────────────────────── */}
+            <div className="pt-3 border-t border-[#E6EDF2] space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-[#003A40]">Custom Department Fee Heads</h4>
+                  <p className="text-[11px] text-slate-500 font-medium">Add special lab, clinical, or departmental fee components</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newId = `fee_${Date.now()}`;
+                    setFormData(prev => ({
+                      ...prev,
+                      customFeeComponents: [...(prev.customFeeComponents || []), { id: newId, title: 'Clinical & Workshop Fee', amount: 3500 }]
+                    }));
+                  }}
+                  className="px-3 py-1.5 bg-[#E6F4F1] hover:bg-[#d0ece7] text-[#003A40] rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Fee Head</span>
+                </button>
+              </div>
+
+              {(formData.customFeeComponents || []).length > 0 && (
+                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                  {formData.customFeeComponents.map((comp, idx) => (
+                    <div key={comp.id || idx} className="flex items-center gap-3 p-2.5 bg-slate-50 border border-[#E6EDF2] rounded-xl">
+                      <input
+                        type="text"
+                        value={comp.title}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData(prev => ({
+                            ...prev,
+                            customFeeComponents: prev.customFeeComponents.map((c, i) => i === idx ? { ...c, title: val } : c)
+                          }));
+                        }}
+                        className="flex-1 px-3 py-1.5 bg-white border border-[#E6EDF2] rounded-lg text-xs font-semibold outline-none focus:border-[#0A686A]"
+                        placeholder="Fee Component Name"
+                      />
+                      <div className="w-32 flex items-center gap-1">
+                        <span className="text-xs font-bold text-slate-500">₹</span>
+                        <input
+                          type="number"
+                          value={comp.amount}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setFormData(prev => ({
+                              ...prev,
+                              customFeeComponents: prev.customFeeComponents.map((c, i) => i === idx ? { ...c, amount: val } : c)
+                            }));
+                          }}
+                          className="w-full px-2.5 py-1.5 bg-white border border-[#E6EDF2] rounded-lg text-xs font-mono font-bold outline-none focus:border-[#0A686A]"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, customFeeComponents: prev.customFeeComponents.filter((_, i) => i !== idx) }))}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 cursor-pointer transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="p-4 bg-slate-50 border border-[#E6EDF2] rounded-xl flex items-center justify-between">
@@ -745,47 +1181,150 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
           </div>
         )}
 
-        {/* STEP 3: SCHOLARSHIPS & WAIVERS */}
+        {/* ══════════════════════════════════════════════════
+            STEP 3: SCHOLARSHIPS & WAIVERS
+            ══════════════════════════════════════════════════ */}
         {currentStep === 3 && (
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-bold text-[#003A40] block mb-2">Institutional Scholarship Category</label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { value: 'None', label: 'No Waiver / Standard Rate', sub: 'Full tuition fee applies' },
-                  { value: 'Merit Excellence (50% Tuition)', label: 'Merit Excellence Scheme', sub: '50% Waiver on Tuition Fee' },
-                  { value: 'First Graduate Scheme (-₹25,000)', label: 'First Graduate Concession', sub: 'State Aid -₹25,000 / Semester' },
-                  { value: 'Single Parent / EWS Aid (-₹20,000)', label: 'EWS / Economic Need Support', sub: 'Special Financial Assistance -₹20,000' },
-                  { value: 'Sports / NCC Excellence (-₹30,000)', label: 'Sports & NCC Fellowship', sub: 'State / National Player -₹30,000' },
-                ].map(sch => {
-                  const isSelected = formData.scholarshipType === sch.value;
-                  return (
-                    <div
-                      key={sch.value}
-                      onClick={() => setFormData({ ...formData, scholarshipType: sch.value })}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-[#0A686A] bg-[#F0FDFA] shadow-2xs'
-                          : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#003A40]">{sch.label}</span>
-                        {isSelected && <span className="material-symbols-outlined text-[18px] text-[#0A686A]">check_circle</span>}
-                      </div>
-                      <span className="text-[11px] text-slate-500 mt-1">{sch.sub}</span>
-                    </div>
-                  );
-                })}
+          <div className="space-y-5">
+
+            {/* ── Header with Add button ── */}
+            <div className="flex items-start justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-[#003A40]">Fee Categories & Scholarship Schemes</h4>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  Design categories here. At admission time, admin picks the student's category — fee is auto-adjusted.
+                </p>
               </div>
+              <button
+                onClick={() => setAddScholarship(true)}
+                className="px-3 py-1.5 bg-[#003A40] hover:bg-[#0A686A] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors flex-shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Category</span>
+              </button>
             </div>
 
+            {/* ── Info banner ── */}
+            <div className="flex items-center gap-2.5 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+              <span className="material-symbols-outlined text-[16px] text-blue-500">info</span>
+              <p className="text-[10px] text-blue-700 font-medium leading-relaxed">
+                These categories are saved to MongoDB. At the time of student admission, the admin selects the applicable category and the system calculates the net fee automatically.
+              </p>
+            </div>
+
+            {/* ── Grouped Category Cards ── */}
+            {(['Government', 'Merit', 'Sports', 'Institutional', 'Standard']).map(groupType => {
+              const group = scholarships.filter(s => (s.scheme_type || 'Standard') === groupType);
+              if (group.length === 0) return null;
+              const groupColors = {
+                Government: { bg: 'bg-blue-50', border: 'border-blue-100', badge: 'bg-blue-100 text-blue-700 border-blue-200', icon: 'account_balance', dot: 'bg-blue-400' },
+                Merit: { bg: 'bg-purple-50', border: 'border-purple-100', badge: 'bg-purple-100 text-purple-700 border-purple-200', icon: 'workspace_premium', dot: 'bg-purple-400' },
+                Sports: { bg: 'bg-orange-50', border: 'border-orange-100', badge: 'bg-orange-100 text-orange-700 border-orange-200', icon: 'sports_soccer', dot: 'bg-orange-400' },
+                Institutional: { bg: 'bg-teal-50', border: 'border-teal-100', badge: 'bg-teal-100 text-teal-700 border-teal-200', icon: 'school', dot: 'bg-teal-400' },
+                Standard: { bg: 'bg-slate-50', border: 'border-slate-100', badge: 'bg-slate-100 text-slate-500 border-slate-200', icon: 'receipt', dot: 'bg-slate-300' },
+              };
+              const gc = groupColors[groupType] || groupColors.Standard;
+              return (
+                <div key={groupType} className="space-y-2">
+                  {/* Group label */}
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${gc.dot} flex-shrink-0`} />
+                    <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">{groupType} Schemes</span>
+                    <div className="flex-1 h-px bg-slate-100" />
+                    <span className="text-[9px] text-slate-400 font-semibold">{group.length} scheme{group.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {group.map(sch => {
+                      const isSelected = formData.scholarshipType === sch.value;
+                      const isDefault = ['none', 'merit', 'first_grad', 'ews', 'sports'].includes(sch.id);
+                      return (
+                        <div
+                          key={sch.id}
+                          onClick={() => setFormData({ ...formData, scholarshipType: sch.value })}
+                          className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex flex-col gap-2 relative group ${
+                            isSelected
+                              ? `border-[#0A686A] ${gc.bg} shadow-sm`
+                              : `border-[#E6EDF2] bg-white hover:${gc.bg} hover:border-slate-200`
+                          }`}
+                        >
+                          {/* Top row: type chip + checkmark */}
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[8px] font-extrabold px-1.5 py-0.5 rounded-full border uppercase tracking-wide ${gc.badge}`}>
+                              {groupType}
+                            </span>
+                            {isSelected && (
+                              <span className="material-symbols-outlined text-[16px] text-[#0A686A]">check_circle</span>
+                            )}
+                          </div>
+
+                          {/* Name + discount */}
+                          <div>
+                            <span className="text-xs font-bold text-[#003A40] leading-snug block">{sch.label}</span>
+                            <span className="text-[11px] text-slate-500 mt-0.5 block font-medium">
+                              {sch.discount_type === 'fixed' && sch.discount_amount > 0
+                                ? `-₹${Number(sch.discount_amount).toLocaleString('en-IN')} waiver`
+                                : sch.discount_type === 'percent' && sch.discount_amount > 0
+                                ? `${sch.discount_amount}% off tuition`
+                                : 'No discount'}
+                            </span>
+                          </div>
+
+                          {/* Eligibility */}
+                          {sch.eligibility && (
+                            <div className="flex items-start gap-1 text-[10px] text-slate-400">
+                              <span className="material-symbols-outlined text-[11px] mt-0.5 flex-shrink-0">verified_user</span>
+                              <span className="leading-tight">{sch.eligibility}</span>
+                            </div>
+                          )}
+                          {/* Income limit tag */}
+                          {sch.income_limit && (
+                            <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full font-semibold w-fit">
+                              Income ≤ {sch.income_limit}
+                            </span>
+                          )}
+
+                          {/* Docs required tag */}
+                          {sch.documentation && (
+                            <div className="flex items-center gap-1 text-[9px] text-slate-400">
+                              <span className="material-symbols-outlined text-[11px]">description</span>
+                              <span className="leading-tight truncate">{sch.documentation}</span>
+                            </div>
+                          )}
+
+                          {/* Hover action buttons */}
+                          <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={e => { e.stopPropagation(); setEditScholarship({ ...sch }); }}
+                              className="w-6 h-6 rounded-lg bg-white border border-[#E6EDF2] text-slate-400 hover:text-[#0A686A] hover:border-[#0A686A]/40 flex items-center justify-center shadow-xs cursor-pointer"
+                              title="Edit category"
+                            >
+                              <span className="material-symbols-outlined text-[12px]">edit</span>
+                            </button>
+                            {!isDefault && (
+                              <button
+                                onClick={e => { e.stopPropagation(); setDeleteScholarshipId(sch.id); }}
+                                className="w-6 h-6 rounded-lg bg-white border border-rose-200 text-rose-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center shadow-xs cursor-pointer"
+                                title="Delete category"
+                              >
+                                <span className="material-symbols-outlined text-[12px]">delete</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* ── Extra waiver input ── */}
             <div>
               <label className="text-xs font-bold text-[#003A40] block mb-1">Additional Special Discount Waiver (₹)</label>
               <input
                 type="number"
                 value={formData.customWaiver}
-                onChange={(e) => setFormData({ ...formData, customWaiver: Number(e.target.value) })}
+                onChange={e => setFormData({ ...formData, customWaiver: Number(e.target.value) })}
                 className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]"
                 placeholder="e.g. 5000"
               />
@@ -795,40 +1334,328 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
               <span className="text-xs font-bold">Total Scholarship Waiver Deduction:</span>
               <span className="text-base font-extrabold text-emerald-700">-₹{scholarshipDiscount.toLocaleString('en-IN')}</span>
             </div>
+
+            {/* ── Edit Scholarship Modal ── */}
+            {editScholarship && (
+              <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setEditScholarship(null)}>
+                <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-bold text-[#003A40]">Edit Scholarship Scheme</h3>
+                    <button onClick={() => setEditScholarship(null)} className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 cursor-pointer transition-colors"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'label', label: 'Scheme Name', type: 'text' },
+                      { key: 'sub', label: 'Description', type: 'text' },
+                      { key: 'eligibility', label: 'Eligibility Criteria', type: 'text' },
+                    ].map(({ key, label, type }) => (
+                      <div key={key}>
+                        <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">{label}</label>
+                        <input type={type} value={editScholarship[key] || ''} onChange={e => setEditScholarship(prev => ({ ...prev, [key]: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Scheme Type</label>
+                      <select value={editScholarship.scheme_type || 'Standard'} onChange={e => setEditScholarship(prev => ({ ...prev, scheme_type: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white">
+                        {['Government', 'Merit', 'Sports', 'Institutional', 'Standard'].map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Discount Amount {editScholarship.discount_type === 'percent' ? '(%)' : '(₹)'}</label>
+                      <input type="number" value={editScholarship.discount_amount} onChange={e => setEditScholarship(prev => ({ ...prev, discount_amount: Number(e.target.value) }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-5">
+                    <button onClick={() => setEditScholarship(null)} className="flex-1 py-2 border border-[#E6EDF2] text-[#5F6B7A] rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button onClick={handleSaveScholarship} disabled={savingScholarship} className="flex-1 py-2 bg-[#003A40] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#0A686A] transition-colors disabled:opacity-60">{savingScholarship ? 'Saving…' : 'Save to DB'}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Add Category Modal (full fields) ── */}
+            {addScholarship && (
+              <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setAddScholarship(false)}>
+                <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#003A40]">Add New Fee Category</h3>
+                      <p className="text-[10px] text-slate-400 mt-0.5">This category will appear at admission time for admin to select</p>
+                    </div>
+                    <button onClick={() => setAddScholarship(false)} className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 cursor-pointer transition-colors"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Category Name */}
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Category / Scheme Name <span className="text-rose-500">*</span></label>
+                      <input type="text" placeholder="e.g. Divyangjan Scholarship" value={newScheme.label} onChange={e => setNewScheme(prev => ({ ...prev, label: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" />
+                    </div>
+
+                    {/* Short Description */}
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Short Description</label>
+                      <input type="text" placeholder="e.g. 25% waiver for PwD students" value={newScheme.sub} onChange={e => setNewScheme(prev => ({ ...prev, sub: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" />
+                    </div>
+
+                    {/* Category Type */}
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Category Type</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { val: 'Government', icon: 'account_balance', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+                          { val: 'Merit', icon: 'workspace_premium', color: 'bg-purple-50 border-purple-200 text-purple-700' },
+                          { val: 'Sports', icon: 'sports_soccer', color: 'bg-orange-50 border-orange-200 text-orange-700' },
+                          { val: 'Institutional', icon: 'school', color: 'bg-teal-50 border-teal-200 text-teal-700' },
+                          { val: 'Standard', icon: 'receipt', color: 'bg-slate-50 border-slate-200 text-slate-600' },
+                        ].map(opt => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            onClick={() => setNewScheme(prev => ({ ...prev, scheme_type: opt.val }))}
+                            className={`p-2 rounded-xl border flex flex-col items-center gap-1 cursor-pointer text-[10px] font-bold transition-all ${
+                              newScheme.scheme_type === opt.val ? opt.color + ' border-2' : 'border-[#E6EDF2] bg-white text-slate-500 hover:bg-slate-50'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[16px]">{opt.icon}</span>
+                            {opt.val}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Discount */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Discount Type</label>
+                        <select value={newScheme.discount_type} onChange={e => setNewScheme(prev => ({ ...prev, discount_type: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white">
+                          <option value="fixed">Fixed Amount (₹)</option>
+                          <option value="percent">Percentage (%) of Tuition</option>
+                          <option value="full">Full Fee Waiver (100%)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">
+                          {newScheme.discount_type === 'fixed' ? 'Amount (₹)' : newScheme.discount_type === 'percent' ? 'Percentage (%)' : 'Auto — 100%'}
+                        </label>
+                        <input
+                          type="number"
+                          value={newScheme.discount_amount}
+                          disabled={newScheme.discount_type === 'full'}
+                          onChange={e => setNewScheme(prev => ({ ...prev, discount_amount: Number(e.target.value) }))}
+                          className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-mono font-bold outline-none focus:border-[#0A686A] disabled:bg-slate-50 disabled:text-slate-400"
+                          placeholder={newScheme.discount_type === 'full' ? '100' : '0'}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Eligibility */}
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Eligibility Criteria</label>
+                      <input type="text" placeholder="e.g. Valid disability certificate from govt hospital" value={newScheme.eligibility} onChange={e => setNewScheme(prev => ({ ...prev, eligibility: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" />
+                    </div>
+
+                    {/* Income Limit */}
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Annual Family Income Limit (optional)</label>
+                      <input type="text" placeholder="e.g. Below ₹2,50,000 per annum" value={newScheme.income_limit || ''} onChange={e => setNewScheme(prev => ({ ...prev, income_limit: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" />
+                    </div>
+
+                    {/* Documentation Required */}
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Documents Required (optional)</label>
+                      <input type="text" placeholder="e.g. Income certificate, Community certificate, First graduate affidavit" value={newScheme.documentation || ''} onChange={e => setNewScheme(prev => ({ ...prev, documentation: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" />
+                    </div>
+
+                    {/* Applicable Communities */}
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Applicable Communities (optional)</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['OC', 'BC', 'MBC', 'DNC', 'SC', 'ST', 'SCA', 'All'].map(comm => {
+                          const selected = (newScheme.applicable_communities || []).includes(comm);
+                          return (
+                            <button
+                              key={comm}
+                              type="button"
+                              onClick={() => setNewScheme(prev => ({
+                                ...prev,
+                                applicable_communities: selected
+                                  ? prev.applicable_communities.filter(c => c !== comm)
+                                  : [...(prev.applicable_communities || []), comm]
+                              }))}
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold border cursor-pointer transition-all ${
+                                selected ? 'bg-[#003A40] text-white border-[#003A40]' : 'bg-white text-slate-500 border-[#E6EDF2] hover:bg-slate-50'
+                              }`}
+                            >
+                              {comm}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-5">
+                    <button onClick={() => setAddScholarship(false)} className="flex-1 py-2 border border-[#E6EDF2] text-[#5F6B7A] rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button
+                      onClick={handleAddScholarship}
+                      disabled={savingScholarship || !newScheme.label}
+                      className="flex-1 py-2 bg-[#003A40] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#0A686A] transition-colors disabled:opacity-60"
+                    >
+                      {savingScholarship ? 'Saving to DB…' : 'Save Category to DB'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Delete Scholarship Confirm ── */}
+            {deleteScholarshipId && (
+              <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl border border-rose-200 p-6 w-full max-w-xs shadow-2xl">
+                  <h3 className="text-sm font-bold text-rose-600 mb-2">Delete Scholarship Scheme?</h3>
+                  <p className="text-xs text-slate-500 mb-5">This action cannot be undone. The scheme will be permanently removed from MongoDB.</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setDeleteScholarshipId(null)} className="flex-1 py-2 border border-[#E6EDF2] text-slate-500 rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50">Cancel</button>
+                    <button onClick={() => handleDeleteScholarship(deleteScholarshipId)} className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors">Delete</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* STEP 4: AUXILIARY SERVICES & PAYMENT PLAN */}
+        {/* ══════════════════════════════════════════════════
+            STEP 4: TRANSPORT & HOSTEL
+            ══════════════════════════════════════════════════ */}
         {currentStep === 4 && (
-          <div className="space-y-4">
+          <div className="space-y-6">
+
+            {/* ── Transport Package Cards ──────────────────────── */}
             <div>
-              <label className="text-xs font-bold text-[#003A40] block mb-1">Bus Transport Route / Zone</label>
-              <select
-                value={formData.transportZone}
-                onChange={(e) => setFormData({ ...formData, transportZone: e.target.value })}
-                className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
-              >
-                <option value="None">No Campus Transport / Self Arranged (₹0)</option>
-                <option value="Zone 1: Urban (≤ 15 km)">Zone 1: Urban City Lines (≤ 15 km) — ₹18,000</option>
-                <option value="Zone 2: Suburban (15-30 km)">Zone 2: Metro Suburban (15–30 km) — ₹28,000</option>
-                <option value="Zone 3: Outstation Corridor (> 30 km)">Zone 3: Outstation Corridor (&gt; 30 km) — ₹38,000</option>
-              </select>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-[#003A40]">Bus Transport Route / Zone</h4>
+                  <p className="text-[11px] text-slate-400 font-medium">Select a transport zone package. Hover to edit amounts.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {auxConfig.transport_zones.map(zone => {
+                  const isSelected = formData.transportZone === zone.value;
+                  return (
+                    <div
+                      key={zone.id}
+                      onClick={() => setFormData({ ...formData, transportZone: zone.value })}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-2.5 relative group ${
+                        isSelected ? 'border-[#0A686A] bg-[#F0FDFA] shadow-sm' : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? 'bg-[#003A40]' : 'bg-slate-100'}`}>
+                            <span className={`material-symbols-outlined text-[16px] ${isSelected ? 'text-white' : 'text-slate-500'}`}>{zone.icon || 'directions_bus'}</span>
+                          </div>
+                          <span className="text-xs font-extrabold text-[#003A40]">{zone.label}</span>
+                        </div>
+                        {isSelected && <span className="material-symbols-outlined text-[18px] text-[#0A686A]">check_circle</span>}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-slate-500 font-medium">{zone.distance || (zone.amount === 0 ? 'Self-arranged' : '')}</span>
+                        <span className="text-sm font-extrabold text-[#003A40] font-mono">
+                          {zone.amount === 0 ? 'Free' : `₹${Number(zone.amount).toLocaleString('en-IN')}`}
+                        </span>
+                      </div>
+                      {(zone.pickup_points || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {zone.pickup_points.slice(0, 2).map((pt, i) => (
+                            <span key={i} className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-semibold">{pt}</span>
+                          ))}
+                        </div>
+                      )}
+                      {/* Edit button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditTransport({ ...zone }); }}
+                        className="absolute top-2 right-2 w-6 h-6 rounded-lg bg-white border border-[#E6EDF2] text-slate-400 hover:text-[#0A686A] hover:border-[#0A686A]/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xs cursor-pointer"
+                        title="Edit zone"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">edit</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
+            {/* ── Hostel Package Cards ─────────────────────────── */}
             <div>
-              <label className="text-xs font-bold text-[#003A40] block mb-1">Hostel Accommodation & Food Plan</label>
-              <select
-                value={formData.hostelType}
-                onChange={(e) => setFormData({ ...formData, hostelType: e.target.value })}
-                className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
-              >
-                <option value="Day Scholar">Day Scholar (No Accommodation)</option>
-                <option value="Standard Quad Occupancy + Food">Standard Quad Occupancy + Mess — ₹75,000</option>
-                <option value="Deluxe Double Occupancy + Food">Deluxe Double Occupancy + Mess — ₹95,000</option>
-                <option value="Executive Single AC Suite + Food">Executive Single AC Suite + Mess — ₹1,35,000</option>
-              </select>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className="text-xs font-bold text-[#003A40]">Hostel Accommodation & Food Plan</h4>
+                  <p className="text-[11px] text-slate-400 font-medium">Select a hostel package. Hover to edit.</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {auxConfig.hostel_types.map(hostel => {
+                  const isSelected = formData.hostelType === hostel.value;
+                  return (
+                    <div
+                      key={hostel.id}
+                      onClick={() => setFormData({ ...formData, hostelType: hostel.value })}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-2.5 relative group ${
+                        isSelected ? 'border-[#0A686A] bg-[#F0FDFA] shadow-sm' : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? 'bg-[#003A40]' : 'bg-slate-100'}`}>
+                            <span className={`material-symbols-outlined text-[16px] ${isSelected ? 'text-white' : 'text-slate-500'}`}>{hostel.icon || 'bed'}</span>
+                          </div>
+                          <div>
+                            <span className="text-xs font-extrabold text-[#003A40] block leading-tight">{hostel.label}</span>
+                            {hostel.occupancy && <span className="text-[10px] text-slate-400 font-medium">{hostel.occupancy}</span>}
+                          </div>
+                        </div>
+                        {isSelected && <span className="material-symbols-outlined text-[18px] text-[#0A686A] flex-shrink-0">check_circle</span>}
+                      </div>
+                      {hostel.food_plan && (
+                        <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[12px]">restaurant</span>
+                          {hostel.food_plan}
+                        </span>
+                      )}
+                      {/* Amenity chips */}
+                      {(hostel.amenities || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {hostel.amenities.slice(0, 4).map(a => (
+                            <span key={a} className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${
+                              isSelected ? 'bg-[#003A40]/10 text-[#003A40]' : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              {amenityIcon[a] || '•'} {amenityLabel[a] || a}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-2 mt-1">
+                        <span className="text-[10px] text-slate-400 font-semibold">Per Annum</span>
+                        <span className="text-sm font-extrabold text-[#003A40] font-mono">
+                          {hostel.amount === 0 ? 'Free' : `₹${Number(hostel.amount).toLocaleString('en-IN')}`}
+                        </span>
+                      </div>
+                      {/* Edit button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditHostel({ ...hostel }); }}
+                        className="absolute top-2 right-2 w-6 h-6 rounded-lg bg-white border border-[#E6EDF2] text-slate-400 hover:text-[#0A686A] hover:border-[#0A686A]/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-xs cursor-pointer"
+                        title="Edit hostel package"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">edit</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
+            {/* ── Payment Plan ─────────────────────────────────── */}
             <div>
               <label className="text-xs font-bold text-[#003A40] block mb-1">Payment Installment Plan</label>
               <select
@@ -836,19 +1663,100 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
                 onChange={(e) => setFormData({ ...formData, paymentPlan: e.target.value })}
                 className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
               >
-                <option value="Bi-Semester Installments">Bi-Semester Installments (50% Per Term)</option>
-                <option value="Lumpsum Single Payment">Full Lumpsum Annual Payment (100% Upfront)</option>
-                <option value="Quarterly Installments">Quarterly Installments (4 Equal Terms)</option>
+                {auxConfig.payment_plans.map(p => (
+                  <option key={p.id || p.value} value={p.value}>{p.label}</option>
+                ))}
               </select>
             </div>
 
-            {/* Summary Box */}
-            <div className="p-4 bg-[#003A40]/5 border border-[#003A40]/20 rounded-xl space-y-1 text-xs">
-              <div className="flex justify-between font-bold text-[#003A40]">
-                <span>Net Total Payable Amount:</span>
-                <span className="text-base text-[#0A686A]">₹{netTotalFee.toLocaleString('en-IN')}</span>
+            {/* ── Final Fee Breakdown ───────────────────────────── */}
+            <div className="p-4 bg-[#003A40]/5 border border-[#003A40]/15 rounded-xl space-y-2 text-xs">
+              <h4 className="text-[10px] font-extrabold text-[#003A40] uppercase tracking-widest mb-3">Final Fee Breakdown</h4>
+              {[
+                { label: 'Gross Academic Fees', amount: grossAcademicFee, color: 'text-[#003A40]' },
+                quotaSurcharge > 0 && { label: `Quota Surcharge (${formData.quota})`, amount: quotaSurcharge, color: 'text-amber-700' },
+                transportFee > 0 && { label: `Transport — ${formData.transportZone}`, amount: transportFee, color: 'text-[#003A40]' },
+                hostelFee > 0 && { label: `Hostel — ${formData.hostelType}`, amount: hostelFee, color: 'text-[#003A40]' },
+                amenitiesFee > 0 && { label: 'Add-on Amenities', amount: amenitiesFee, color: 'text-[#003A40]' },
+                scholarshipDiscount > 0 && { label: `Scholarship Waiver (${formData.scholarshipType})`, amount: -scholarshipDiscount, color: 'text-emerald-600' },
+              ].filter(Boolean).map((row, i) => (
+                <div key={i} className={`flex justify-between py-1 border-b border-[#003A40]/10 ${row.color}`}>
+                  <span className="font-semibold">{row.label}</span>
+                  <span className="font-mono font-bold">
+                    {row.amount < 0 ? '-' : ''}₹{Math.abs(row.amount).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              ))}
+              <div className="flex justify-between pt-2 font-extrabold text-sm text-[#003A40]">
+                <span>NET TOTAL PAYABLE:</span>
+                <span className="text-[#0A686A] font-mono text-base">₹{netTotalFee.toLocaleString('en-IN')}</span>
               </div>
             </div>
+
+            {/* ── Edit Transport Modal ── */}
+            {editTransport && (
+              <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setEditTransport(null)}>
+                <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-bold text-[#003A40]">Edit Transport Zone</h3>
+                    <button onClick={() => setEditTransport(null)} className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 cursor-pointer transition-colors"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Zone Label</label>
+                      <input type="text" value={editTransport.label} onChange={e => setEditTransport(prev => ({ ...prev, label: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Distance Range</label>
+                      <input type="text" value={editTransport.distance || ''} onChange={e => setEditTransport(prev => ({ ...prev, distance: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" placeholder="e.g. Up to 15 km" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Annual Fee (₹)</label>
+                      <input type="number" value={editTransport.amount} onChange={e => setEditTransport(prev => ({ ...prev, amount: Number(e.target.value) }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-5">
+                    <button onClick={() => setEditTransport(null)} className="flex-1 py-2 border border-[#E6EDF2] text-[#5F6B7A] rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button onClick={handleSaveTransport} disabled={savingAux} className="flex-1 py-2 bg-[#003A40] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#0A686A] transition-colors disabled:opacity-60">{savingAux ? 'Saving…' : 'Save to DB'}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Edit Hostel Modal ── */}
+            {editHostel && (
+              <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4" onClick={() => setEditHostel(null)}>
+                <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 w-full max-w-sm shadow-2xl" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-bold text-[#003A40]">Edit Hostel Package</h3>
+                    <button onClick={() => setEditHostel(null)} className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 cursor-pointer transition-colors"><X className="w-3.5 h-3.5" /></button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Package Name</label>
+                      <input type="text" value={editHostel.label} onChange={e => setEditHostel(prev => ({ ...prev, label: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Occupancy Type</label>
+                      <input type="text" value={editHostel.occupancy || ''} onChange={e => setEditHostel(prev => ({ ...prev, occupancy: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" placeholder="e.g. Quad (4 Students)" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Food Plan</label>
+                      <input type="text" value={editHostel.food_plan || ''} onChange={e => setEditHostel(prev => ({ ...prev, food_plan: e.target.value }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A]" placeholder="e.g. Three Meals (Mess)" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Annual Fee (₹)</label>
+                      <input type="number" value={editHostel.amount} onChange={e => setEditHostel(prev => ({ ...prev, amount: Number(e.target.value) }))} className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs font-mono outline-none focus:border-[#0A686A]" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-5">
+                    <button onClick={() => setEditHostel(null)} className="flex-1 py-2 border border-[#E6EDF2] text-[#5F6B7A] rounded-xl text-xs font-bold cursor-pointer hover:bg-slate-50 transition-colors">Cancel</button>
+                    <button onClick={handleSaveHostel} disabled={savingAux} className="flex-1 py-2 bg-[#003A40] text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-[#0A686A] transition-colors disabled:opacity-60">{savingAux ? 'Saving…' : 'Save to DB'}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 

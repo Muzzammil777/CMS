@@ -845,42 +845,18 @@ export default function FacultyDepartmentPage() {
 
                       <div>
                         {/* Header row */}
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#003A40] to-[#0A686A] text-white flex items-center justify-center font-extrabold text-xs font-['Outfit'] shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
-                              {code}
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="text-sm font-extrabold text-[#003A40] font-['Outfit'] truncate leading-tight group-hover:text-[#0A686A] transition-colors">
-                                {dept.name}
-                              </h3>
-                              <span className="inline-block mt-0.5 px-2 py-0.5 bg-[#F2FBFA] border border-[#0A686A]/20 rounded-md text-[10px] font-bold text-[#0A686A] uppercase">
-                                Code: {code}
-                              </span>
-                            </div>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#003A40] to-[#0A686A] text-white flex items-center justify-center font-extrabold text-xs font-['Outfit'] shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                            {code}
                           </div>
-
-                          {role !== 'student' && (
-                            <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => {
-                                  setEditingDept(dept);
-                                  setIsEditOpen(true);
-                                }}
-                                className="w-7 h-7 rounded-lg text-[#5F6B7A] hover:text-[#003A40] hover:bg-[#F4F7FF] flex items-center justify-center transition-colors cursor-pointer"
-                                title="Edit Department"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteDepartment(dept.id)}
-                                className="w-7 h-7 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
-                                title="Delete Department"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-extrabold text-[#003A40] font-['Outfit'] truncate leading-tight group-hover:text-[#0A686A] transition-colors" title={dept.name}>
+                              {dept.name}
+                            </h3>
+                            <span className="inline-block mt-0.5 px-2 py-0.5 bg-[#F2FBFA] border border-[#0A686A]/20 rounded-md text-[10px] font-bold text-[#0A686A] uppercase">
+                              Code: {code}
+                            </span>
+                          </div>
                         </div>
 
                         {/* HOD & Contact Info */}
@@ -927,14 +903,35 @@ export default function FacultyDepartmentPage() {
                         </div>
                       </div>
 
-                      {/* Footer CTA */}
-                      <button
-                        onClick={() => setSelectedDept(dept)}
-                        className="w-full py-2.5 px-3 rounded-xl border border-[#E6EDF2] bg-white text-xs font-bold text-[#003A40] hover:bg-[#F2FBFA] hover:border-[#0A686A]/40 transition-all flex items-center justify-between cursor-pointer group/btn mt-2"
-                      >
-                        <span>Explore Department</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-[#0A686A] group-hover/btn:translate-x-1 transition-transform" />
-                      </button>
+                      {/* Footer CTA & Action Controls */}
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[#EEF4F7]">
+                        <button
+                          onClick={() => setSelectedDept(dept)}
+                          className="flex-1 py-2.5 px-3 rounded-xl border border-[#E6EDF2] bg-white text-xs font-bold text-[#003A40] hover:bg-[#F2FBFA] hover:border-[#0A686A]/40 transition-all flex items-center justify-between cursor-pointer group/btn"
+                        >
+                          <span>Explore Department</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-[#0A686A] group-hover/btn:translate-x-1 transition-transform" />
+                        </button>
+
+                        {role !== 'student' && (
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => setEditingDept(dept)}
+                              className="w-9 h-9 rounded-xl border border-[#E6EDF2] bg-white text-[#5F6B7A] hover:text-[#003A40] hover:border-[#0A686A]/40 hover:bg-[#F2FBFA] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                              title="Edit Department"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDepartment(dept.id)}
+                              className="w-9 h-9 rounded-xl border border-[#E6EDF2] bg-white text-rose-500 hover:text-rose-700 hover:border-rose-200 hover:bg-rose-50 flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                              title="Delete Department"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

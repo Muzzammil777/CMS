@@ -5,6 +5,7 @@ import { useAdmission } from '../context/AdmissionContext';
 import { buildApiUrl } from '../api/apiBase';
 import { settingsApi } from '../api/settingsApi';
 import { saveLocalDraft, getLocalDrafts, deleteLocalDraft } from '../utils/draftManager';
+import { useDepartments } from '../hooks/useDepartments';
 
 export default function AddFacultyPage() {
   const navigate = useNavigate();
@@ -15,20 +16,8 @@ export default function AddFacultyPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [departments, setDepartments] = useState([]);
+  const { departments } = useDepartments();
   const [avatarPreview, setAvatarPreview] = useState(null);
-
-  useEffect(() => {
-    const fetchDepts = async () => {
-      try {
-        const data = await settingsApi.getDepartments();
-        setDepartments(data || []);
-      } catch (err) {
-        console.error('Failed to load departments:', err);
-      }
-    };
-    fetchDepts();
-  }, []);
 
   useEffect(() => {
     if (draftId) {

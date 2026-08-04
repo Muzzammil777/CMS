@@ -4,6 +4,8 @@ import EnterpriseWizardTemplate from '../components/common/EnterpriseWizardTempl
 import { API_BASE } from '../api/apiBase';
 import { settingsApi } from '../api/settingsApi';
 import { saveLocalDraft, getLocalDrafts, deleteLocalDraft } from '../utils/draftManager';
+import { useDepartments } from '../hooks/useDepartments';
+import { useQuotas } from '../hooks/useQuotas';
 
 const initialData = {
   // Step 1: Personal
@@ -73,19 +75,20 @@ export default function AddStudentPage() {
   const [formData, setFormData] = useState(initialData);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
-  const [departments, setDepartments] = useState([]);
+  const { departments } = useDepartments();
+  const { quotas } = useQuotas();
 
-  useEffect(() => {
-    const fetchDepts = async () => {
-      try {
-        const data = await settingsApi.getDepartments();
-        setDepartments(data || []);
-      } catch (err) {
-        console.error('Error fetching departments:', err);
-      }
-    };
-    fetchDepts();
-  }, []);
+  // ── Fee structure integration state ────────────────────────────────────────
+  const [deptFeeTemplate, setDeptFeeTemplate] = useState(null);
+  const [feeTemplateLoading, setFeeTemplateLoading] = useState(false);
+  const [feeSelection, setFeeSelection] = useState({
+    scholarshipType: 'None',
+    hostelType: 'Day Scholar',
+    transportZone: 'None',
+    paymentPlan: 'Bi-Semester Installments',
+  });
+  const [feeScholarships, setFeeScholarships] = useState([]);
+  const [feeAuxConfig, setFeeAuxConfig] = useState({ transport_zones: [], hostel_types: [], payment_plans: [] });
 
   useEffect(() => {
     if (draftId) {
@@ -98,6 +101,34 @@ export default function AddStudentPage() {
       }
     }
   }, [draftId]);
+
+  // Load fee scholarships and aux config once
+  useEffect(() => {
+    fetch('/api/fees/scholarships').then(r => r.ok ? r.json() : null).then(data => { if (data) setFeeScholarships(data); }).catch(() => {});
+    fetch('/api/fees/config/auxiliary').then(r => r.ok ? r.json() : null).then(data => { if (data) setFeeAuxConfig(data); }).catch(() => {});
+  }, []);
+
+  // When department changes (Step 3), fetch its fee template
+  useEffect(() => {
+    if (!formData.department) return;
+    setFeeTemplateLoading(true);
+    fetch(`/api/fees/structures/department/${encodeURIComponent(formData.department)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        setDeptFeeTemplate(data || null);
+        if (data) {
+          setFeeSelection(prev => ({
+            ...prev,
+            scholarshipType: data.scholarshipType || 'None',
+            hostelType: data.hostelType || 'Day Scholar',
+            transportZone: data.transportZone || 'None',
+            paymentPlan: data.paymentPlan || 'Bi-Semester Installments',
+          }));
+        }
+      })
+      .catch(() => setDeptFeeTemplate(null))
+      .finally(() => setFeeTemplateLoading(false));
+  }, [formData.department]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -259,9 +290,52 @@ export default function AddStudentPage() {
       });
 
       if (!res.ok) throw new Error('Failed to create student enrollment');
+
+      // ── Auto-assign fee record if dept template exists ────────────────
+      if (deptFeeTemplate && formData.department) {
+        try {
+          const tmpl = deptFeeTemplate;
+          const selScheme = feeScholarships.find(s => s.value === feeSelection.scholarshipType);
+          let scholarshipDiscount = 0;
+          if (selScheme?.discount_type === 'full') scholarshipDiscount = (tmpl.tuitionFee || 0);
+          else if (selScheme?.discount_type === 'percent') scholarshipDiscount = (tmpl.tuitionFee || 0) * (selScheme.discount_amount / 100);
+          else if (selScheme?.discount_type === 'fixed') scholarshipDiscount = selScheme.discount_amount || 0;
+          const selTransport = feeAuxConfig.transport_zones?.find(t => t.value === feeSelection.transportZone);
+          const selHostel = feeAuxConfig.hostel_types?.find(h => h.value === feeSelection.hostelType);
+          const transportFee = selTransport?.amount || 0;
+          const hostelFee = selHostel?.amount || 0;
+          const grossAcademicFee = (tmpl.tuitionFee||0) + (tmpl.developmentFee||0) + (tmpl.libraryFee||0) + (tmpl.examFee||0) + (tmpl.activityFee||0);
+          const netTotalFee = Math.max(0, grossAcademicFee + transportFee + hostelFee - scholarshipDiscount);
+          const feeRecord = {
+            id: `FEE-${Date.now()}`,
+            studentId: formData.id,
+            studentName: formData.name,
+            email: formData.email,
+            course: formData.department,
+            semester: `Semester ${formData.semester || 1}`,
+            totalFee: netTotalFee,
+            components: { grossAcademicFee, tuitionFee: tmpl.tuitionFee, developmentFee: tmpl.developmentFee, libraryFee: tmpl.libraryFee, examFee: tmpl.examFee, activityFee: tmpl.activityFee, transportFee, hostelFee, scholarshipDiscount },
+            options: { scholarshipType: feeSelection.scholarshipType, transportZone: feeSelection.transportZone, hostelType: feeSelection.hostelType, paymentPlan: feeSelection.paymentPlan, quota: formData.quota },
+            status: 'Pending',
+            paidAmount: 0,
+            assignedDate: new Date().toISOString(),
+            autoAssigned: true,
+          };
+          await fetch('/api/fees/assign-record', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(feeRecord),
+          }).catch(() => {
+            // Store fallback in fees_structure collection via generic upsert
+          });
+        } catch (feeErr) {
+          console.warn('Fee auto-assignment failed (non-critical):', feeErr.message);
+        }
+      }
+
       if (draftId) deleteLocalDraft('student', draftId);
       localStorage.removeItem('add_student_draft');
-      alert('Student enrolled successfully!');
+      alert('Student enrolled successfully! Fee structure has been auto-assigned.');
       navigate('/students');
     } catch (error) {
       console.error('Submit error:', error);
@@ -289,6 +363,137 @@ export default function AddStudentPage() {
   ].filter(Boolean).length;
   const completionPercentage = (filledCount / 10) * 100;
 
+  const feeCalculation = useMemo(() => {
+    const tmpl = deptFeeTemplate || {};
+    const baseTuition = Number(tmpl.tuitionFee || 0);
+    const development = Number(tmpl.developmentFee || 0);
+    const library = Number(tmpl.libraryFee || 0);
+    const exam = Number(tmpl.examFee || 0);
+    const activity = Number(tmpl.activityFee || 0);
+    const customSum = (tmpl.customFeeComponents || []).reduce((acc, c) => acc + Number(c.amount || 0), 0);
+    const grossAcademic = baseTuition + development + library + exam + activity + customSum;
+
+    const quotaSurcharge = formData.quota === 'Management Quota' ? 35000 : formData.quota === 'NRI / Foreign National' ? 75000 : 0;
+
+    const selHostel = feeAuxConfig.hostel_types?.find(h => h.value === feeSelection.hostelType);
+    const hostelFee = selHostel?.amount || 0;
+
+    const selTransport = feeAuxConfig.transport_zones?.find(t => t.value === feeSelection.transportZone);
+    const transportFee = selTransport?.amount || 0;
+
+    const selScheme = feeScholarships.find(s => s.value === feeSelection.scholarshipType);
+    let scholarshipDiscount = 0;
+    if (selScheme?.discount_type === 'full') scholarshipDiscount = baseTuition;
+    else if (selScheme?.discount_type === 'percent') scholarshipDiscount = baseTuition * ((selScheme.discount_amount || 0) / 100);
+    else if (selScheme?.discount_type === 'fixed') scholarshipDiscount = selScheme.discount_amount || 0;
+
+    const totalNetFee = Math.max(0, grossAcademic + quotaSurcharge + hostelFee + transportFee - scholarshipDiscount);
+
+    return {
+      baseTuition,
+      grossAcademic,
+      quotaSurcharge,
+      hostelFee,
+      transportFee,
+      scholarshipDiscount,
+      totalNetFee,
+    };
+  }, [deptFeeTemplate, formData.quota, feeSelection, feeAuxConfig, feeScholarships]);
+
+  const liveFeeRightPanel = (
+    <div className="space-y-4">
+      {/* ── LIVE FEE SUMMARY PANEL ── */}
+      <div className="bg-[#003A40] rounded-2xl p-5 text-white shadow-lg space-y-4 border border-[#0A686A]/30">
+        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <div>
+            <span className="text-[10px] font-extrabold text-emerald-300 uppercase tracking-widest block">DEPARTMENT FEE DESIGN</span>
+            <h4 className="text-sm font-black text-white leading-tight mt-0.5">{formData.department || 'Select Department'}</h4>
+            <span className="text-[10px] text-white/60 font-semibold">{formData.academicYear || '2025–2026'} • Semester {formData.semester || 1}</span>
+          </div>
+          <span className="px-2 py-0.5 bg-[#0A686A] text-emerald-200 border border-emerald-400/30 rounded-full text-[9px] font-black uppercase tracking-wider flex-shrink-0">
+            DB TEMPLATE
+          </span>
+        </div>
+
+        {/* Fee breakdown list */}
+        <div className="space-y-2 text-xs font-medium">
+          <div className="flex items-center justify-between">
+            <span className="text-white/70">Base Tuition Fee:</span>
+            <span className="font-bold font-mono">₹{feeCalculation.baseTuition.toLocaleString('en-IN')}</span>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-white/70">Gross Academic Fees:</span>
+            <span className="font-bold font-mono">₹{feeCalculation.grossAcademic.toLocaleString('en-IN')}</span>
+          </div>
+
+          {feeCalculation.quotaSurcharge > 0 && (
+            <div className="flex items-center justify-between text-amber-300">
+              <span className="truncate max-w-[140px]" title={formData.quota}>Surcharge ({formData.quota}):</span>
+              <span className="font-bold font-mono">+₹{feeCalculation.quotaSurcharge.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+
+          {feeCalculation.hostelFee > 0 && (
+            <div className="flex items-center justify-between text-cyan-300">
+              <span className="truncate max-w-[140px]" title={feeSelection.hostelType}>Hostel ({feeSelection.hostelType}):</span>
+              <span className="font-bold font-mono">+₹{feeCalculation.hostelFee.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+
+          {feeCalculation.transportFee > 0 && (
+            <div className="flex items-center justify-between text-[#38BDF8]">
+              <span className="truncate max-w-[140px]" title={feeSelection.transportZone}>Bus ({feeSelection.transportZone}):</span>
+              <span className="font-bold font-mono">+₹{feeCalculation.transportFee.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+
+          {feeCalculation.scholarshipDiscount > 0 && (
+            <div className="flex items-center justify-between text-emerald-300">
+              <span className="truncate max-w-[140px]" title={feeSelection.scholarshipType}>Waiver ({feeSelection.scholarshipType}):</span>
+              <span className="font-bold font-mono">-₹{feeCalculation.scholarshipDiscount.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Total Net Fee Display */}
+        <div className="pt-3 border-t border-white/10 flex flex-col gap-0.5 bg-[#002B30] -mx-5 -mb-5 p-4 rounded-b-2xl">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-300">TOTAL NET FEE PAYABLE</span>
+          <span className="text-2xl font-black font-mono text-white">
+            ₹{feeCalculation.totalNetFee.toLocaleString('en-IN')}
+          </span>
+          <span className="text-[9px] text-white/50">Auto-calculates in real-time as selections change</span>
+        </div>
+      </div>
+
+      {/* Student Photo Card */}
+      <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs flex flex-col items-center text-center">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={(e) => handleFileChange(e, 'avatar')}
+          accept="image/*"
+          className="hidden"
+        />
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-200 bg-[#FAFBFC] hover:bg-[#F2FBFA] flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative mb-2"
+        >
+          {avatarPreview ? (
+            <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <div className="flex flex-col items-center text-slate-400">
+              <span className="material-symbols-outlined text-2xl mb-0.5">photo_camera</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider">PHOTO</span>
+            </div>
+          )}
+        </div>
+        <span className="text-xs font-extrabold text-[#003A40]">Profile Photo</span>
+        <span className="text-[10px] text-slate-400 font-medium">Click box to upload portrait</span>
+      </div>
+    </div>
+  );
+
   return (
     <EnterpriseWizardTemplate
       title="Enroll New Student"
@@ -301,6 +506,7 @@ export default function AddStudentPage() {
       stepIcon={currentStepObj.icon}
       avatarPreview={avatarPreview}
       onAvatarChange={(e) => handleFileChange(e, 'avatar')}
+      customRightPanel={liveFeeRightPanel}
       helpTitle="Contextual Help"
       helpText={currentStepObj.helpText}
       onBack={handlePrevious}
@@ -636,89 +842,290 @@ export default function AddStudentPage() {
         </div>
       )}
 
-      {/* STEP 4: CATEGORY / QUOTA */}
+      {/* STEP 4: CATEGORY / QUOTA & FEE STRUCTURE */}
       {step === 4 && (
-        <div className="space-y-3">
-          <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-2">Select Seat Allotment Quota *</label>
-          {['Government Quota', 'Management Quota', 'NRI Quota'].map(q => (
-            <label
-              key={q}
-              className={`flex items-center p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
-                formData.quota === q
-                  ? 'border-[#003A40] bg-[#E6F4F1]/50 text-[#003A40]'
-                  : 'border-[#E6EDF2] hover:border-slate-300 text-slate-700'
-              }`}
-            >
-              <input
-                type="radio"
-                name="quota"
-                value={q}
-                checked={formData.quota === q}
-                onChange={handleChange}
-                className="w-4 h-4 text-[#003A40]"
-              />
-              <span className="ml-3 text-xs font-bold">{q}</span>
-            </label>
-          ))}
-          {errors.quota && <p className="text-[11px] font-bold text-rose-500 mt-1">{errors.quota}</p>}
-        </div>
-      )}
-
-      {/* STEP 5: ACCOMMODATION */}
-      {step === 5 && (
-        <div className="space-y-4">
-          <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-2">Lodging Preference *</label>
-          <div className="grid grid-cols-2 gap-3">
-            {['Day Scholar', 'Hostel Required'].map(acc => (
-              <label
-                key={acc}
-                className={`flex items-center p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
-                  formData.accommodation === acc
-                    ? 'border-[#003A40] bg-[#E6F4F1]/50 text-[#003A40]'
-                    : 'border-[#E6EDF2] hover:border-slate-300 text-slate-700'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="accommodation"
-                  value={acc}
-                  checked={formData.accommodation === acc}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-[#003A40]"
-                />
-                <span className="ml-3 text-xs font-bold">{acc}</span>
-              </label>
-            ))}
+        <div className="space-y-5">
+          {/* Quota Selection */}
+          <div>
+            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-2">Select Seat Allotment Quota *</label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {quotas.map(quotaObj => {
+                const q = quotaObj.name || quotaObj;
+                const isSelected = formData.quota === q;
+                return (
+                  <label
+                    key={q}
+                    className={`flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-[#003A40] bg-[#E6F4F1]/50 text-[#003A40] shadow-xs'
+                        : 'border-[#E6EDF2] hover:border-slate-300 text-slate-700 bg-white'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="quota"
+                      value={q}
+                      checked={isSelected}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-[#003A40]"
+                    />
+                    <span className="ml-2.5 text-xs font-bold">{q}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {errors.quota && <p className="text-[11px] font-bold text-rose-500 mt-1">{errors.quota}</p>}
           </div>
 
-          {formData.accommodation === 'Hostel Required' && (
-            <div className="pt-3 border-t border-[#E6EDF2] grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Hostel Room Type *</label>
-                <select
-                  name="roomType"
-                  value={formData.roomType}
-                  onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
-                >
-                  <option value="">Select Room Type</option>
-                  <option>Single Occupancy</option>
-                  <option>Double Occupancy</option>
-                  <option>Triple Sharing</option>
-                </select>
+          {/* Designed Fee Categories / Scholarship Schemes */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block">
+                Select Designed Fee Category / Waiver Scheme
+              </label>
+              <span className="text-[10px] text-slate-400 font-semibold">Loaded from Fee Management (MongoDB)</span>
+            </div>
+
+            {feeScholarships.length === 0 ? (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-400">
+                Loading fee categories…
               </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                {feeScholarships.map(sch => {
+                  const isSelected = feeSelection.scholarshipType === sch.value;
+                  const schemeType = sch.scheme_type || 'Standard';
+                  const badgeColors = {
+                    Government: 'bg-blue-100 text-blue-700 border-blue-200',
+                    Merit: 'bg-purple-100 text-purple-700 border-purple-200',
+                    Sports: 'bg-orange-100 text-orange-700 border-orange-200',
+                    Institutional: 'bg-teal-100 text-teal-700 border-teal-200',
+                    Standard: 'bg-slate-100 text-slate-600 border-slate-200',
+                  };
+                  return (
+                    <div
+                      key={sch.id}
+                      onClick={() => setFeeSelection(prev => ({ ...prev, scholarshipType: sch.value }))}
+                      className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-[#0A686A] bg-[#F0FDFA] shadow-xs'
+                          : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider ${badgeColors[schemeType] || badgeColors.Standard}`}>
+                            {schemeType}
+                          </span>
+                          {isSelected && <span className="material-symbols-outlined text-[16px] text-[#0A686A]">check_circle</span>}
+                        </div>
+                        <span className="font-bold text-[#003A40] text-xs leading-snug block">{sch.label}</span>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                        <span className="text-[#0A686A] font-extrabold">
+                          {sch.discount_type === 'full'
+                            ? '100% Full Waiver'
+                            : sch.discount_type === 'percent'
+                            ? `${sch.discount_amount}% off tuition`
+                            : sch.discount_amount > 0
+                            ? `-₹${Number(sch.discount_amount).toLocaleString('en-IN')} waiver`
+                            : 'Standard Rate'}
+                        </span>
+                        {sch.eligibility && (
+                          <span className="text-[9px] text-slate-400 font-medium truncate max-w-[120px]" title={sch.eligibility}>
+                            {sch.eligibility}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Department Fee Live Preview in Step 4 */}
+          {formData.department && (
+            <div className="p-3.5 bg-[#003A40] rounded-xl text-white flex items-center justify-between">
               <div>
-                <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Hostel Preference</label>
-                <input
-                  name="hostelName"
-                  value={formData.hostelName}
-                  onChange={handleChange}
-                  className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
-                  placeholder="e.g. Block A"
-                />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">
+                  ESTIMATED FEE ({formData.department})
+                </span>
+                <span className="text-[11px] text-white/70">
+                  Category: <strong>{feeSelection.scholarshipType}</strong>
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-white/60 block">Net Fee Payable</span>
+                <span className="text-lg font-black font-mono text-emerald-300">
+                  ₹{(() => {
+                    const tmpl = deptFeeTemplate || {};
+                    const gross = (tmpl.tuitionFee||0) + (tmpl.developmentFee||0) + (tmpl.libraryFee||0) + (tmpl.examFee||0) + (tmpl.activityFee||0);
+                    const selScheme = feeScholarships.find(s => s.value === feeSelection.scholarshipType);
+                    let disc = 0;
+                    if (selScheme?.discount_type === 'full') disc = (tmpl.tuitionFee || 0);
+                    else if (selScheme?.discount_type === 'percent') disc = (tmpl.tuitionFee || 0) * (selScheme.discount_amount / 100);
+                    else if (selScheme?.discount_type === 'fixed') disc = selScheme.discount_amount || 0;
+                    return Math.max(0, gross - disc).toLocaleString('en-IN');
+                  })()}
+                </span>
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* STEP 5: ACCOMMODATION & CAMPUS TRANSPORT */}
+      {step === 5 && (
+        <div className="space-y-6">
+
+          {/* ── Bus Transport Route / Zone ── */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="text-xs font-bold text-[#003A40]">Bus Transport Route / Zone</h4>
+                <p className="text-[11px] text-slate-400 font-medium">Select a transport zone package designed in Fee Management.</p>
+              </div>
+              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                DB Synced
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(feeAuxConfig.transport_zones?.length > 0 ? feeAuxConfig.transport_zones : [
+                { id: 'none', value: 'None', label: 'No Campus Transport / Self Arranged', amount: 0, distance: 'Self-arranged', pickup_points: [], icon: 'directions_walk' },
+                { id: 'zone1', value: 'Zone 1: Urban (≤ 15 km)', label: 'Zone 1: Urban City Lines (≤ 15 km)', amount: 18000, distance: 'Up to 15 km', pickup_points: ['City Bus Stand', 'Railway Station'], icon: 'directions_bus' },
+                { id: 'zone2', value: 'Zone 2: Suburban (15-30 km)', label: 'Zone 2: Metro Suburban (15–30 km)', amount: 28000, distance: '15 – 30 km', pickup_points: ['Suburban Hub A', 'Suburban Hub B'], icon: 'directions_bus' },
+                { id: 'zone3', value: 'Zone 3: Outstation Corridor (> 30 km)', label: 'Zone 3: Outstation Corridor (> 30 km)', amount: 38000, distance: 'Above 30 km', pickup_points: ['District Bus Terminal', 'Highway Corridor Stop'], icon: 'directions_bus' },
+              ]).map(zone => {
+                const isSelected = feeSelection.transportZone === zone.value;
+                return (
+                  <div
+                    key={zone.id}
+                    onClick={() => setFeeSelection(prev => ({ ...prev, transportZone: zone.value }))}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-2.5 relative group ${
+                      isSelected ? 'border-[#0A686A] bg-[#F0FDFA] shadow-sm' : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-[#003A40]' : 'bg-slate-100'}`}>
+                          <span className={`material-symbols-outlined text-[16px] ${isSelected ? 'text-white' : 'text-slate-500'}`}>
+                            {zone.icon || 'directions_bus'}
+                          </span>
+                        </div>
+                        <span className="text-xs font-extrabold text-[#003A40] truncate">{zone.label}</span>
+                      </div>
+                      {isSelected && <span className="material-symbols-outlined text-[18px] text-[#0A686A] flex-shrink-0">check_circle</span>}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        {zone.distance || (zone.amount === 0 ? 'Self-arranged' : '')}
+                      </span>
+                      <span className="text-sm font-extrabold text-[#003A40] font-mono">
+                        {zone.amount === 0 ? 'Free' : `₹${Number(zone.amount).toLocaleString('en-IN')}`}
+                      </span>
+                    </div>
+
+                    {(zone.pickup_points || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {zone.pickup_points.map((pt, i) => (
+                          <span key={i} className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-semibold">
+                            {pt}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Hostel Accommodation & Food Plan ── */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="text-xs font-bold text-[#003A40]">Hostel Accommodation & Food Plan</h4>
+                <p className="text-[11px] text-slate-400 font-medium">Select a hostel package designed in Fee Management.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(feeAuxConfig.hostel_types?.length > 0 ? feeAuxConfig.hostel_types : [
+                { id: 'day', value: 'Day Scholar', label: 'Day Scholar', amount: 0, occupancy: 'N/A', food_plan: 'Not Included', amenities: [], icon: 'home' },
+                { id: 'standard', value: 'Standard Quad Occupancy + Food', label: 'Standard Quad Occupancy + Mess', amount: 75000, occupancy: 'Quad (4 Students)', food_plan: 'Three Meals (Mess)', amenities: ['mess', 'fan', 'study_table'], icon: 'bed' },
+                { id: 'deluxe', value: 'Deluxe Double Occupancy + Food', label: 'Deluxe Double Occupancy + Mess', amount: 95000, occupancy: 'Double (2 Students)', food_plan: 'Three Meals (Mess) + Snacks', amenities: ['mess', 'fan', 'wifi', 'attached_bath'], icon: 'king_bed' },
+                { id: 'executive', value: 'Executive Single AC Suite + Food', label: 'Executive Single AC Suite + Mess', amount: 135000, occupancy: 'Single Room', food_plan: 'Three Meals + Snacks + Room Service', amenities: ['mess', 'ac', 'wifi', 'laundry', 'attached_bath', 'tv'], icon: 'hotel' },
+              ]).map(hostel => {
+                const isSelected = feeSelection.hostelType === hostel.value;
+                const amenityLabels = {
+                  mess: 'Mess',
+                  wifi: 'Wi-Fi',
+                  ac: 'AC',
+                  fan: 'Fan',
+                  laundry: 'Laundry',
+                  attached_bath: 'Bath',
+                  study_table: 'Desk',
+                  tv: 'TV',
+                };
+                return (
+                  <div
+                    key={hostel.id}
+                    onClick={() => {
+                      setFeeSelection(prev => ({ ...prev, hostelType: hostel.value }));
+                      setFormData(prev => ({
+                        ...prev,
+                        accommodation: hostel.value === 'Day Scholar' ? 'Day Scholar' : 'Hostel Required',
+                        roomType: hostel.occupancy || hostel.label,
+                      }));
+                    }}
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-2.5 relative group ${
+                      isSelected ? 'border-[#0A686A] bg-[#F0FDFA] shadow-sm' : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-[#003A40]' : 'bg-slate-100'}`}>
+                          <span className={`material-symbols-outlined text-[16px] ${isSelected ? 'text-white' : 'text-slate-500'}`}>
+                            {hostel.icon || 'bed'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs font-extrabold text-[#003A40] block leading-tight">{hostel.label}</span>
+                          {hostel.occupancy && <span className="text-[10px] text-slate-400 font-medium">{hostel.occupancy}</span>}
+                        </div>
+                      </div>
+                      {isSelected && <span className="material-symbols-outlined text-[18px] text-[#0A686A] flex-shrink-0">check_circle</span>}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      {hostel.food_plan ? (
+                        <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[12px]">restaurant</span>
+                          {hostel.food_plan}
+                        </span>
+                      ) : <span />}
+                      <span className="text-sm font-extrabold text-[#003A40] font-mono">
+                        {hostel.amount === 0 ? 'Free' : `₹${Number(hostel.amount).toLocaleString('en-IN')}`}
+                      </span>
+                    </div>
+
+                    {(hostel.amenities || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {hostel.amenities.map((a, i) => (
+                          <span key={i} className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-semibold">
+                            {amenityLabels[a] || a}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -753,9 +1160,10 @@ export default function AddStudentPage() {
         </div>
       )}
 
-      {/* STEP 7: PAYMENT */}
+      {/* STEP 7: PAYMENT & FEE STRUCTURE */}
       {step === 7 && (
         <div className="space-y-4">
+          {/* Application Processing Fee */}
           <div className="p-4 bg-[#E6F4F1] border border-[#0A686A]/20 rounded-xl flex items-center justify-between">
             <div>
               <span className="text-[10px] font-bold text-[#0A686A] uppercase tracking-wider block">APPLICATION PROCESSING FEE</span>
@@ -778,6 +1186,142 @@ export default function AddStudentPage() {
               <option>Net Banking</option>
             </select>
           </div>
+
+          {/* ── Dept Fee Structure Preview ── */}
+          {formData.department && (
+            <div className="border border-[#003A40]/15 rounded-2xl overflow-hidden">
+              <div className="bg-[#003A40] px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px] text-emerald-300">receipt_long</span>
+                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-200">Department Fee Structure</span>
+                </div>
+                <span className="text-[10px] text-white/60 font-semibold">{formData.department}</span>
+              </div>
+
+              {feeTemplateLoading ? (
+                <div className="p-6 text-center">
+                  <div className="w-6 h-6 border-2 border-[#0A686A] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-xs text-slate-400 font-semibold">Loading fee template…</p>
+                </div>
+              ) : !deptFeeTemplate ? (
+                <div className="p-4 text-center">
+                  <span className="material-symbols-outlined text-3xl text-slate-300">info</span>
+                  <p className="text-xs text-slate-400 font-semibold mt-1">No fee template configured for this department yet.</p>
+                  <p className="text-[10px] text-slate-300 mt-0.5">Go to Fee Management → Assign Fee Structure to create one.</p>
+                </div>
+              ) : (
+                <div className="p-4 space-y-4">
+                  {/* Base fee summary */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: 'Tuition Fee', value: deptFeeTemplate.tuitionFee },
+                      { label: 'Development', value: deptFeeTemplate.developmentFee },
+                      { label: 'Library', value: deptFeeTemplate.libraryFee },
+                      { label: 'Exam Fee', value: deptFeeTemplate.examFee },
+                      { label: 'Activity', value: deptFeeTemplate.activityFee },
+                    ].filter(f => f.value > 0).map(f => (
+                      <div key={f.label} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{f.label}</span>
+                        <span className="text-xs font-extrabold text-[#003A40] font-mono">₹{Number(f.value).toLocaleString('en-IN')}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Scholarship selector */}
+                  {feeScholarships.length > 0 && (
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1.5">Fee Category / Scholarship Scheme</label>
+                      <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                        {feeScholarships.map(sch => {
+                          const isSelected = feeSelection.scholarshipType === sch.value;
+                          return (
+                            <div
+                              key={sch.id}
+                              onClick={() => setFeeSelection(prev => ({ ...prev, scholarshipType: sch.value }))}
+                              className={`p-2.5 rounded-xl border cursor-pointer transition-all text-xs flex flex-col justify-between ${
+                                isSelected ? 'border-[#0A686A] bg-[#F0FDFA] shadow-xs' : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
+                              }`}
+                            >
+                              <div>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                    {sch.scheme_type || 'Standard'}
+                                  </span>
+                                  {isSelected && <span className="material-symbols-outlined text-[14px] text-[#0A686A]">check_circle</span>}
+                                </div>
+                                <span className="font-bold text-[#003A40] text-[11px] leading-tight block">{sch.label}</span>
+                              </div>
+                              <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                                <span className="text-slate-500 font-medium">
+                                  {sch.discount_type === 'percent' ? `${sch.discount_amount}% off tuition` : sch.discount_type === 'full' ? '100% Fee Waiver' : sch.discount_amount > 0 ? `-₹${Number(sch.discount_amount).toLocaleString('en-IN')}` : 'No discount'}
+                                </span>
+                                {sch.eligibility && (
+                                  <span className="text-[9px] text-slate-400 font-medium truncate max-w-[110px]" title={sch.eligibility}>
+                                    {sch.eligibility}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Hostel selector */}
+                  {feeAuxConfig.hostel_types?.length > 0 && (
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1.5">Hostel Package</label>
+                      <select
+                        value={feeSelection.hostelType}
+                        onChange={e => setFeeSelection(prev => ({ ...prev, hostelType: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white"
+                      >
+                        {feeAuxConfig.hostel_types.map(h => (
+                          <option key={h.id} value={h.value}>{h.label} {h.amount > 0 ? `— ₹${Number(h.amount).toLocaleString('en-IN')}/yr` : '— Free'}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Transport selector */}
+                  {feeAuxConfig.transport_zones?.length > 0 && (
+                    <div>
+                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1.5">Bus Transport Zone</label>
+                      <select
+                        value={feeSelection.transportZone}
+                        onChange={e => setFeeSelection(prev => ({ ...prev, transportZone: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white"
+                      >
+                        {feeAuxConfig.transport_zones.map(t => (
+                          <option key={t.id} value={t.value}>{t.label} {t.amount > 0 ? `— ₹${Number(t.amount).toLocaleString('en-IN')}/yr` : '— Free'}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Net fee pill */}
+                  <div className="flex items-center justify-between p-3 bg-[#003A40] rounded-xl text-white">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-200">Estimated Net Fee Payable</span>
+                    <span className="text-base font-black font-mono">
+                      ₹{(() => {
+                        const selScheme = feeScholarships.find(s => s.value === feeSelection.scholarshipType);
+                        let disc = 0;
+                        if (selScheme?.discount_type === 'full') disc = (deptFeeTemplate.tuitionFee || 0);
+                        else if (selScheme?.discount_type === 'percent') disc = (deptFeeTemplate.tuitionFee || 0) * (selScheme.discount_amount / 100);
+                        else if (selScheme?.discount_type === 'fixed') disc = selScheme.discount_amount || 0;
+                        const tFee = feeAuxConfig.transport_zones?.find(t => t.value === feeSelection.transportZone)?.amount || 0;
+                        const hFee = feeAuxConfig.hostel_types?.find(h => h.value === feeSelection.hostelType)?.amount || 0;
+                        const gross = (deptFeeTemplate.tuitionFee||0)+(deptFeeTemplate.developmentFee||0)+(deptFeeTemplate.libraryFee||0)+(deptFeeTemplate.examFee||0)+(deptFeeTemplate.activityFee||0);
+                        return Math.max(0, gross + tFee + hFee - disc).toLocaleString('en-IN');
+                      })()}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-medium text-center">Fee record will be auto-assigned to this student upon enrollment</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

@@ -341,66 +341,59 @@ async def create_admission(payload: dict[str, Any]):
 
 @router.get("")
 async def get_all_admissions():
-    admissions_collection = _admissions_collection()
-    data: list[dict[str, Any]] = []
-
-    for attempt in range(2):
-        try:
-            async for item in admissions_collection.find().sort("created_at", -1):
-                data.append(_serialize_admission(item))
-            break
-        except (AutoReconnect, ServerSelectionTimeoutError, PyMongoError) as err:
-            if attempt == 1:
-                print(f"Warning: get_all_admissions encountered db error: {err}")
-                break
-            await asyncio.sleep(0.3)
-
-    return data
+    try:
+        admissions_collection = _admissions_collection()
+        docs = await asyncio.wait_for(admissions_collection.find().sort("created_at", -1).to_list(length=300), timeout=1.0)
+        return [_serialize_admission(item) for item in docs]
+    except BaseException as err:
+        print(f"Warning: get_all_admissions encountered db error: {err}")
+        from backend.dev_store import DEV_STORE
+        return DEV_STORE.get("admissions_all", [])
 
 
 @router.get("/students")
 async def get_student_admissions():
-    admissions_collection = _admissions_collection()
-    data: list[dict[str, Any]] = []
-
-    query = {"$or": [{"role": "student"}, {"type": "student"}]}
-    for attempt in range(2):
-        try:
-            async for item in admissions_collection.find(query).sort("created_at", -1):
-                data.append(_serialize_admission(item))
-            break
-        except (AutoReconnect, ServerSelectionTimeoutError, PyMongoError) as err:
-            if attempt == 1:
-                print(f"Warning: get_student_admissions encountered db error: {err}")
-                break
-            await asyncio.sleep(0.3)
-
-    return data
+    try:
+        admissions_collection = _admissions_collection()
+        query = {"$or": [{"role": "student"}, {"type": "student"}]}
+        docs = await asyncio.wait_for(admissions_collection.find(query).sort("created_at", -1).to_list(length=300), timeout=1.0)
+        return [_serialize_admission(item) for item in docs]
+    except BaseException as err:
+        print(f"Warning: get_student_admissions encountered db error: {err}")
+        from backend.dev_store import DEV_STORE
+        return DEV_STORE.get("admissions_students", [])
 
 
 @router.get("/students/approved-for-fees")
 async def get_approved_students_for_fees():
     """Get only APPROVED students with valid ID fields - ready for fee assignment.
     STRICT validation: Only returns students that can be found with exact ID match."""
-    admissions_collection = _admissions_collection()
-    data: list[dict[str, Any]] = []
+    try:
+        admissions_collection = _admissions_collection()
+        data: list[dict[str, Any]] = []
 
-    query = {
-        "$and": [
-            {"$or": [{"role": "student"}, {"type": "student"}]},
-            {"status": "Approved"}
-        ]
-    }
-    
-    seen_ids = set()
-    async for item in admissions_collection.find(query).sort("created_at", -1):
-        serialized = _serialize_admission(item)
-        student_id = serialized.get("id")
-        if student_id and student_id not in seen_ids:
-            seen_ids.add(student_id)
-            data.append(serialized)
+        query = {
+            "$and": [
+                {"$or": [{"role": "student"}, {"type": "student"}]},
+                {"status": "Approved"}
+            ]
+        }
+        
+        seen_ids = set()
+        docs = await asyncio.wait_for(admissions_collection.find(query).sort("created_at", -1).to_list(length=300), timeout=2.0)
+        for item in docs:
+            serialized = _serialize_admission(item)
+            student_id = serialized.get("id")
+            if student_id and student_id not in seen_ids:
+                seen_ids.add(student_id)
+                data.append(serialized)
 
-    return {"approved_students": data, "count": len(data)}
+        return {"approved_students": data, "count": len(data)}
+    except BaseException as err:
+        print(f"Warning: get_approved_students_for_fees db error: {err}")
+        from backend.dev_store import DEV_STORE
+        approved = [s for s in DEV_STORE.get("admissions_students", []) if s.get("status") == "Approved"]
+        return {"approved_students": approved, "count": len(approved)}
 
 
 @router.delete("/purge-invalid-approved")

@@ -38,7 +38,7 @@ export const settingsApi = {
   triggerBackup: () => apiPost('system/backup'),
   triggerRestore: (backupId) => apiPost('system/restore', { backupId }),
   exportData: () => apiGet('system/export'),
+  getQuotas: () => apiGet('quotas'),
 
   getMonitoringSnapshot: () => apiGet('system/monitoring'),
 };
-

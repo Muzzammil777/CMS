@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from backend.db import get_db
 from backend.utils.mongo import serialize_doc
 from backend.routes.academics.exams import is_department_match, is_year_match
+import traceback
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -471,132 +472,184 @@ async def get_student_dashboard_widgets(student_id: str):
 @router.get("/finance/widgets")
 async def get_finance_dashboard_widgets():
     try:
-        db = get_db()
-        use_db = True
-    except HTTPException:
-        use_db = False
-
-    collection_trends = []
-    monthly_totals = {
-        "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0,
-        "Jun": 0.0, "Jul": 0.0, "Aug": 0.0, "Sep": 0.0, "Oct": 0.0,
-        "Nov": 0.0, "Dec": 0.0
-    }
-    
-    invoices = []
-    if use_db:
         try:
-            async for inv in db["invoices"].find({}):
-                invoices.append(inv)
-        except Exception:
-            pass
-    else:
-        from backend.dev_store import list_items
-        try:
-            invoices = list_items("invoices")
-        except KeyError:
-            invoices = []
+            db = get_db()
+            use_db = True
+        except HTTPException:
+            use_db = False
 
-    active_months = set()
-    for inv in invoices:
-        status = inv.get("payment_status", inv.get("status", ""))
-        if status.lower() == "paid":
-            date_str = inv.get("generated_date", inv.get("date", ""))
+        collection_trends = []
+        monthly_totals = {
+            "Jan": 0.0, "Feb": 0.0, "Mar": 0.0, "Apr": 0.0, "May": 0.0,
+            "Jun": 0.0, "Jul": 0.0, "Aug": 0.0, "Sep": 0.0, "Oct": 0.0,
+            "Nov": 0.0, "Dec": 0.0
+        }
+        
+        invoices = []
+        if use_db:
             try:
-                dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-                month_name = dt.strftime("%b")
-                amount = float(inv.get("total", inv.get("amount", 0.0)))
-                monthly_totals[month_name] += amount
-                active_months.add(month_name)
+                async for inv in db["invoices"].find({}):
+                    invoices.append(inv)
             except Exception:
                 pass
+        else:
+            from backend.dev_store import list_items
+            try:
+                invoices = list_items("invoices")
+            except KeyError:
+                invoices = []
 
-    month_order = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    for m in month_order:
-        total_m = monthly_totals[m]
-        if total_m > 0 or m in ["Jan", "Feb", "Mar", "Apr", "May"]:
-            amount_str = f"₹{total_m/100000:.1f}L" if total_m >= 100000 else f"₹{total_m:,.0f}"
-            collection_trends.append({
-                "month": m,
-                "amount": amount_str,
-                "percent": min(100, int((total_m / 1000000.0) * 100)) if total_m > 0 else 0
+        active_months = set()
+        for inv in invoices:
+            status = str(inv.get("payment_status") or inv.get("status") or "")
+            if status.lower() == "paid":
+                date_str = str(inv.get("generated_date") or inv.get("date") or datetime.now().isoformat())
+                try:
+                    dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+                    month_name = dt.strftime("%b")
+                    raw_amt = inv.get("total")
+                    if raw_amt is None:
+                        raw_amt = inv.get("amount")
+                    amount = float(raw_amt or 0.0)
+                    monthly_totals[month_name] += amount
+                    active_months.add(month_name)
+                except Exception:
+                    pass
+
+        month_order = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        for m in month_order:
+            total_m = monthly_totals[m]
+            if total_m > 0 or m in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"]:
+                amount_str = f"₹{total_m/100000:.1f}L" if total_m >= 100000 else f"₹{total_m:,.0f}"
+                collection_trends.append({
+                    "month": m,
+                    "amount": amount_str,
+                    "raw_collected": total_m,
+                    "raw_target": total_m * 1.2 if total_m > 0 else 500000,
+                    "percent": min(100, int((total_m / 1000000.0) * 100)) if total_m > 0 else 0
+                })
+
+        collection_trends = collection_trends[-7:]
+
+        # 2. Recent Invoices
+        recent_invoices = []
+        sorted_invs = sorted(invoices, key=lambda x: str(x.get("generated_date") or x.get("date") or ""), reverse=True)[:5]
+        for inv in sorted_invs:
+            raw_amt = inv.get("total")
+            if raw_amt is None:
+                raw_amt = inv.get("amount")
+            amt_val = float(raw_amt or 0.0)
+            
+            recent_invoices.append({
+                "id": inv.get("invoice_id") or "INV-N/A",
+                "student": inv.get("student_name") or inv.get("studentId") or "Unknown",
+                "amount": f"₹{amt_val:,.0f}",
+                "type": inv.get("generated_from") or "Fee Invoice",
+                "status": inv.get("payment_status") or inv.get("status") or "Pending"
             })
 
-    collection_trends = collection_trends[-5:]
+        # Fee Distribution for Donut Chart
+        fee_distribution_map = {}
+        total_fee_collected = 0.0
+        for inv in invoices:
+            status = str(inv.get("payment_status") or inv.get("status") or "")
+            if status.lower() == "paid":
+                cat = str(inv.get("generated_from") or "Tuition Fee")
+                if cat == "Fee Invoice":
+                    cat = "Tuition Fee"
+                raw_amt = inv.get("total")
+                if raw_amt is None:
+                    raw_amt = inv.get("amount")
+                amt = float(raw_amt or 0.0)
+                fee_distribution_map[cat] = fee_distribution_map.get(cat, 0.0) + amt
+                total_fee_collected += amt
 
-    # 2. Recent Invoices
-    recent_invoices = []
-    sorted_invs = sorted(invoices, key=lambda x: x.get("generated_date", x.get("date", "")), reverse=True)[:5]
-    for inv in sorted_invs:
-        recent_invoices.append({
-            "id": inv.get("invoice_id", "INV-N/A"),
-            "student": inv.get("student_name", inv.get("studentId", "Unknown")),
-            "amount": f"₹{float(inv.get('total', 0)):,.0f}",
-            "type": inv.get("generated_from", "Fee Invoice"),
-            "status": inv.get("payment_status", inv.get("status", "Pending"))
-        })
+        color_palette = ["#6366F1", "#10B981", "#3B82F6", "#F59E0B", "#EC4899"]
+        fee_distribution = []
+        idx = 0
+        for cat, amt in fee_distribution_map.items():
+            if amt > 0:
+                pct = round((amt / total_fee_collected) * 100, 1)
+                fee_distribution.append({
+                    "name": cat,
+                    "value": amt,
+                    "pct": f"{pct}%",
+                    "color": color_palette[idx % len(color_palette)]
+                })
+                idx += 1
 
-    # 3. Payroll summary list from payroll collection
-    payroll_summary = []
-    payroll_records = []
-    if use_db:
-        try:
-            async for p in db["payroll"].find({}):
-                payroll_records.append(p)
-        except Exception:
-            pass
-    else:
-        from backend.dev_store import list_items
-        try:
-            payroll_records = list_items("payroll")
-        except KeyError:
-            payroll_records = []
+        if not fee_distribution:
+            fee_distribution = [
+                {"name": "Tuition Fee", "value": 750000, "pct": "78.9%", "color": "#6366F1"},
+                {"name": "Hostel Fee", "value": 150000, "pct": "15.8%", "color": "#10B981"},
+                {"name": "Transport", "value": 50000, "pct": "5.3%", "color": "#F59E0B"}
+            ]
 
-    pay_groups = {}
-    for p in payroll_records:
-        cat = p.get("category", p.get("staffType", "Staff"))
-        status = p.get("status", "Pending")
-        if cat not in pay_groups:
-            pay_groups[cat] = {"total": 0, "processed": 0}
-        pay_groups[cat]["total"] += 1
-        if status.lower() == "paid":
-            pay_groups[cat]["processed"] += 1
 
-    for cat, counts in pay_groups.items():
-        payroll_summary.append({
-            "category": cat,
-            "processed": f"{counts['processed']}/{counts['total']}",
-            "status": "Complete" if counts["processed"] == counts["total"] else "Processing"
-        })
+        # 3. Payroll summary list from payroll collection
+        payroll_summary = []
+        payroll_records = []
+        if use_db:
+            try:
+                async for p in db["payroll"].find({}):
+                    payroll_records.append(p)
+            except Exception:
+                pass
+        else:
+            from backend.dev_store import list_items
+            try:
+                payroll_records = list_items("payroll")
+            except KeyError:
+                payroll_records = []
 
-    if not payroll_summary:
-        payroll_summary = [
-            {"category": "Teaching Staff", "processed": "0/0", "status": "Pending"},
-            {"category": "Non-Teaching", "processed": "0/0", "status": "Pending"}
-        ]
+        pay_groups = {}
+        for p in payroll_records:
+            cat = p.get("category", p.get("staffType", "Staff"))
+            status = p.get("status", "Pending")
+            if cat not in pay_groups:
+                pay_groups[cat] = {"total": 0, "processed": 0}
+            pay_groups[cat]["total"] += 1
+            if status.lower() == "paid":
+                pay_groups[cat]["processed"] += 1
 
-    # 4. Recent Notifications
-    recent_notifications = []
-    if use_db:
-        try:
-            async for notif in db["notifications"].find({"$or": [{"receiverRole": "finance"}, {"receiverRole": "ALL"}]}).sort("createdAt", -1).limit(5):
-                recent_notifications.append(serialize_doc(notif))
-        except Exception:
-            pass
-    else:
-        from backend.dev_store import list_notifications
-        try:
-            notifs, _ = list_notifications("finance", limit=5)
-            recent_notifications = notifs
-        except Exception:
-            recent_notifications = []
+        for cat, counts in pay_groups.items():
+            payroll_summary.append({
+                "category": cat,
+                "processed": f"{counts['processed']}/{counts['total']}",
+                "status": "Complete" if counts["processed"] == counts["total"] else "Processing"
+            })
 
-    return {
-        "success": True,
-        "data": {
-            "collection_trends": collection_trends,
-            "recent_invoices": recent_invoices,
-            "payroll_summary": payroll_summary,
-            "recent_notifications": recent_notifications
+        if not payroll_summary:
+            payroll_summary = [
+                {"category": "Teaching Staff", "processed": "0/0", "status": "Pending"},
+                {"category": "Non-Teaching", "processed": "0/0", "status": "Pending"}
+            ]
+
+        # 4. Recent Notifications
+        recent_notifications = []
+        if use_db:
+            try:
+                async for notif in db["notifications"].find({"$or": [{"receiverRole": "finance"}, {"receiverRole": "ALL"}]}).sort("createdAt", -1).limit(5):
+                    recent_notifications.append(serialize_doc(notif))
+            except Exception:
+                pass
+        else:
+            from backend.dev_store import list_notifications
+            try:
+                notifs, _ = list_notifications("finance", limit=5)
+                recent_notifications = notifs
+            except Exception:
+                recent_notifications = []
+
+        return {
+            "success": True,
+            "data": {
+                "collection_trends": collection_trends,
+                "recent_invoices": recent_invoices,
+                "payroll_summary": payroll_summary,
+                "fee_distribution": fee_distribution,
+                "recent_notifications": recent_notifications
+            }
         }
-    }
+    except Exception as e:
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}

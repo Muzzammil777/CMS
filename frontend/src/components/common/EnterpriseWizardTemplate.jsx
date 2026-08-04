@@ -15,6 +15,7 @@ export default function EnterpriseWizardTemplate({
   onAvatarChange = null,
   avatarTitle = 'Profile Photo',
   avatarSubtext = 'Upload a high-resolution professional portrait. Max 2MB.',
+  customRightPanel = null,
   helpTitle = 'Contextual Help',
   helpText = 'Ensure all basic information matches government-issued ID for credentialing verification.',
   onBack = null,
@@ -60,43 +61,48 @@ export default function EnterpriseWizardTemplate({
             </span>
           </div>
 
-          {/* Segmented Progress Bar */}
-          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${totalSteps}, 1fr)` }}>
-            {Array.from({ length: totalSteps }).map((_, idx) => {
+          {/* PROGRESS STEPS BAR */}
+          <div className="grid grid-cols-4 gap-2">
+            {steps.map((st, idx) => {
               const stepNum = idx + 1;
               const isCompleted = stepNum < currentStep;
-              const isActive = stepNum === currentStep;
+              const isCurrent = stepNum === currentStep;
 
               return (
-                <div key={idx} className="space-y-1">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      isCompleted
-                        ? 'bg-[#003A40]'
-                        : isActive
-                        ? 'bg-gradient-to-r from-[#003A40] to-[#0A686A]'
-                        : 'bg-[#E6EDF2]'
-                    }`}
-                  />
-                  {steps[idx] && (
-                    <p
-                      className={`text-[10px] font-bold truncate ${
-                        isActive ? 'text-[#003A40]' : isCompleted ? 'text-[#0A686A]' : 'text-slate-400'
+                <div key={st.title || idx} className="space-y-1.5">
+                  <div className="h-1.5 rounded-full overflow-hidden bg-[#E6EDF2]">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        isCompleted
+                          ? 'bg-[#003A40]'
+                          : isCurrent
+                          ? 'bg-[#0A686A]'
+                          : 'bg-transparent'
                       }`}
-                    >
-                      {steps[idx].title || steps[idx].label || `Step ${stepNum}`}
-                    </p>
-                  )}
+                    />
+                  </div>
+                  <span
+                    className={`text-[11px] font-extrabold block truncate ${
+                      isCurrent
+                        ? 'text-[#003A40]'
+                        : isCompleted
+                        ? 'text-slate-600'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {st.title || st.label}
+                  </span>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* ── 2-COLUMN MAIN LAYOUT ──────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* LEFT FORM PANEL (8 COLS) */}
-          <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs space-y-5">
+        {/* ── MAIN CONTENT GRID (8 COLS FORM + 4 COLS SIDEBAR) ────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-[460px]">
+          {/* LEFT FORM CARD (8 COLS) */}
+          <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs space-y-6 flex flex-col justify-between">
+            {/* STEP TITLE HEADER */}
             <div className="flex items-center gap-2.5 pb-4 border-b border-[#E6EDF2]">
               <div className="w-8 h-8 rounded-xl bg-[#E6F4F1] text-[#003A40] flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-lg leading-none">{stepIcon}</span>
@@ -110,56 +116,59 @@ export default function EnterpriseWizardTemplate({
 
           {/* RIGHT SIDEBAR CARDS (4 COLS) */}
           <div className="lg:col-span-4 space-y-5">
-            {/* PROFILE PHOTO UPLOAD CARD */}
-            <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs flex flex-col items-center text-center">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={onAvatarChange}
-                accept="image/*"
-                className="hidden"
-              />
-              <div className="relative group mb-4">
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-36 h-36 rounded-2xl border-2 border-dashed border-slate-200 bg-[#FAFBFC] hover:bg-[#F2FBFA] flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative"
-                >
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center text-slate-400">
-                      <span className="material-symbols-outlined text-4xl mb-1">photo_camera</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider">PHOTO</span>
-                    </div>
-                  )}
+            {customRightPanel ? (
+              customRightPanel
+            ) : (
+              <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs flex flex-col items-center text-center">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={onAvatarChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <div className="relative group mb-4">
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-36 h-36 rounded-2xl border-2 border-dashed border-slate-200 bg-[#FAFBFC] hover:bg-[#F2FBFA] flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative"
+                  >
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center text-slate-400">
+                        <span className="material-symbols-outlined text-4xl mb-1">photo_camera</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">PHOTO</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#003A40] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    title="Upload image"
+                  >
+                    <span className="material-symbols-outlined text-base">add</span>
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-[#003A40] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                  title="Upload image"
-                >
-                  <span className="material-symbols-outlined text-base">add</span>
-                </button>
-              </div>
+                <h4 className="text-sm font-extrabold text-[#003A40] mb-1">{avatarTitle}</h4>
+                <p className="text-xs font-semibold text-[#5F6B7A] leading-relaxed max-w-xs mb-5">
+                  {avatarSubtext}
+                </p>
 
-              <h4 className="text-sm font-extrabold text-[#003A40] mb-1">{avatarTitle}</h4>
-              <p className="text-xs font-semibold text-[#5F6B7A] leading-relaxed max-w-xs mb-5">
-                {avatarSubtext}
-              </p>
-
-              <div className="w-full pt-4 border-t border-[#E6EDF2] flex items-center justify-between text-xs font-bold text-[#5F6B7A]">
-                <span>COMPLETION</span>
-                <span className="text-[#003A40] font-black">{Math.round(completionPercentage)}%</span>
+                <div className="w-full pt-4 border-t border-[#E6EDF2] flex items-center justify-between text-xs font-bold text-[#5F6B7A]">
+                  <span>COMPLETION</span>
+                  <span className="text-[#003A40] font-black">{Math.round(completionPercentage)}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-[#E6EDF2] rounded-full overflow-hidden mt-1.5">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#003A40] to-[#0A686A] transition-all duration-300"
+                    style={{ width: `${Math.min(100, Math.max(0, completionPercentage))}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-1.5 bg-[#E6EDF2] rounded-full overflow-hidden mt-1.5">
-                <div
-                  className="h-full bg-gradient-to-r from-[#003A40] to-[#0A686A] transition-all duration-300"
-                  style={{ width: `${Math.min(100, Math.max(0, completionPercentage))}%` }}
-                />
-              </div>
-            </div>
+            )}
 
             {/* CONTEXTUAL HELP CARD */}
             <div className="bg-[#E6F4F1]/60 rounded-2xl border border-[#0A686A]/20 p-5 shadow-2xs">

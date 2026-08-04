@@ -1,12 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Layout from '../components/Layout';
-import KpiCard from '../components/KpiCard';
-import KpiGrid from '../components/KpiGrid';
-import { TableSkeleton } from '../components/common';
+import { StatsSection, Pagination, TableSkeleton } from '../components/common';
+import EnterprisePageTemplate from '../components/EnterprisePageTemplate';
+import DashboardSkeleton from '../components/DashboardSkeleton';
+import { Download, FileText, CheckCircle2, DollarSign, Clock, AlertTriangle, Eye, Edit, Trash2 } from 'lucide-react';
 import { API_BASE } from '../api/apiBase';
 import { settingsApi } from '../api/settingsApi';
+import { getUserSession } from '../auth/sessionController';
 
 // Icons
 function ViewIcon() {
@@ -41,6 +43,9 @@ export default function PayrollPage({ noLayout = false }) {
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const session = getUserSession();
+    const role = session?.role || null;
 
     const fetchPayroll = async () =>{
         setLoading(true);
@@ -87,10 +92,12 @@ export default function PayrollPage({ noLayout = false }) {
     const [filterMonth, setFilterMonth] = useState('All Periods');
     const [filterStatus, setFilterStatus] = useState('All');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const [itemsPerPage, setItemsPerPage] = useState(5);
 
     const [viewingRecord, setViewingRecord] = useState(null);
     const [editingRecord, setEditingRecord] = useState(null);
+    const [expandedPayrollId, setExpandedPayrollId] = useState(null);
+    const [updatingPayrollId, setUpdatingPayrollId] = useState(null);
 
     // Run Payroll States
     const [isRunPayrollModalOpen, setIsRunPayrollModalOpen] = useState(false);
@@ -483,106 +490,268 @@ export default function PayrollPage({ noLayout = false }) {
         };
     }, [filteredData]);
 
+
+    const totalGross = payrollData.reduce((acc, r) => acc + (r.grossPay || 0), 0);
+    const paidCount = payrollData.filter(r => r.status === 'Paid').length;
+    const pendingCount = payrollData.filter(r => r.status === 'Processing').length;
+
+    const kpiCards = [
+        {
+            title: 'Total Gross Pay',
+            value: `₹${(totalGross / 100000).toFixed(2)}L`,
+            sub: 'Processed this period',
+            trend: 'Payroll active',
+            trendUp: true,
+            icon: <DollarSign className="w-5 h-5" />,
+            gradient: 'indigo',
+        },
+        {
+            title: 'Processed Payrolls',
+            value: payrollData.length.toLocaleString(),
+            sub: 'Staff paid',
+            trend: 'Total records',
+            trendUp: true,
+            icon: <CheckCircle2 className="w-5 h-5" />,
+            gradient: 'emerald',
+        },
+        {
+            title: 'Paid Accounts',
+            value: paidCount.toLocaleString(),
+            sub: 'Salaries cleared',
+            trend: `${(((paidCount || 0) / (payrollData.length || 1)) * 100).toFixed(1)}% cleared`,
+            trendUp: true,
+            icon: <Clock className="w-5 h-5" />,
+            gradient: 'teal',
+        },
+        {
+            title: 'Processing / Draft',
+            value: (pendingCount + payrollData.filter(r => r.status === 'Draft').length).toLocaleString(),
+            sub: 'Awaiting clearance',
+            trend: 'Action required',
+            trendUp: false,
+            icon: <AlertTriangle className="w-5 h-5" />,
+            gradient: 'amber',
+        },
+    ];
+
+    const columns = [
+        {
+            key: 'facultyDetails',
+            label: 'Faculty Details',
+            render: (_, r) => {
+                const staff = staffList.find(s => (s.staffId || s.staff_id) === r.staffId);
+                const displayName = r.staffName || (staff && (staff.staffName || staff.name)) || '—';
+                const displayId = r.staffId || '—';
+                const displayRole = r.designation || (staff && (staff.designation || staff.role)) || '—';
+                return (
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#003A40] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                            {displayName.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{displayName}</p>
+                            <p className="text-[10px] text-[#8C98A5] font-medium truncate">ID: {displayId} • {displayRole}</p>
+                        </div>
+                    </div>
+                );
+            }
+        },
+        {
+            key: 'payPeriod',
+            label: 'Pay Period',
+            render: (_, r) => (
+                <span className="text-xs font-bold text-[#003A40] block truncate">{r.payPeriodDetailed || r.payMonth || '—'}</span>
+            )
+        },
+        {
+            key: 'grossPay',
+            label: 'Gross Pay',
+            render: (_, r) => (
+                <span className="text-xs font-extrabold text-[#003A40] font-['Outfit']">
+                    {r.grossPay ? formatCurrency(r.grossPay) : '—'}
+                </span>
+            )
+        },
+        {
+            key: 'netPay',
+            label: 'Net Pay',
+            render: (_, r) => (
+                <span className="text-xs font-extrabold text-[#0A686A] font-['Outfit']">
+                    {r.netPay ? formatCurrency(r.netPay) : '—'}
+                </span>
+            )
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            render: (_, r) => {
+                const st = r.status || 'Draft';
+                const cls = st === 'Paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                          : st === 'Processing' ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200';
+                return (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${cls}`}>
+                        {st}
+                    </span>
+                );
+            }
+        }
+    ];
+
+    const actions = [
+        {
+            icon: <Eye className="w-3.5 h-3.5" />,
+            label: 'View Breakdown',
+            color: 'teal',
+            onClick: (r) => setExpandedPayrollId(expandedPayrollId === r.id ? null : r.id)
+        },
+        {
+            icon: <FileText className="w-3.5 h-3.5" />,
+            label: 'Print Payslip',
+            color: 'blue',
+            onClick: (r) => handleGeneratePayslip(r)
+        },
+        {
+            icon: <Trash2 className="w-3.5 h-3.5" />,
+            label: 'Delete',
+            color: 'red',
+            onClick: (r) => { if (window.confirm('Delete payroll record?')) handleDeletePayroll(r) }
+        }
+    ];
+
+    const filterOptions = [
+        {
+            key: 'status',
+            label: 'Status',
+            options: [
+                { value: 'Paid', label: 'Paid' },
+                { value: 'Processing', label: 'Processing' },
+                { value: 'Draft', label: 'Draft' },
+            ],
+        },
+        {
+            key: 'month',
+            label: 'Month',
+            options: availablePeriods.filter(p => p !== 'All Periods').map(p => ({ value: p, label: p })),
+        }
+    ];
+
     const inner = (
-        <div className="payroll-view" style={{ animation: 'fadeIn 0.3s ease-out' }}><div className="section-header"><span className="section-title">Payroll Management</span><div style={{ display: 'flex', gap: 12 }}><button type="button" className="btn-secondary-sm" onClick={openWizard} style={{ background: '#fff', border: '1px solid #d1d5db', color: '#374151' }}>Create Payroll
-                    </button><button type="button" className="btn-primary-sm" onClick={handleRunPayroll}>Run Payroll
-                    </button></div></div><div style={{ marginBottom: 32 }}><KpiGrid><KpiCard
-                        icon="payments"
-                        label="Total Net Pay"
-                        value={formatCurrency(stats.totalDisbursement)}
-                        colorScheme="emerald"
-                    /><KpiCard
-                        icon="check_circle"
-                        label="Paid Records"
-                        value={stats.paidCount}
-                        colorScheme="green"
-                    /><KpiCard
-                        icon="sync"
-                        label="Processing"
-                        value={stats.processingCount}
-                        colorScheme="green"
-                    /><KpiCard
-                        icon="edit_note"
-                        label="Draft"
-                        value={stats.draftCount}
-                        colorScheme="orange"
-                    /></KpiGrid></div><div className="content-card" style={{ marginBottom: 24 }}><div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', padding: '16px 20px', borderBottom: '1px solid #e5e7eb' }}><div className="input-wrap"><select
-                            value={filterMonth}
-                            onChange={(e) =>{ setFilterMonth(e.target.value); setCurrentPage(1); }}
-                            style={{ height: 40, borderRadius: 8, padding: '0 12px', border: '1px solid #e5e7eb', outline: 'none', background: '#fff', fontSize: 14, minWidth: 160 }}
-                        >{availablePeriods.map(p =>(
-                                <option key={p} value={p}>{p}</option>))}
-                        </select></div><div className="input-wrap"><select
-                            value={filterStatus}
-                            onChange={(e) =>{ setFilterStatus(e.target.value); setCurrentPage(1); }}
-                            style={{ height: 40, borderRadius: 8, padding: '0 12px', border: '1px solid #e5e7eb', outline: 'none', background: '#fff', fontSize: 14, minWidth: 160 }}
-                        ><option value="All">All Statuses</option><option value="Draft">Draft</option><option value="Paid">Paid</option><option value="Processing">Processing</option></select></div></div><div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}><thead><tr style={{ background: '#f9fafb', color: '#6b7280', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.5px' }}><th style={{ padding: '16px 20px', fontWeight: 600 }}>Faculty Details</th><th style={{ padding: '16px 20px', fontWeight: 600 }}>Pay Period</th><th style={{ padding: '16px 20px', fontWeight: 600 }}>Gross Pay</th><th style={{ padding: '16px 20px', fontWeight: 600 }}>Net Pay</th><th style={{ padding: '16px 20px', fontWeight: 600 }}>Status</th><th style={{ padding: '16px 20px', fontWeight: 600, textAlign: 'center' }}>Actions</th></tr></thead><tbody>{loading ? (
-                                <tr><td colSpan="6" style={{ padding: '0' }}>
-                                    <TableSkeleton cols={6} rows={8} />
-                                </td></tr>) : error ? (
-                                <tr><td colSpan="6" style={{ padding: '32px 20px', textAlign: 'center', color: '#ef4444' }}>{error} — Make sure the backend server is running on port 5000.
-                                    </td></tr>) : paginatedData.length >0 ? (
-                                paginatedData.map(record =>{
-                                    // Try to find a matching staff record for display fallback
-                                    const staff = staffList.find(s =>(s.staffId || s.staff_id) === record.staffId);
-                                    const displayName = record.staffName || (staff && (staff.staffName || staff.name)) || '—';
-                                    const displayId = record.staffId || '—';
-                                    const displayRole = record.designation || (staff && (staff.designation || staff.role)) || '—';
-                                    const hasPayroll = !!(record.grossPay || record.netPay);
-                                    return (
-                                        <tr key={record.id} style={{ borderTop: '1px solid #e5e7eb', transition: 'background 0.2s' }}><td style={{ padding: '16px 20px' }}><div style={{ fontWeight: 600, color: '#1f2937', fontSize: 15, marginBottom: 4 }}>{displayName}</div><div style={{ fontSize: 13, color: '#6b7280', display: 'flex', gap: 8 }}><span>ID: {displayId}</span><span style={{ color: '#d1d5db' }}>|</span><span>{displayRole}</span></div>{(record.experienceYears >0 || record.experienceBonus >0) && (
-                                                    <div style={{ fontSize: 11, color: '#059669', marginTop: 4, fontWeight: 500 }}>Exp: {record.experienceYears || (record.experienceBonus / 4000)} yrs (+{formatCurrency(record.experienceBonus || (record.experienceYears * 4000))})
-                                                    </div>)}
-                                            </td><td style={{ padding: '16px 20px', fontSize: 14, color: '#374151' }}>{record.payPeriodDetailed || record.payMonth || '—'}</td><td style={{ padding: '16px 20px', fontSize: 14, color: '#374151', fontWeight: 500 }}>{hasPayroll ? formatCurrency(record.grossPay) : '—'}</td><td style={{ padding: '16px 20px', fontSize: 14, color: '#1f2937', fontWeight: 600 }}>{hasPayroll ? formatCurrency(record.netPay) : '—'}</td><td style={{ padding: '16px 20px' }}>{hasPayroll ? (
-                                                    <span style={{
-                                                        background: record.status === 'Paid' ? '#dcfce7' : record.status === 'Processing' ? '#fef3c7' : record.status === 'Draft' ? '#e0f2fe' : '#f3f4f6',
-                                                        color: record.status === 'Paid' ? '#166534' : record.status === 'Processing' ? '#92400e' : record.status === 'Draft' ? '#0369a1' : '#374151',
-                                                        border: 'none', padding: '4px 10px', borderRadius: '9999px', fontSize: 12, fontWeight: 500
-                                                    }}>{record.status}
-                                                    </span>) : <span style={{ color: '#9ca3af', fontSize: 13 }}>No payroll</span>}
-                                            </td><td style={{ padding: '16px 20px' }}><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>{hasPayroll && (
-                                                        <><button onClick={() =>setViewingRecord(record)} title="View Payroll"
-                                                                style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, borderRadius: 4 }}><ViewIcon /></button>{record.status !== 'Paid' && (
-                                                                <button 
-                                                                    onClick={async () =>{
-                                                                        if (window.confirm(`Mark payroll as Paid for ${displayName}?`)) {
-                                                                            try {
-                                                                                const res = await fetch(`${API_BASE}/payroll/${record.id || record._id}`, {
-                                                                                    method: 'PUT',
-                                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                                    body: JSON.stringify({ ...record, status: 'Paid' }),
-                                                                                });
-                                                                                if (!res.ok) throw new Error('Failed to update status');
-                                                                                await fetchPayroll();
-                                                                            } catch (err) { alert(err.message); }
-                                                                        }
-                                                                    }}
-                                                                    title="Mark as Paid"
-                                                                    style={{ display: 'inline-flex', alignItems: 'center', background: '#dcfce7', border: 'none', cursor: 'pointer', color: '#166534', padding: '4px 8px', borderRadius: 6, fontSize: 14, fontWeight: 600 }}></button>)}
-                                                            <button onClick={() =>setEditingRecord(record)} title="Edit Payroll"
-                                                                style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, borderRadius: 4 }}><EditIcon /></button><button onClick={() =>handleGeneratePayslip(record)} title="Print Report"
-                                                                style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, borderRadius: 4 }}><DocumentIcon /></button><button onClick={() =>handleDeletePayroll(record)} title="Delete Payroll"
-                                                                style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 4, borderRadius: 4 }}><DeleteIcon /></button></>)}
-                                                </div></td></tr>);
-                                })
-                            ) : (
-                                <tr><td colSpan="6" style={{ padding: '32px 20px', textAlign: 'center', color: '#6b7280' }}>No payroll records found for the selected filters.
-                                    </td></tr>)}
-                        </tbody></table></div>{/* Pagination */}
-                {totalPages >1 && (
-                    <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e5e7eb' }}><div style={{ fontSize: 13, color: '#6b7280' }}>Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} records
-                        </div><div style={{ display: 'flex', gap: 6 }}><button
-                                disabled={currentPage === 1}
-                                onClick={() =>setCurrentPage(p =>p - 1)}
-                                style={{ padding: '6px 12px', border: '1px solid #e5e7eb', background: currentPage === 1 ? '#f9fafb' : '#fff', color: currentPage === 1 ? '#d1d5db' : '#374151', borderRadius: 6, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
-                            >Prev
-                            </button><button
-                                disabled={currentPage === totalPages}
-                                onClick={() =>setCurrentPage(p =>p + 1)}
-                                style={{ padding: '6px 12px', border: '1px solid #e5e7eb', background: currentPage === totalPages ? '#f9fafb' : '#fff', color: currentPage === totalPages ? '#d1d5db' : '#374151', borderRadius: 6, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
-                            >Next
-                            </button></div></div>)}
-            </div>{/* Create Payroll Wizard Modal */}
+        <div style={{ height: 'calc(100vh - 80px)' }}>
+            {loading ? (
+                <DashboardSkeleton />
+            ) : (
+                <EnterprisePageTemplate
+                    kpiCards={kpiCards}
+                    columns={columns}
+                    rows={filteredData}
+                    actions={actions}
+                    rowKey="id"
+                    searchQuery={step1SearchQuery}
+                    onSearchChange={setStep1SearchQuery}
+                    searchPlaceholder="Search staff by name or ID..."
+                    filterOptions={filterOptions}
+                    activeFilters={{ status: filterStatus === 'All' ? '' : filterStatus, month: filterMonth === 'All Periods' ? '' : filterMonth }}
+                    onFilterChange={(key, val) => {
+                        if (key === 'status') setFilterStatus(val || 'All');
+                        if (key === 'month') setFilterMonth(val || 'All Periods');
+                    }}
+                    onAdd={openWizard}
+                    addLabel="Create Payroll"
+                    loading={false}
+                    emptyMessage="No payroll records match your criteria."
+                    customFilters={
+                        <button onClick={handleRunPayroll} className="h-8 px-3 flex items-center gap-1.5 rounded-lg border border-[#E6EDF2] bg-[#F0FDFA] text-[#0A686A] text-[11px] font-bold transition-all cursor-pointer hover:bg-[#E6EDF2]">
+                            <span className="material-symbols-outlined text-[14px]">play_arrow</span> Run Payroll
+                        </button>
+                    }
+                />
+            )}
+
+            {/* View Modal (Enterprise Layout) */}
+            {expandedPayrollId && (() => {
+                const viewingRecord = payrollData.find(r => r.id === expandedPayrollId);
+                if (!viewingRecord) return null;
+                return (
+                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 max-w-md w-full shadow-xl">
+                        <h3 className="text-base font-bold text-[#003A40] mb-4">Payroll Breakdown — {viewingRecord.staffName}</h3>
+                        <div className="space-y-2 text-xs text-[#5F6B7A] mb-6">
+                            <div className="flex justify-between py-1 border-b border-slate-100">
+                                <span>Pay Period:</span>
+                                <span className="font-bold text-[#003A40]">{viewingRecord.payPeriodDetailed || viewingRecord.payMonth}</span>
+                            </div>
+                            <div className="flex justify-between py-1 border-b border-slate-100">
+                                <span>Basic Salary ({viewingRecord.designation}):</span>
+                                <span className="font-bold text-[#003A40]">₹{viewingRecord.baseSalary || SALARY_MAP[viewingRecord.designation] || (viewingRecord.basicSalary - (viewingRecord.experienceBonus || 0))}</span>
+                            </div>
+                            {(viewingRecord.experienceYears > 0 || (viewingRecord.experienceBonus > 0)) && (
+                            <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-600 font-bold">
+                                <span>Exp. Bonus:</span>
+                                <span>+₹{(viewingRecord.experienceBonus || 0).toLocaleString()}</span>
+                            </div>
+                            )}
+                            <div className="flex justify-between py-1 border-b border-slate-100">
+                                <span>Gross Pay:</span>
+                                <span className="font-bold text-[#003A40]">₹{(viewingRecord.grossPay || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between py-1 border-b border-slate-100 text-rose-500 font-bold">
+                                <span>PF / Taxes:</span>
+                                <span>-₹{(viewingRecord.deductions || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between py-1 font-bold text-sm text-[#003A40] pt-2">
+                                <span>Net Pay:</span>
+                                <span className="text-[#0A686A]">₹{(viewingRecord.netPay || 0).toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        {role === 'finance' && (
+                            <div className="mb-4 pt-4 border-t border-slate-100">
+                                <label className="block text-[10px] font-bold text-[#8C98A5] uppercase tracking-wider mb-2">Update Payment Status</label>
+                                <div className="flex gap-2">
+                                    <select
+                                        value={viewingRecord.status}
+                                        onChange={async (e) => {
+                                            try {
+                                                const res = await fetch(`${API_BASE}/payroll/${viewingRecord.id || viewingRecord._id}`, {
+                                                    method: 'PUT',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ ...viewingRecord, status: e.target.value }),
+                                                });
+                                                if (!res.ok) throw new Error('Failed to update status');
+                                                await fetchPayroll();
+                                            } catch (err) { alert(err.message); }
+                                        }}
+                                        className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-lg text-[11px] font-semibold focus:ring-1 focus:ring-[#0A686A] focus:outline-none shadow-sm hover:border-slate-300 transition-all cursor-pointer"
+                                    >
+                                        <option value="Draft">Draft</option>
+                                        <option value="Processing">Processing</option>
+                                        <option value="Paid">Paid</option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setExpandedPayrollId(null)}
+                                className="flex-1 py-2 bg-slate-100 text-[#5F6B7A] rounded-xl font-bold text-[11px] cursor-pointer hover:bg-slate-200 transition-colors"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={() => handleGeneratePayslip(viewingRecord)}
+                                className="flex-1 py-2 bg-[#003A40] text-white rounded-xl font-bold text-[11px] cursor-pointer hover:bg-[#0A686A] transition-colors"
+                            >
+                                Print PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                )
+            })()}
+
+            {/* Create Payroll Wizard Modal */}
             {isWizardOpen && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}><div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 700, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', animation: 'slideUp 0.3s ease-out', overflow: 'hidden' }}>{/* Header */}
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9fafb' }}><h3 style={{ margin: 0, fontSize: 18, color: '#1f2937', fontWeight: 600 }}>Create Payroll</h3><button onClick={closeWizard} style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer' }}><CloseIcon /></button></div>{/* Step Indicator */}
@@ -712,12 +881,7 @@ export default function PayrollPage({ noLayout = false }) {
                                 </button>)}
                         </div></div></div>)}
 
-            {/* View Modal */}
-            {viewingRecord && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}><div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', animation: 'slideUp 0.3s ease-out' }}><div style={{ padding: '20px 24px', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><h3 style={{ margin: 0, fontSize: 18, color: '#1f2937' }}>Payroll Breakdown</h3><button onClick={() =>setViewingRecord(null)} style={{ background: 'transparent', border: 'none', color: '#9ca3af', cursor: 'pointer' }}><CloseIcon /></button></div><div style={{ padding: '24px' }}><div style={{ display: 'flex', gap: 16, marginBottom: 24 }}><div className="avatar-initials" style={{ width: 48, height: 48, fontSize: 18, background: '#e0e7ff', color: '#3730a3', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>{viewingRecord.staffName.slice(0, 2).toUpperCase()}
-                                </div><div><div style={{ fontWeight: 600, fontSize: 16, color: '#1f2937' }}>{viewingRecord.staffName}</div><div style={{ fontSize: 14, color: '#6b7280' }}>ID: {viewingRecord.staffId} • {viewingRecord.designation}</div></div></div><div style={{ background: '#f9fafb', borderRadius: 12, padding: 16, marginBottom: 24 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}><span style={{ color: '#6b7280', fontSize: 14 }}>Pay Period</span><span style={{ fontWeight: 500, color: '#1f2937', fontSize: 14 }}>{viewingRecord.payPeriodDetailed || viewingRecord.payMonth}</span></div><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}><span style={{ color: '#6b7280', fontSize: 14 }}>Base Salary ({viewingRecord.designation})</span><span style={{ fontWeight: 500, color: '#1f2937', fontSize: 14 }}>{formatCurrency(viewingRecord.baseSalary || SALARY_MAP[viewingRecord.designation] || (viewingRecord.basicSalary - (viewingRecord.experienceBonus || 0)))}</span></div>{(viewingRecord.experienceYears >0 || (viewingRecord.experienceBonus >0)) && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}><span style={{ color: '#6b7280', fontSize: 14 }}>Exp. Bonus ({viewingRecord.experienceYears || (viewingRecord.experienceBonus / 4000)} yrs)</span><span style={{ fontWeight: 500, color: '#059669', fontSize: 14 }}>+ {formatCurrency(viewingRecord.experienceBonus || 0)}</span></div>)}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}><span style={{ color: '#6b7280', fontSize: 14 }}>Gross Pay</span><span style={{ fontWeight: 500, color: '#1f2937', fontSize: 14 }}>{formatCurrency(viewingRecord.grossPay)}</span></div><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}><span style={{ color: '#ef4444', fontSize: 14 }}>PF / ESI / Taxes</span><span style={{ fontWeight: 500, color: '#ef4444', fontSize: 14 }}>- {formatCurrency(viewingRecord.deductions)}</span></div><div style={{ height: 1, background: '#e5e7eb', margin: '12px 0' }} /><div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#1f2937', fontSize: 16, fontWeight: 600 }}>Net Pay</span><span style={{ fontWeight: 700, color: '#4c1d95', fontSize: 18 }}>{formatCurrency(viewingRecord.netPay)}</span></div></div><div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}><button type="button" className="btn-secondary-sm" onClick={() =>setViewingRecord(null)}>Close</button><button type="button" className="btn-primary-sm" onClick={() =>handleGeneratePayslip(viewingRecord)}>Print Report</button></div></div></div></div>)}
+
 
             {/* Run Payroll Filter Modal */}
             {isRunPayrollModalOpen && (

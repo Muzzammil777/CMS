@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import EnterpriseWizardTemplate from '../components/common/EnterpriseWizardTemplate';
 import { API_BASE, buildApiUrl } from '../api/apiBase';
 import { settingsApi } from '../api/settingsApi';
+import { useDepartments } from '../hooks/useDepartments';
+import { useQuotas } from '../hooks/useQuotas';
 
 export default function EditStudentPage() {
   const navigate = useNavigate();
@@ -12,7 +14,8 @@ export default function EditStudentPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [departments, setDepartments] = useState([]);
+  const { departments } = useDepartments();
+  const { quotas } = useQuotas();
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -70,17 +73,7 @@ export default function EditStudentPage() {
     guardianOccupation: '',
   });
 
-  useEffect(() => {
-    const fetchDepts = async () => {
-      try {
-        const data = await settingsApi.getDepartments();
-        setDepartments(data || []);
-      } catch (err) {
-        console.error('Error fetching departments:', err);
-      }
-    };
-    fetchDepts();
-  }, []);
+
 
   useEffect(() => {
     if (id) {
@@ -668,25 +661,26 @@ export default function EditStudentPage() {
         <div className="space-y-4">
           <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Seat Allotment Quota</label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { id: 'Government Quota', label: 'Government Quota', desc: 'State entrance merit list allotment' },
-              { id: 'Management Quota', label: 'Management Quota', desc: 'Direct institutional admission' },
-              { id: 'NRI / Sports Quota', label: 'NRI / Sports Quota', desc: 'Special international or athletic reservation' }
-            ].map(q => (
-              <div
-                key={q.id}
-                onClick={() => setFormData(prev => ({ ...prev, quota: q.id }))}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${formData.quota === q.id ? 'border-[#7C3AED] bg-[#7C3AED]/5 shadow-sm' : 'border-[#E6EDF2] bg-white hover:border-[#7C3AED]/30'}`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <h4 className="text-xs font-bold text-[#1E293B]">{q.label}</h4>
-                  <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${formData.quota === q.id ? 'border-[#7C3AED] bg-[#7C3AED]' : 'border-slate-300'}`}>
-                    {formData.quota === q.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                  </span>
+            {quotas.map(quotaObj => {
+              const qId = quotaObj.name || quotaObj;
+              const qLabel = quotaObj.name || quotaObj;
+              const qDesc = quotaObj.desc || `${qLabel} allotment`;
+              return (
+                <div
+                  key={qId}
+                  onClick={() => setFormData(prev => ({ ...prev, quota: qId }))}
+                  className={`p-4 rounded-xl border cursor-pointer transition-all ${formData.quota === qId ? 'border-[#7C3AED] bg-[#7C3AED]/5 shadow-sm' : 'border-[#E6EDF2] bg-[#FAFBFC] hover:border-[#7C3AED]/30'}`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <h4 className="text-xs font-bold text-[#1E293B]">{qLabel}</h4>
+                    <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${formData.quota === qId ? 'border-[#7C3AED] bg-[#7C3AED]' : 'border-slate-300'}`}>
+                      {formData.quota === qId && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#64748B] font-medium">{qDesc}</p>
                 </div>
-                <p className="text-[11px] text-[#64748B] font-medium">{q.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

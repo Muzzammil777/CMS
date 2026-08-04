@@ -339,47 +339,77 @@ export default function AdminFeesPage() {
       )}
 
       {/* Expanded Breakdown Modal */}
-      {expandedFee && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-base font-bold text-[#003A40] mb-4">Fee Structure Breakdown — {expandedFee.studentName}</h3>
-            <div className="space-y-2 text-xs text-[#5F6B7A] mb-6">
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span>Tuition / Semester Fee:</span>
-                <span className="font-bold text-[#003A40]">₹{(expandedFee.components?.semesterFee || expandedFee.components?.tuitionFee || 0).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span>Books & Digital Library:</span>
-                <span className="font-bold text-[#003A40]">₹{(expandedFee.components?.bookFee || expandedFee.components?.libraryFee || 0).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span>Exam Fee:</span>
-                <span className="font-bold text-[#003A40]">₹{(expandedFee.components?.examFee || 0).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span>Hostel & Mess:</span>
-                <span className="font-bold text-[#003A40]">₹{(expandedFee.components?.hostelFee || 0).toLocaleString()}</span>
-              </div>
-              {expandedFee.components?.scholarshipDiscount > 0 && (
-                <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-600 font-bold">
-                  <span>Scholarship Waiver:</span>
-                  <span>-₹{expandedFee.components.scholarshipDiscount.toLocaleString()}</span>
+      {expandedFee && (() => {
+        const comp = expandedFee.components || {};
+        const calculatedAnnual = (comp.grossAcademicFee || 0) + (comp.quotaSurcharge || 0) + (comp.transportFee || 0) + (comp.hostelFee || 0) + (comp.amenitiesFee || 0) - (comp.scholarshipDiscount || 0);
+        const annualTotal = calculatedAnnual > expandedFee.totalFee ? calculatedAnnual : (expandedFee.totalFee || 0) * 2;
+        const isSplit = annualTotal > (expandedFee.totalFee || 0);
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 max-w-md w-full shadow-xl">
+              <h3 className="text-base font-bold text-[#003A40] mb-4">Fee Structure Breakdown — {expandedFee.studentName}</h3>
+              <div className="space-y-2 text-xs text-[#5F6B7A] mb-6">
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span>Tuition / Base Academic Fee:</span>
+                  <span className="font-bold text-[#003A40]">₹{(comp.tuitionFee || comp.semesterFee || 0).toLocaleString('en-IN')}</span>
                 </div>
-              )}
-              <div className="flex justify-between py-1 font-bold text-sm text-[#003A40] pt-2">
-                <span>Total Semester Fee:</span>
-                <span>₹{(expandedFee.totalFee || 0).toLocaleString()}</span>
+                {comp.developmentFee > 0 && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Infrastructure & Lab Dev:</span>
+                    <span className="font-bold text-[#003A40]">₹{comp.developmentFee.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span>Books & Digital Library:</span>
+                  <span className="font-bold text-[#003A40]">₹{(comp.libraryFee || comp.bookFee || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span>Exam Fee:</span>
+                  <span className="font-bold text-[#003A40]">₹{(comp.examFee || 0).toLocaleString('en-IN')}</span>
+                </div>
+                {comp.hostelFee > 0 && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Hostel & Mess:</span>
+                    <span className="font-bold text-[#003A40]">₹{comp.hostelFee.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+                {comp.transportFee > 0 && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Transport Service:</span>
+                    <span className="font-bold text-[#003A40]">₹{comp.transportFee.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+                {comp.scholarshipDiscount > 0 && (
+                  <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-600 font-bold">
+                    <span>Scholarship Waiver:</span>
+                    <span>-₹{comp.scholarshipDiscount.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+
+                <div className="pt-3 mt-3 border-t-2 border-slate-100 space-y-1.5">
+                  {isSplit && (
+                    <div className="flex justify-between font-bold text-xs text-[#5F6B7A]">
+                      <span>Total Annual Fee (Full Structure):</span>
+                      <span className="font-mono font-bold text-[#003A40]">₹{annualTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-extrabold text-sm text-[#003A40] pt-1">
+                    <span>{isSplit ? 'Total Semester Fee (50% Term Split):' : 'Total Structure Fee:'}</span>
+                    <span className="text-[#0A686A] font-mono text-base">₹{(expandedFee.totalFee || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
               </div>
+              <button
+                onClick={() => setExpandedFee(null)}
+                className="w-full py-2 bg-[#003A40] text-white rounded-xl font-bold text-xs cursor-pointer hover:bg-[#0A686A] transition-colors"
+              >
+                Close Breakdown
+              </button>
             </div>
-            <button
-              onClick={() => setExpandedFee(null)}
-              className="w-full py-2 bg-[#003A40] text-white rounded-xl font-bold text-xs cursor-pointer hover:bg-[#0A686A] transition-colors"
-            >
-              Close Breakdown
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </Layout>
   );
 }

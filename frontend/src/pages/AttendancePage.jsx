@@ -5,7 +5,7 @@ import KpiGrid from '../components/KpiGrid'
 import EnterprisePageTemplate from '../components/EnterprisePageTemplate'
 import { CheckCircle2, AlertTriangle, XCircle, Users, Download } from 'lucide-react'
 import { StatsSection, Pagination, TableSkeleton } from '../components/common'
-import { getUserSession } from '../auth/sessionController'
+import { getUserSession, getUserData } from '../auth/sessionController'
 import { buildApiUrl } from '../api/apiBase'
 import { settingsApi } from '../api/settingsApi'
 
@@ -14,10 +14,12 @@ const HOURS_LIST = ['Hour 1', 'Hour 2', 'Hour 3', 'Hour 4', 'Hour 5', 'Hour 6', 
 
 export default function AttendancePage({ noLayout = false }) {
   const session = getUserSession()
+  const user = session?.user || getUserData()
   const role = session?.role || 'student'
   const userId = session?.userId || ''
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || ''
 
-  const isAdmin = role === 'admin'
+  const isAdmin = role === 'admin' || role === 'hod'
   const isStudent = role === 'student'
   const isFaculty = role === 'faculty'
   const isFinance = role === 'finance'
@@ -44,7 +46,7 @@ export default function AttendancePage({ noLayout = false }) {
     setTimeout(() => setToast(null), 4000)
   }
 
-  // --- Admin States ---
+  // --- Admin / HOD States ---
   const [adminTab, setAdminTab] = useState('students') // 'students' | 'faculty'
   const [adminOverview, setAdminOverview] = useState({
     totalStudents: 0,
@@ -55,7 +57,7 @@ export default function AttendancePage({ noLayout = false }) {
   const [adminRecords, setAdminRecords] = useState([])
   const [adminSearch, setAdminSearch] = useState('')
   const [adminFilters, setAdminFilters] = useState({
-    department: '',
+    department: role === 'hod' && hodDepartment ? hodDepartment : '',
     semester: '',
     section: '',
     subject: '',
@@ -130,6 +132,13 @@ export default function AttendancePage({ noLayout = false }) {
   }, [])
 
   // Load Admin Data
+  // Lock the department filter for HOD role
+  useEffect(() => {
+    if (role === 'hod' && hodDepartment && adminFilters.department !== hodDepartment) {
+      setAdminFilters(prev => ({ ...prev, department: hodDepartment }))
+    }
+  }, [role, hodDepartment])
+
   useEffect(() => {
     if (isAdmin) {
       fetchAdminData()
@@ -695,16 +704,22 @@ export default function AttendancePage({ noLayout = false }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 <div>
                   <label className="block text-[10px] font-extrabold text-[#5F6B7A] uppercase mb-1">Department</label>
-                  <select
-                    className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl outline-none text-xs text-[#003A40] font-semibold bg-[#FAFBFC]"
-                    value={adminFilters.department}
-                    onChange={(e) => setAdminFilters({ ...adminFilters, department: e.target.value })}
-                  >
-                    <option value="">All Depts</option>
-                    {departments.map(d => (
-                      <option key={d.code} value={d.name}>{d.name}</option>
-                    ))}
-                  </select>
+                  {role === 'hod' ? (
+                    <div className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl text-xs text-[#003A40] font-semibold bg-[#F0F7FF] cursor-not-allowed" title="HOD can only view their department">
+                      {hodDepartment}
+                    </div>
+                  ) : (
+                    <select
+                      className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl outline-none text-xs text-[#003A40] font-semibold bg-[#FAFBFC]"
+                      value={adminFilters.department}
+                      onChange={(e) => setAdminFilters({ ...adminFilters, department: e.target.value })}
+                    >
+                      <option value="">All Depts</option>
+                      {departments.map(d => (
+                        <option key={d.code} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[10px] font-extrabold text-[#5F6B7A] uppercase mb-1">Semester</label>
@@ -763,7 +778,7 @@ export default function AttendancePage({ noLayout = false }) {
                 <div className="flex items-end">
                   <button
                     onClick={() => {
-                      setAdminFilters({ department: '', semester: '', section: '', subject: '', faculty: '', startDate: '', endDate: '' })
+                      setAdminFilters({ department: role === 'hod' ? hodDepartment : '', semester: '', section: '', subject: '', faculty: '', startDate: '', endDate: '' })
                       setAdminSearch('')
                     }}
                     className="w-full px-3 py-1.5 bg-[#F4F7FF] hover:bg-slate-200 text-[#5F6B7A] rounded-xl text-xs font-bold transition-all cursor-pointer"

@@ -630,16 +630,44 @@ export default function FacultyDepartmentPage() {
 
       let facData = [];
       try {
-        const facRes = await fetch(`${API_BASE}/faculty/dropdown`);
+        const facRes = await fetch(`${API_BASE}/faculty`);
         if (facRes.ok) facData = await facRes.json();
       } catch (e) {
         console.warn('Faculty API error:', e);
       }
 
+      let stuData = [];
+      try {
+        const stuRes = await fetch(`${API_BASE}/students`);
+        if (stuRes.ok) stuData = await stuRes.json();
+      } catch (e) {
+        console.warn('Students API error:', e);
+      }
+
       setAllFaculty(facData || []);
 
       const deptsList = Array.isArray(deptsData) ? deptsData : [];
-      const finalDepts = deptsList.length ? deptsList : DEFAULT_DEPARTMENTS;
+      const baseDepts = deptsList.length ? deptsList : DEFAULT_DEPARTMENTS;
+
+      const finalDepts = baseDepts.map(d => {
+        const dName = (d.name || d.code || '').toLowerCase();
+
+        const liveFacCount = (facData || []).filter(f => {
+          const fDept = (f.departmentId || f.department || f.department_id || '').toLowerCase();
+          return fDept && (fDept.includes(dName) || dName.includes(fDept));
+        }).length;
+
+        const liveStuCount = (stuData || []).filter(s => {
+          const sDept = (s.department || s.departmentId || s.department_id || '').toLowerCase();
+          return sDept && (sDept.includes(dName) || dName.includes(sDept));
+        }).length;
+
+        return {
+          ...d,
+          totalFaculty: liveFacCount,
+          totalStudents: liveStuCount,
+        };
+      });
 
       setDepartments(finalDepts);
     } catch (err) {
@@ -685,7 +713,7 @@ export default function FacultyDepartmentPage() {
   const getFilteredFaculty = (dept) => {
     if (!dept || !allFaculty.length) return [];
     return allFaculty.filter((fac) => {
-      const fDept = (fac.departmentId || fac.department || '').toLowerCase();
+      const fDept = (fac.departmentId || fac.department || fac.department_id || '').toLowerCase();
       const dName = (dept.name || '').toLowerCase();
       const dCode = (dept.code || '').toLowerCase();
       return fDept === dName || fDept === dCode || dName.includes(fDept) || fDept.includes(dName);
@@ -724,8 +752,8 @@ export default function FacultyDepartmentPage() {
     return filteredDepartments.slice(startIndex, startIndex + pageSize);
   }, [filteredDepartments, startIndex, pageSize]);
 
-  const totalFacultyCount = departments.reduce((sum, d) => sum + (d.totalFaculty || 10), 0);
-  const totalStudentCount = departments.reduce((sum, d) => sum + (d.totalStudents || 300), 0);
+  const totalFacultyCount = filteredDepartments.reduce((sum, d) => sum + (d.totalFaculty || 0), 0);
+  const totalStudentCount = filteredDepartments.reduce((sum, d) => sum + (d.totalStudents || 0), 0);
 
   if (isAddOpen || editingDept) {
     return (
@@ -757,9 +785,13 @@ export default function FacultyDepartmentPage() {
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
                 <Building2 className="w-5 h-5" />
               </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8C98A5]">Departments</p>
-                <p className="text-xl font-extrabold text-[#003A40] leading-none font-['Outfit'] mt-0.5">{departments.length}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8C98A5]">
+                  {role === 'hod' ? 'My Department' : 'Departments'}
+                </p>
+                <p className="text-sm lg:text-base font-extrabold text-[#003A40] leading-tight font-['Outfit'] mt-0.5 truncate" title={role === 'hod' ? hodDepartment : departments.length}>
+                  {role === 'hod' ? hodDepartment : departments.length}
+                </p>
               </div>
             </div>
 
@@ -769,7 +801,9 @@ export default function FacultyDepartmentPage() {
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8C98A5]">Faculty Members</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8C98A5]">
+                  {role === 'hod' ? 'Dept Faculty' : 'Faculty Members'}
+                </p>
                 <p className="text-xl font-extrabold text-[#003A40] leading-none font-['Outfit'] mt-0.5">{totalFacultyCount}</p>
               </div>
             </div>
@@ -780,7 +814,9 @@ export default function FacultyDepartmentPage() {
                 <GraduationCap className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8C98A5]">Enrolled Students</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8C98A5]">
+                  {role === 'hod' ? 'Dept Students' : 'Enrolled Students'}
+                </p>
                 <p className="text-xl font-extrabold text-[#003A40] leading-none font-['Outfit'] mt-0.5">{totalStudentCount.toLocaleString()}</p>
               </div>
             </div>
@@ -791,8 +827,12 @@ export default function FacultyDepartmentPage() {
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8C98A5]">Courses Offered</p>
-                <p className="text-xl font-extrabold text-[#003A40] leading-none font-['Outfit'] mt-0.5">{departments.length * 8}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8C98A5]">
+                  {role === 'hod' ? 'Dept Courses' : 'Courses Offered'}
+                </p>
+                <p className="text-xl font-extrabold text-[#003A40] leading-none font-['Outfit'] mt-0.5">
+                  {role === 'hod' ? (filteredDepartments[0]?.courses || 4) : departments.length * 8}
+                </p>
               </div>
             </div>
           </div>

@@ -56,7 +56,7 @@ export default function HodDashboardPage() {
 
   const userToUse = freshUserData || dynamicUser;
   const hodName = userToUse?.name || userToUse?.fullName || 'HOD User';
-  const hodDepartment = userToUse?.department || userToUse?.departmentId || userToUse?.department_id || 'Computer Science';
+  const hodDepartment = userToUse?.department || userToUse?.departmentId || userToUse?.department_id || 'Medical Laboratory Technology';
 
   const roleQuery = `?role=${encodeURIComponent(role)}`;
 
@@ -112,9 +112,10 @@ export default function HodDashboardPage() {
         }
 
         // 5. Fetch Notifications / Notices
-        const notifRes = await fetch(`${API_BASE}/notifications`);
+        const notifRes = await fetch(`${API_BASE}/notifications/hod`);
         if (notifRes.ok) {
-          const nData = await notifRes.json();
+          const nResult = await notifRes.json();
+          const nData = nResult?.data || nResult;
           setDeptNotifications(Array.isArray(nData) ? nData.slice(0, 3) : []);
         }
       } catch (err) {

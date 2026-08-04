@@ -4,13 +4,18 @@ import EnterprisePageTemplate from '../components/EnterprisePageTemplate';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { fetchPlacements, createPlacement, deletePlacement } from '../api/placementApi';
 import { Eye, Plus, Trash2, Briefcase, Award, TrendingUp, Building } from 'lucide-react';
-import { getUserSession } from '../auth/sessionController';
+import { getUserSession, getUserData } from '../auth/sessionController';
+import { API_BASE } from '../api/apiBase';
 
 export default function PlacementPage() {
   const session = getUserSession();
-  const isStudent = session?.role === 'student';
+  const user = session?.user || getUserData();
+  const role = session?.role || 'admin';
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || '';
+  const isStudent = role === 'student';
 
   const [placements, setPlacements] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState({ status: '', company: '' });
@@ -20,7 +25,7 @@ export default function PlacementPage() {
   const [formData, setFormData] = useState({
     student_id: '',
     student_name: '',
-    department: 'Computer Science',
+    department: hodDepartment || 'Medical Laboratory Technology',
     company_name: '',
     job_role: '',
     package_lpa: '',
@@ -31,14 +36,22 @@ export default function PlacementPage() {
   const loadPlacements = async () => {
     setLoading(true);
     try {
-      const data = await fetchPlacements();
+      const placementsReq = role === 'hod' && hodDepartment 
+        ? fetchPlacements({ department: hodDepartment })
+        : fetchPlacements();
+
+      const [data, stuRes] = await Promise.all([
+        placementsReq,
+        fetch(`${API_BASE}/students`).then(res => res.ok ? res.json() : []).catch(() => [])
+      ]);
+
       let placementsData = Array.isArray(data) ? data : [];
-      
       if (isStudent && session?.userId) {
         placementsData = placementsData.filter(p => (p.student_id === session.userId || p.id === session.userId));
       }
-      
+
       setPlacements(placementsData);
+      setStudents(Array.isArray(stuRes) ? stuRes : []);
     } catch (err) {
       console.error('Failed to fetch placements:', err);
       setPlacements([]);
@@ -77,7 +90,7 @@ export default function PlacementPage() {
       setFormData({
         student_id: '',
         student_name: '',
-        department: 'Computer Science',
+        department: hodDepartment || 'Medical Laboratory Technology',
         company_name: '',
         job_role: '',
         package_lpa: '',
@@ -93,6 +106,33 @@ export default function PlacementPage() {
   // Filter logic
   const filteredPlacements = useMemo(() => {
     return placements.filter((p) => {
+      if (role === 'hod' && hodDepartment) {
+        const targetDept = hodDepartment.toLowerCase();
+        const pDept = (p.department || p.departmentId || p.department_id || p.dept || p.course || '').toLowerCase();
+
+        const sid = (p.student_id || p.studentId || p.rollNumber || p.id || p._id || '').toLowerCase();
+        const matchedStudent = students.find(s => {
+          const idStr = (s.id || s.student_id || s.rollNumber || s.roll_number || '').toLowerCase();
+          return idStr && idStr === sid;
+        });
+
+        const sDept = matchedStudent
+          ? (matchedStudent.department || matchedStudent.departmentId || matchedStudent.department_id || '').toLowerCase()
+          : '';
+
+        const effectiveDept = pDept || sDept;
+
+        if (effectiveDept) {
+          if (!effectiveDept.includes(targetDept) && !targetDept.includes(effectiveDept)) {
+            return false;
+          }
+        } else if (matchedStudent && sDept) {
+          if (!sDept.includes(targetDept) && !targetDept.includes(sDept)) {
+            return false;
+          }
+        }
+      }
+
       const q = searchQuery.toLowerCase();
       const matchSearch =
         !q ||
@@ -109,7 +149,7 @@ export default function PlacementPage() {
 
       return matchSearch && matchStatus && matchCompany;
     });
-  }, [placements, searchQuery, activeFilters]);
+  }, [placements, searchQuery, activeFilters, role, hodDepartment]);
 
   // Export CSV
   const handleExportCSV = () => {
@@ -137,7 +177,7 @@ export default function PlacementPage() {
   };
 
   // KPI Calculations
-  const placedList = placements.filter((p) => (p.status || 'Placed').toLowerCase() === 'placed');
+  const placedList = filteredPlacements.filter((p) => (p.status || 'Placed').toLowerCase() === 'placed');
   const packages = placedList.map((p) => parseFloat(p.package_lpa || p.ctc || 0)).filter(Boolean);
   const highestCTC = packages.length ? Math.max(...packages) : 0;
   const avgCTC = packages.length ? (packages.reduce((a, b) => a + b, 0) / packages.length).toFixed(1) : 0;

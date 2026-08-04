@@ -6,6 +6,7 @@ import DashboardSkeleton from '../components/DashboardSkeleton'
 import { buildApiUrl } from '../api/apiBase'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { getUserSession, getUserData } from '../auth/sessionController'
 import { Eye, Pencil, Trash2, Users, UserCheck, Building2, CalendarOff } from 'lucide-react'
 import { getLocalDrafts, deleteLocalDraft } from '../utils/draftManager'
 

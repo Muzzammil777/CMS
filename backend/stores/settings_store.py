@@ -180,6 +180,51 @@ def _admin_seed(overrides: Optional[dict] = None) -> dict:
     return data
 
 
+def _hod_seed(overrides: Optional[dict] = None) -> dict:
+    data = {
+        "profile": {
+            "name": "Dr. Ravi",
+            "email": "ravi@hod.edu",
+            "department": "Medical Laboratory Technology",
+            "phone": "9123456789",
+            "bio": "Head of Department — Medical Laboratory Technology",
+        },
+        "notifications": {
+            "departmentAdmission": True,
+            "attendanceThreshold": True,
+            "departmentPlacement": True,
+            "feeCollection": False,
+            "examSchedule": True,
+        },
+        "appearance": {
+            "theme": "light",
+            "fontSize": "medium",
+            "accentColor": "teal",
+            "layoutDensity": "comfortable",
+        },
+        "language": {
+            "language": "English",
+            "region": "India",
+            "timezone": "Asia/Kolkata",
+            "dateFormat": "DD/MM/YYYY",
+        },
+        "privacy": {
+            "profileVisible": True,
+            "searchable": True,
+            "allowDirectMessages": True,
+        },
+        "accessibility": {
+            "highContrast": False,
+            "reduceMotion": False,
+            "textToSpeech": False,
+            "largeClickTargets": False,
+        },
+    }
+    if overrides:
+        data.update(overrides)
+    return data
+
+
 _now = _utc_now()
 
 SETTINGS_DB = {
@@ -216,6 +261,10 @@ SETTINGS_DB = {
             }
         ),
     },
+    "hod": {
+        "HOD-CS-001": _hod_seed(),
+        "hod_001": _hod_seed(),  # legacy alias
+    },
     "finance": {
         "FIN-880": _finance_seed(),
         "fin_001": _finance_seed(),  # legacy alias
@@ -231,6 +280,13 @@ SETTINGS_DB = {
         "FAC-204": "faculty123",
     },
     "sessions": {
+        "HOD-CS-001": [
+            {"id": "sess-hod-1", "device": "Chrome on Windows", "location": "Chennai", "active": True, "lastSeen": _now},
+            {"id": "sess-hod-2", "device": "Mobile App", "location": "Chennai", "active": False, "lastSeen": "2026-07-30T09:00:00Z"},
+        ],
+        "hod_001": [
+            {"id": "sess-hod-3", "device": "Chrome on Windows", "location": "Chennai", "active": True, "lastSeen": _now},
+        ],
         "stu_101": [
             {"id": "sess-stu-1", "device": "Chrome on Windows", "location": "Chennai", "active": True, "lastSeen": _now},
             {"id": "sess-stu-2", "device": "Android App", "location": "Chennai", "active": False, "lastSeen": "2026-03-09T08:00:00Z"},
@@ -246,6 +302,14 @@ SETTINGS_DB = {
         ],
     },
     "loginHistory": {
+        "HOD-CS-001": [
+            {"timestamp": _now, "status": "success", "ip": "10.10.7.11"},
+            {"timestamp": "2026-07-30T08:30:00Z", "status": "success", "ip": "10.10.7.11"},
+            {"timestamp": "2026-07-28T10:00:00Z", "status": "failed",  "ip": "10.10.7.11"},
+        ],
+        "hod_001": [
+            {"timestamp": _now, "status": "success", "ip": "10.10.7.12"},
+        ],
         "stu_101": [
             {"timestamp": _now, "status": "success", "ip": "10.10.2.45"},
             {"timestamp": "2026-03-10T17:22:00Z", "status": "success", "ip": "10.10.2.45"},
@@ -274,8 +338,8 @@ def normalize_role(role: Optional[str]) -> Optional[str]:
     lowered = role.lower()
     if lowered in {"student", "students"}:
         return "student"
-    if lowered == "faculty":
-        return "faculty"
+    if lowered in {"faculty", "hod"}:
+        return lowered
     if lowered in {"finance", "admin"}:
         return lowered
     return None
@@ -286,6 +350,8 @@ def infer_role_by_user_id(user_id: str) -> Optional[str]:
         return "student"
     if user_id in SETTINGS_DB["faculty"]:
         return "faculty"
+    if user_id in SETTINGS_DB.get("hod", {}):
+        return "hod"
     if user_id in SETTINGS_DB.get("finance", {}):
         return "finance"
     if user_id in SETTINGS_DB.get("admin", {}):
@@ -297,8 +363,10 @@ def get_user_record(role: Optional[str], user_id: str) -> Optional[dict]:
     resolved_role = normalize_role(role) or infer_role_by_user_id(user_id)
     if not resolved_role:
         return None
-    if resolved_role == "faculty":
-        bucket = SETTINGS_DB["faculty"]
+    if resolved_role == "hod":
+        bucket = SETTINGS_DB.setdefault("hod", {})
+    elif resolved_role == "faculty":
+        bucket = SETTINGS_DB.setdefault("faculty", {})
     elif resolved_role == "finance":
         bucket = SETTINGS_DB.setdefault("finance", {})
     elif resolved_role == "admin":
@@ -310,6 +378,8 @@ def get_user_record(role: Optional[str], user_id: str) -> Optional[dict]:
         # Auto-create default settings for unknown user
         if resolved_role == "student":
             bucket[user_id] = _student_seed()
+        elif resolved_role == "hod":
+            bucket[user_id] = _hod_seed()
         elif resolved_role == "faculty":
             bucket[user_id] = _faculty_seed()
         elif resolved_role == "finance":

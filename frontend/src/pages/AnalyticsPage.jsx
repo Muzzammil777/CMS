@@ -10,6 +10,7 @@ import Layout from '../components/Layout';
 import { API_BASE } from '../api/apiBase';
 import { settingsApi } from '../api/settingsApi';
 import { DashboardSkeleton } from '../components/common/SkeletonLoader';
+import { getUserSession, getUserData } from '../auth/sessionController';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const Ico = {
@@ -218,19 +219,15 @@ export default function AnalyticsPage() {
   const [calOpen, setCalOpen] = useState(false);
   const calRef = useRef(null);
 
-  const session = useMemo(() => {
-    try {
-      const u = localStorage.getItem('user');
-      return u ? JSON.parse(u) : null;
-    } catch { return null; }
-  }, []);
-
-  const role = getValidRole(searchParams.get('role') || session?.role || 'admin');
+  const activeSession = getUserSession();
+  const userData = activeSession?.user || getUserData();
+  const role = activeSession?.role || getValidRole(searchParams.get('role') || 'admin');
+  const hodDepartment = userData?.department || userData?.departmentId || userData?.department_id || '';
 
   const [startMY, setStartMY] = useState({month:0,year:2024});
   const [endMY, setEndMY] = useState({month:11,year:2026});
   const [semester, setSemester] = useState(SEMESTER_OPTS[0]);
-  const [department, setDepartment] = useState('All Departments');
+  const [department, setDepartment] = useState(role === 'hod' && hodDepartment ? hodDepartment : 'All Departments');
   const [activeTab, setActiveTab] = useState('overview');
 
   const [dbDepartments, setDbDepartments] = useState([]);

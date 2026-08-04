@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getSchedulePreview, submitBulkSchedule } from '../../api/examsApi';
 import { getUserSession } from '../../auth/sessionController';
 import { settingsApi } from '../../api/settingsApi';
-
+import { API_BASE } from '../../api/apiBase';
 function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20 }}>
@@ -20,18 +20,34 @@ export default function TimetableScheduleWizard({ isOpen, onClose, onSave }) {
   const [departments, setDepartments] = useState([]);
 
   // Step 1 parameters
-  const [dept, setDept] = useState('Computer Science');
+  const [dept, setDept] = useState('Medical Laboratory Technology');
 
   useEffect(() => {
     const fetchDepts = async () => {
       try {
+        const res = await fetch(`${API_BASE}/settings/departments`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setDepartments(data);
+            setDept(data[0].name || data[0].code);
+            return;
+          }
+        }
         const data = await settingsApi.getDepartments();
         setDepartments(data || []);
         if (data && data.length > 0) {
           setDept(data[0].name);
         }
       } catch (err) {
-        console.error('Error loading departments in TimetableScheduleWizard:', err);
+        console.warn('Fallback loading departments in TimetableScheduleWizard:', err);
+        setDepartments([
+          { id: '1', name: 'Medical Laboratory Technology', code: 'MLT' },
+          { id: '2', name: 'Operation Theatre & Anaesthesia Technology', code: 'OTAT' },
+          { id: '3', name: 'Cardiac Technology', code: 'CT' },
+          { id: '4', name: 'Radiography & Imaging Technology', code: 'RIT' }
+        ]);
+        setDept('Medical Laboratory Technology');
       }
     };
     fetchDepts();

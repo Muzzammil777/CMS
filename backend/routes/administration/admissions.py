@@ -352,10 +352,20 @@ async def get_all_admissions():
 
 
 @router.get("/students")
-async def get_student_admissions():
+async def get_student_admissions(department: str = None):
     try:
         admissions_collection = _admissions_collection()
         query = {"$or": [{"role": "student"}, {"type": "student"}]}
+        if department:
+            import re as _re
+            dept_esc = _re.escape(department.strip())
+            dept_filter = {"$or": [
+                {"department": {"$regex": dept_esc, "$options": "i"}},
+                {"courseCategory": {"$regex": dept_esc, "$options": "i"}},
+                {"course": {"$regex": dept_esc, "$options": "i"}},
+                {"program": {"$regex": dept_esc, "$options": "i"}},
+            ]}
+            query = {"$and": [query, dept_filter]}
         docs = await asyncio.wait_for(admissions_collection.find(query).sort("created_at", -1).to_list(length=300), timeout=1.0)
         return [_serialize_admission(item) for item in docs]
     except BaseException as err:
@@ -812,57 +822,6 @@ async def reject_admission(admission_id: str):
     return {"message": "Admission rejected successfully", "id": admission_id}
 
 
-@router.delete("/{admission_id}")
-async def delete_admission(admission_id: str):
-    admissions_collection = _admissions_collection()
-    result = await admissions_collection.delete_one(_build_lookup_query(admission_id))
-
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Admission not found")
-
-    return {"message": "Admission deleted successfully", "id": admission_id}
-
-
-@router.get("/{admission_id}")
-async def get_admission(admission_id: str):
-    admissions_collection = _admissions_collection()
-    doc = await admissions_collection.find_one(_build_lookup_query(admission_id))
-    if not doc:
-        raise HTTPException(status_code=404, detail="Admission not found")
-    return _serialize_admission(doc)
-
-
-@router.put("/{admission_id}/documents")
-async def update_admission_documents(admission_id: str, payload: dict = Body(...)):
-    admissions_collection = _admissions_collection()
-    
-    # Check if admission exists
-    admission = await admissions_collection.find_one(_build_lookup_query(admission_id))
-    if not admission:
-        raise HTTPException(status_code=404, detail="Admission not found")
-        
-    documents = payload.get("documents")
-    if documents is None:
-        raise HTTPException(status_code=400, detail="Missing documents in request body")
-        
-    update_data = {
-        "documents": documents,
-        "updated_at": _utc_now_iso()
-    }
-    if payload.get("status"):
-        update_data["status"] = payload.get("status")
-        
-    result = await admissions_collection.update_one(
-        _build_lookup_query(admission_id),
-        {"$set": update_data}
-    )
-    
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Admission not found")
-        
-    return {"message": "Documents updated successfully", "id": admission_id}
-
-
 # -----------------
 # Faculty Admissions Routes
 # -----------------
@@ -902,12 +861,21 @@ def _build_faculty_lookup_query(faculty_admission_id: str) -> dict[str, Any]:
 
 @router.get("/faculty")
 @router.get("/faculty/")
-async def get_faculty_admissions():
+async def get_faculty_admissions(department: str = None):
     """Get all faculty admissions"""
     faculty_admissions_collection = _faculty_admissions_collection()
     data: list[dict[str, Any]] = []
-    
-    async for item in faculty_admissions_collection.find().sort("created_at", -1):
+
+    query: dict[str, Any] = {}
+    if department:
+        import re as _re
+        dept_esc = _re.escape(department.strip())
+        query = {"$or": [
+            {"department": {"$regex": dept_esc, "$options": "i"}},
+            {"departmentId": {"$regex": dept_esc, "$options": "i"}},
+        ]}
+
+    async for item in faculty_admissions_collection.find(query).sort("created_at", -1):
         data.append(_serialize_faculty_admission(item))
     
     return data
@@ -997,3 +965,54 @@ async def delete_faculty_admission(faculty_admission_id: str):
         raise HTTPException(status_code=404, detail="Faculty admission not found")
     
     return {"message": "Faculty admission deleted successfully", "id": faculty_admission_id}
+
+
+@router.delete("/{admission_id}")
+async def delete_admission(admission_id: str):
+    admissions_collection = _admissions_collection()
+    result = await admissions_collection.delete_one(_build_lookup_query(admission_id))
+
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Admission not found")
+
+    return {"message": "Admission deleted successfully", "id": admission_id}
+
+
+@router.get("/{admission_id}")
+async def get_admission(admission_id: str):
+    admissions_collection = _admissions_collection()
+    doc = await admissions_collection.find_one(_build_lookup_query(admission_id))
+    if not doc:
+        raise HTTPException(status_code=404, detail="Admission not found")
+    return _serialize_admission(doc)
+
+
+@router.put("/{admission_id}/documents")
+async def update_admission_documents(admission_id: str, payload: dict = Body(...)):
+    admissions_collection = _admissions_collection()
+    
+    # Check if admission exists
+    admission = await admissions_collection.find_one(_build_lookup_query(admission_id))
+    if not admission:
+        raise HTTPException(status_code=404, detail="Admission not found")
+        
+    documents = payload.get("documents")
+    if documents is None:
+        raise HTTPException(status_code=400, detail="Missing documents in request body")
+        
+    update_data = {
+        "documents": documents,
+        "updated_at": _utc_now_iso()
+    }
+    if payload.get("status"):
+        update_data["status"] = payload.get("status")
+        
+    result = await admissions_collection.update_one(
+        _build_lookup_query(admission_id),
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Admission not found")
+        
+    return {"message": "Documents updated successfully", "id": admission_id}

@@ -1,9 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { API_BASE } from '../api/apiBase';
+import { getUserSession, getUserData } from '../auth/sessionController';
 
 const AdmissionContext = createContext();
 
 export function AdmissionProvider({ children }) {
+  const session = getUserSession();
+  const user = session?.user || getUserData();
+  const role = session?.role || 'admin';
+  const hodDepartment = role === 'hod' ? (user?.department || user?.departmentId || user?.department_id || '') : '';
+
   const [studentApps, setStudentApps] = useState([]);
   const [facultyApps, setFacultyApps] = useState([]);
   const [approvedStudents, setApprovedStudents] = useState([]);
@@ -24,7 +30,8 @@ export function AdmissionProvider({ children }) {
   //  Fetch Students
   const fetchStudentAdmissions = async () =>{
     try {
-      const res = await fetch(`${API_BASE}/admissions/students`);
+      const deptParam = hodDepartment ? `?department=${encodeURIComponent(hodDepartment)}` : '';
+      const res = await fetch(`${API_BASE}/admissions/students${deptParam}`);
       if (res.ok) {
         const data = await res.json();
         setStudentApps(data.map((item) =>sanitizeStudent(item)));
@@ -37,7 +44,8 @@ export function AdmissionProvider({ children }) {
   //  Fetch Faculty
   const fetchFacultyAdmissions = async () =>{
     try {
-      const res = await fetch(`${API_BASE}/admissions/faculty`);
+      const deptParam = hodDepartment ? `?department=${encodeURIComponent(hodDepartment)}` : '';
+      const res = await fetch(`${API_BASE}/admissions/faculty${deptParam}`);
       if (res.ok) {
         const data = await res.json();
         setFacultyApps(data.map((item) =>sanitizeStudent(item)));
@@ -47,9 +55,9 @@ export function AdmissionProvider({ children }) {
     }
   };
 
-  //  Fetch Approved Students
   const fetchApprovedStudents = async () =>{
     try {
+      // Skip the expensive purge on every call — run it only on explicit admin action
       const res = await fetch(`${API_BASE}/admissions/students/approved-for-fees`);
 
       if (res.ok) {
@@ -63,14 +71,13 @@ export function AdmissionProvider({ children }) {
     }
   };
 
-  //  INITIAL LOAD
+  //  INITIAL LOAD — only student + faculty admissions (fast parallel)
   useEffect(() =>{
     const loadData = async () =>{
       setLoading(true);
       await Promise.all([
         fetchStudentAdmissions(),
         fetchFacultyAdmissions(),
-        fetchApprovedStudents(),
       ]);
       setLoading(false);
     };

@@ -36,11 +36,12 @@ function filterPlacements(items, { status, search, personId } = {}) {
   return filtered;
 }
 
-export async function fetchPlacements({ status, search, personId } = {}) {
+export async function fetchPlacements({ status, search, personId, department } = {}) {
   const params = new URLSearchParams();
   if (status && status !== 'All') params.append('status', status);
   if (search) params.append('search', search);
   if (personId) params.append('person_id', personId);
+  if (department) params.append('department', department);
 
   const queryString = params.toString();
   const url = queryString ? `${API_BASE}/academics/placement?${queryString}` : `${API_BASE}/academics/placement`;

@@ -845,6 +845,12 @@ async def get_admin_attendance_overview(
             mq["$or"] = [{"subjectCode": subject}, {"subjectName": subject}]
         if faculty:
             mq["markedBy"] = faculty
+        if department:
+            dept_escaped = re.escape(department.split('&')[0].split('and')[0].strip())
+            mq["$or"] = [
+                {"department": {"$regex": dept_escaped, "$options": "i"}},
+                {"classLabel": {"$regex": dept_escaped, "$options": "i"}},
+            ]
         
         async for m in db["academic_attendance_markings"].find(mq):
             markings.append(serialize_doc(m))
@@ -929,6 +935,12 @@ async def list_admin_records(
         if faculty:
             mq["markedBy"] = faculty
         
+        if department:
+            dept_escaped = re.escape(department.split('&')[0].split('and')[0].strip())
+            mq["$or"] = [
+                {"department": {"$regex": dept_escaped, "$options": "i"}},
+                {"classLabel": {"$regex": dept_escaped, "$options": "i"}},
+            ]
         async for m in db["academic_attendance_markings"].find(mq).sort("date", -1):
             markings.append(serialize_doc(m))
     else:
@@ -937,6 +949,7 @@ async def list_admin_records(
         if endDate: markings = [m for m in markings if m.get("date") <= endDate]
         if subject: markings = [m for m in markings if m.get("subjectCode") == subject or m.get("subjectName") == subject]
         if faculty: markings = [m for m in markings if m.get("markedBy") == faculty]
+        if department: markings = [m for m in markings if department.lower() in (m.get("department") or "").lower() or department.lower() in (m.get("classLabel") or "").lower()]
 
     # Resolve class labels to check department, semester, section filters
     records_list = []
@@ -950,13 +963,15 @@ async def list_admin_records(
 
         # Extract class info
         label = m.get("classLabel") or ""
-        # E.g. "Computer Science - Semester 6 - Section A" or "CO-S6A"
-        dept = m.get("department") or "Computer Science"
+        dept = m.get("department") or ""
         sem = m.get("semester") or "Semester 6"
         sec = m.get("section") or "Section A"
 
-        if department and department.lower() not in dept.lower() and department.lower() not in label.lower():
-            continue
+        # If department filter is set, strictly skip records where neither dept nor label matches
+        if department:
+            target_d = department.lower()
+            if target_d not in dept.lower() and target_d not in label.lower():
+                continue
         if semester and str(semester).lower() not in sem.lower() and str(semester).lower() not in label.lower():
             continue
         if section and section.lower() not in sec.lower() and section.lower() not in label.lower():

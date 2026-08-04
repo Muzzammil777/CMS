@@ -7,8 +7,15 @@ import { useAdmission } from '../context/AdmissionContext';
 import AdmissionDetailsModal from '../components/AdmissionDetailsModal';
 import { Eye, Check, X, Trash2, Users, UserCheck, CheckCircle2, XCircle } from 'lucide-react';
 
+import { getUserSession, getUserData } from '../auth/sessionController';
+
 export default function AdmissionPage() {
   const navigate = useNavigate();
+  const session = getUserSession();
+  const user = session?.user || getUserData();
+  const role = session?.role || 'admin';
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || '';
+
   const {
     studentApps,
     facultyApps,
@@ -42,6 +49,22 @@ export default function AdmissionPage() {
         return app;
       })
       .filter((app) => {
+        if (role === 'hod' && hodDepartment) {
+          const appDept = (
+            app.department ||
+            app.departmentId ||
+            app.department_id ||
+            app.course ||
+            app.program ||
+            app.courseCategory ||
+            ''
+          ).toLowerCase();
+          const targetDept = hodDepartment.toLowerCase();
+          if (appDept && !appDept.includes(targetDept) && !targetDept.includes(appDept)) {
+            return false;
+          }
+        }
+
         const q = searchQuery.toLowerCase();
         const matchSearch =
           !q ||
@@ -54,7 +77,7 @@ export default function AdmissionPage() {
 
         return matchSearch && matchStatus;
       });
-  }, [activeTab, studentApps, facultyApps, searchQuery, activeFilters]);
+  }, [activeTab, studentApps, facultyApps, searchQuery, activeFilters, role, hodDepartment]);
 
   // ── Actions ──────────────────────────────────────────────────────────────
   const handleApprove = async (id) => {

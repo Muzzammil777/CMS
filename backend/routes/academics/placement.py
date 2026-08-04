@@ -19,6 +19,7 @@ async def list_placements(
     status: Optional[str] = None,
     search: Optional[str] = None,
     person_id: Optional[str] = None,
+    department: Optional[str] = None,
 ):
     try:
         db = get_db()
@@ -31,11 +32,22 @@ async def list_placements(
         query["status"] = status
     if person_id:
         query["ownerId"] = person_id
-    if search:
+    if department:
         query["$or"] = [
+            {"department": {"$regex": department, "$options": "i"}},
+            {"departmentId": {"$regex": department, "$options": "i"}},
+            {"department_id": {"$regex": department, "$options": "i"}},
+            {"dept": {"$regex": department, "$options": "i"}},
+        ]
+    if search:
+        search_or = [
             {"name": {"$regex": search, "$options": "i"}},
             {"company": {"$regex": search, "$options": "i"}},
         ]
+        if "$or" in query:
+            query["$and"] = [{"$or": query.pop("$or")}, {"$or": search_or}]
+        else:
+            query["$or"] = search_or
 
     rows = []
     async for row in db["academic_placements"].find(query).sort("date", -1):

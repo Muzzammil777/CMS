@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
-import { getUserSession } from '../auth/sessionController'
+import { getUserSession, getUserData } from '../auth/sessionController'
 import { buildApiUrl } from '../api/apiBase'
 import { settingsApi } from '../api/settingsApi'
 
@@ -363,8 +363,10 @@ function NewClassModal({ onSave, onClose }) {
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function TimetablePage({ noLayout = false }) {
   const session = getUserSession()
+  const user    = session?.user || getUserData()
   const role    = session?.role || 'student'
-  const canEdit = role === 'admin' || role === 'faculty'
+  const canEdit = role === 'admin' || role === 'faculty' || role === 'hod'
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || ''
 
   const [timetables,   setTimetables]   = useState({})
   const [activeClass,  setActiveClass]  = useState('')
@@ -417,16 +419,26 @@ export default function TimetablePage({ noLayout = false }) {
     return semOnly ? semOnly[0] : null
   }
 
-  const visibleTimetableEntries = role === 'student'
-    ? (() => {
-        const matchedId = findStudentClassId(timetables, studentProfile)
-        if (matchedId && timetables[matchedId]) {
-          return [[matchedId, timetables[matchedId]]]
-        }
-        const first = Object.entries(timetables)[0]
-        return first ? [first] : []
-      })()
-    : Object.entries(timetables)
+  const visibleTimetableEntries = (() => {
+    const all = Object.entries(timetables);
+    if (role === 'hod' && hodDepartment) {
+      const targetDept = toNormalizedText(hodDepartment);
+      const filtered = all.filter(([, record]) => {
+        const d = toNormalizedText(record.dept || record.department || record.label || '');
+        return !d || d.includes(targetDept) || targetDept.includes(d);
+      });
+      return filtered.length ? filtered : all;
+    }
+    if (role === 'student') {
+      const matchedId = findStudentClassId(timetables, studentProfile)
+      if (matchedId && timetables[matchedId]) {
+        return [[matchedId, timetables[matchedId]]]
+      }
+      const first = all[0]
+      return first ? [first] : []
+    }
+    return all;
+  })()
 
   const visibleTimetableMap = Object.fromEntries(visibleTimetableEntries)
   const currentClassId = visibleTimetableMap[activeClass] ? activeClass : visibleTimetableEntries[0]?.[0]

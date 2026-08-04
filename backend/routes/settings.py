@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 
 from backend.schemas.settings import (
     ChangePasswordPayload,
@@ -98,6 +98,100 @@ async def update_profile_by_role(role: str, user_id: str, payload: PartialSettin
     if not updated:
         raise HTTPException(status_code=404, detail="Profile not found for user.")
     return {"message": "Profile updated successfully", "data": updated}
+
+
+# ===== DEPARTMENTS MANAGEMENT =====
+
+@router.get("/departments")
+async def get_departments():
+    try:
+        from backend.db import get_db
+        db = get_db()
+        collection = db["departments"]
+        depts = []
+        async for doc in collection.find({}):
+            doc["id"] = str(doc.get("_id", doc.get("id")))
+            doc.pop("_id", None)
+            depts.append(doc)
+        if depts:
+            return depts
+    except Exception:
+        pass
+
+    from backend.dev_store import DEV_STORE
+    return DEV_STORE.setdefault("departments", [
+        { "id": 'DEPT-MLT', "name": 'Medical Laboratory Technology', "code": 'MLT', "head": 'Department Head', "email": 'mlt@dschs.edu.in', "phone": '+91 98765 43210', "office_location": 'Health Sciences Block, Room 101', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Medical Laboratory Technology (3 Years + 1 Year Internship)" },
+        { "id": 'DEPT-OTAT', "name": 'Operation Theatre & Anaesthesia Technology', "code": 'OTAT', "head": 'Department Head', "email": 'otat@dschs.edu.in', "phone": '+91 98765 43211', "office_location": 'Operation Theatre Complex, Block B', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Operation Theatre and Anaesthesia Technology (3 Years + 1 Year Internship)" },
+        { "id": 'DEPT-RIT', "name": 'Radiography & Imaging Technology', "code": 'RIT', "head": 'Department Head', "email": 'rit@dschs.edu.in', "phone": '+91 98765 43212', "office_location": 'Department of Radiology, Block C', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Radiography and Imaging Technology (3 Years + 1 Year Internship)" },
+    ])
+
+@router.post("/departments")
+async def create_department(payload: dict = Body(...)):
+    from backend.dev_store import DEV_STORE
+    depts = DEV_STORE.setdefault("departments", [
+        { "id": 'DEPT-MLT', "name": 'Medical Laboratory Technology', "code": 'MLT', "head": 'Department Head', "email": 'mlt@dschs.edu.in', "phone": '+91 98765 43210', "office_location": 'Health Sciences Block, Room 101', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Medical Laboratory Technology (3 Years + 1 Year Internship)" },
+        { "id": 'DEPT-OTAT', "name": 'Operation Theatre & Anaesthesia Technology', "code": 'OTAT', "head": 'Department Head', "email": 'otat@dschs.edu.in', "phone": '+91 98765 43211', "office_location": 'Operation Theatre Complex, Block B', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Operation Theatre and Anaesthesia Technology (3 Years + 1 Year Internship)" },
+        { "id": 'DEPT-RIT', "name": 'Radiography & Imaging Technology', "code": 'RIT', "head": 'Department Head', "email": 'rit@dschs.edu.in', "phone": '+91 98765 43212', "office_location": 'Department of Radiology, Block C', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Radiography and Imaging Technology (3 Years + 1 Year Internship)" },
+    ])
+    from uuid import uuid4
+    dept_id = payload.get("id") or f"DEPT-{uuid4().hex[:8].upper()}"
+    payload["id"] = dept_id
+    
+    # DEV_STORE sync
+    existing_idx = next((i for i, d in enumerate(depts) if d.get("id") == dept_id or d.get("code") == payload.get("code")), None)
+    if existing_idx is not None:
+        depts[existing_idx] = payload
+    else:
+        depts.append(payload)
+
+    # MongoDB sync if available
+    try:
+        from backend.db import get_db
+        db = get_db()
+        await db["departments"].update_one({"id": dept_id}, {"$set": payload}, upsert=True)
+    except Exception:
+        pass
+
+    return payload
+
+@router.put("/departments/{dept_id}")
+async def update_department(dept_id: str, payload: dict = Body(...)):
+    from backend.dev_store import DEV_STORE
+    depts = DEV_STORE.setdefault("departments", [])
+    payload["id"] = dept_id
+    
+    updated = False
+    for i, d in enumerate(depts):
+        if d.get("id") == dept_id or d.get("code") == payload.get("code"):
+            depts[i] = payload
+            updated = True
+            break
+    if not updated:
+        depts.append(payload)
+        
+    try:
+        from backend.db import get_db
+        db = get_db()
+        await db["departments"].update_one({"id": dept_id}, {"$set": payload}, upsert=True)
+    except Exception:
+        pass
+
+    return payload
+
+@router.delete("/departments/{dept_id}")
+async def delete_department(dept_id: str):
+    from backend.dev_store import DEV_STORE
+    depts = DEV_STORE.setdefault("departments", [])
+    DEV_STORE["departments"] = [d for d in depts if d.get("id") != dept_id]
+    
+    try:
+        from backend.db import get_db
+        db = get_db()
+        await db["departments"].delete_one({"id": dept_id})
+    except Exception:
+        pass
+
+    return {"message": "Department deleted"}
 
 
 @router.get("/{role}/{user_id}/notifications")
@@ -239,55 +333,4 @@ async def request_account_deletion(user_id: str, payload: DeleteRequestPayload, 
     return {"message": "Account deletion request submitted.", "data": entry}
 
 
-# ===== DEPARTMENTS MANAGEMENT =====
 
-@router.get("/departments")
-async def get_departments():
-    try:
-        from backend.db import get_db
-        db = get_db()
-        collection = db["departments"]
-        depts = []
-        async for doc in collection.find({}):
-            doc["id"] = str(doc.get("_id", doc.get("id")))
-            doc.pop("_id", None)
-            depts.append(doc)
-        if depts:
-            return depts
-    except Exception:
-        pass
-
-    from backend.dev_store import DEV_STORE
-    return DEV_STORE.setdefault("departments", [
-        { "id": 'DEPT-1', "name": 'Computer Science', "code": 'CS', "head": 'Dr. Ramesh Kumar', "email": 'hod.cs@mit.edu', "phone": '+91 98765 43210', "office_location": 'Building A, Room 301', "totalFaculty": 14, "totalStudents": 420, "courses": 12 },
-        { "id": 'DEPT-2', "name": 'Electronics & Communication', "code": 'ECE', "head": 'Dr. Sunita Sharma', "email": 'hod.ece@mit.edu', "phone": '+91 98765 43213', "office_location": 'Building B, Room 201', "totalFaculty": 10, "totalStudents": 310, "courses": 9 },
-        { "id": 'DEPT-3', "name": 'Mechanical Engineering', "code": 'ME', "head": 'Dr. Venkat Reddy', "email": 'hod.me@mit.edu', "phone": '+91 98765 43221', "office_location": 'Building D, Room 301', "totalFaculty": 8, "totalStudents": 260, "courses": 8 },
-        { "id": 'DEPT-4', "name": 'Mathematics', "code": 'MATH', "head": 'Dr. Deepak Gupta', "email": 'hod.math@mit.edu', "phone": '+91 98765 43218', "office_location": 'Building C, Room 301', "totalFaculty": 6, "totalStudents": 180, "courses": 6 },
-        { "id": 'DEPT-5', "name": 'Information Technology', "code": 'IT', "head": 'Dr. Geetha V', "email": 'hod.it@mit.edu', "phone": '+91 98765 43230', "office_location": 'Building A, Room 305', "totalFaculty": 11, "totalStudents": 350, "courses": 10 },
-        { "id": 'DEPT-6', "name": 'Medical Laboratory Technology', "code": 'MLT', "head": 'Dr. K. Rahini', "email": 'hod.mlt@mit.edu', "phone": '+91 98765 43240', "office_location": 'Building E, Room 101', "totalFaculty": 7, "totalStudents": 210, "courses": 6 },
-    ])
-
-@router.post("/departments")
-async def create_department(payload: dict):
-    from backend.dev_store import DEV_STORE
-    depts = DEV_STORE.setdefault("departments", [])
-    depts.append(payload)
-    return payload
-
-@router.put("/departments/{dept_id}")
-async def update_department(dept_id: str, payload: dict):
-    from backend.dev_store import DEV_STORE
-    depts = DEV_STORE.setdefault("departments", [])
-    for i, d in enumerate(depts):
-        if d.get("id") == dept_id:
-            depts[i] = payload
-            return payload
-    depts.append(payload)
-    return payload
-
-@router.delete("/departments/{dept_id}")
-async def delete_department(dept_id: str):
-    from backend.dev_store import DEV_STORE
-    depts = DEV_STORE.setdefault("departments", [])
-    DEV_STORE["departments"] = [d for d in depts if d.get("id") != dept_id]
-    return {"message": "Department deleted"}

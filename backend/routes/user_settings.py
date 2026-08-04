@@ -1128,14 +1128,9 @@ async def create_user(body: dict):
 
 def _get_default_departments():
     return [
-        {"id": 1, "name": "Computer Science & Engineering", "code": "CSE", "head": "Prof. Dr. Amjad Khan", "hod": "Prof. Dr. Amjad Khan", "totalFaculty": 24, "totalStudents": 312, "courses": 45, "email": "cse@mit.edu", "phone": "+91-9876543210", "location": "Building A, Floor 3", "description": "Excellence in computer science education and research", "mappedStaff": 24},
-        {"id": 2, "name": "Electrical Engineering", "code": "EEE", "head": "Prof. K.V. Rao", "hod": "Prof. K.V. Rao", "totalFaculty": 18, "totalStudents": 256, "courses": 38, "email": "eee@mit.edu", "phone": "+91-9876543211", "location": "Building B, Floor 2", "description": "Power systems, control systems, and renewable energy focus", "mappedStaff": 18},
-        {"id": 3, "name": "Mechanical Engineering", "code": "ME", "head": "Prof. S. Natarajan", "hod": "Prof. S. Natarajan", "totalFaculty": 22, "totalStudents": 298, "courses": 42, "email": "me@mit.edu", "phone": "+91-9876543212", "location": "Building C, Floor 1", "description": "Thermal engineering, manufacturing, and design specializations", "mappedStaff": 22},
-        {"id": 4, "name": "Civil Engineering", "code": "CE", "head": "Prof. Ramesh Gupta", "hod": "Prof. Ramesh Gupta", "totalFaculty": 16, "totalStudents": 224, "courses": 35, "email": "ce@mit.edu", "phone": "+91-9876543213", "location": "Building D, Floor 2", "description": "Infrastructure, structures, and environmental engineering", "mappedStaff": 16},
-        {"id": 5, "name": "Medicine & Health Sciences", "code": "MED", "head": "Prof. Dr. Sarah Johnson", "hod": "Prof. Dr. Sarah Johnson", "totalFaculty": 30, "totalStudents": 400, "courses": 50, "email": "medicine@mit.edu", "phone": "+91-9876543214", "location": "Medical Block, Floor 1", "description": "MBBS, Nursing, and Allied Health Sciences", "mappedStaff": 30},
-        {"id": 6, "name": "Arts & Humanities", "code": "ART", "head": "Prof. Dr. Maya Sen", "hod": "Prof. Dr. Maya Sen", "totalFaculty": 15, "totalStudents": 220, "courses": 30, "email": "arts@mit.edu", "phone": "+91-9876543215", "location": "Arts Block, Floor 2", "description": "Literature, history, sociology and fine arts education", "mappedStaff": 15},
-        {"id": 7, "name": "Business & Commerce", "code": "BUS", "head": "Prof. Dr. Rajesh Kumar", "hod": "Prof. Dr. Rajesh Kumar", "totalFaculty": 20, "totalStudents": 350, "courses": 40, "email": "business@mit.edu", "phone": "+91-9876543216", "location": "Management Block, Floor 3", "description": "Commerce, finance, and business administration programs", "mappedStaff": 20},
-        {"id": 8, "name": "Science & Technology", "code": "SCI", "head": "Prof. Dr. Amit Verma", "hod": "Prof. Dr. Amit Verma", "totalFaculty": 18, "totalStudents": 280, "courses": 35, "email": "science@mit.edu", "phone": "+91-9876543217", "location": "Science Block, Floor 1", "description": "Physics, chemistry, mathematics, and biotechnology programs", "mappedStaff": 18},
+        {"id": 1, "name": "Medical Laboratory Technology", "code": "MLT", "head": "Head of Department", "hod": "Head of Department", "totalFaculty": 0, "totalStudents": 0, "courses": 1, "email": "mlt@dschs.edu.in", "phone": "+91-9876543210", "location": "Health Sciences Block, Room 101", "description": "B.Sc. Medical Laboratory Technology (3 Years + 1 Year Internship)", "mappedStaff": 0},
+        {"id": 2, "name": "Operation Theatre & Anaesthesia Technology", "code": "OTAT", "head": "Head of Department", "hod": "Head of Department", "totalFaculty": 0, "totalStudents": 0, "courses": 1, "email": "otat@dschs.edu.in", "phone": "+91-9876543211", "location": "Operation Theatre Complex, Block B", "description": "B.Sc. Operation Theatre and Anaesthesia Technology (3 Years + 1 Year Internship)", "mappedStaff": 0},
+        {"id": 3, "name": "Radiography & Imaging Technology", "code": "RIT", "head": "Head of Department", "hod": "Head of Department", "totalFaculty": 0, "totalStudents": 0, "courses": 1, "email": "rit@dschs.edu.in", "phone": "+91-9876543212", "location": "Department of Radiology, Block C", "description": "B.Sc. Radiography and Imaging Technology (3 Years + 1 Year Internship)", "mappedStaff": 0},
     ]
 
 def get_matching_dept_code(dept_val: str, dept_list: list) -> str:
@@ -1160,25 +1155,15 @@ def get_matching_dept_code(dept_val: str, dept_list: list) -> str:
         if val and (val in name or name in val or val in code or code in val):
             return d.get("code")
             
-    # 4. Fallback check for standard code patterns, but only if they exist in active departments
+    # 4. Fallback check for health science codes
     valid_codes = {d.get("code").upper() for d in dept_list if d.get("code")}
     
-    if ("computer" in val or "cse" in val or "cs" in val) and "CSE" in valid_codes:
-        return "CSE"
-    if ("electrical" in val or "electronics" in val or "eee" in val or "ece" in val) and "EEE" in valid_codes:
-        return "EEE"
-    if ("mechanical" in val or "me" in val or "mech" in val) and "ME" in valid_codes:
-        return "ME"
-    if ("civil" in val or "ce" in val) and "CE" in valid_codes:
-        return "CE"
-    if ("medicine" in val or "med" in val or "mbbs" in val or "health" in val) and "MED" in valid_codes:
-        return "MED"
-    if ("arts" in val or "humanities" in val or "art" in val) and "ART" in valid_codes:
-        return "ART"
-    if ("business" in val or "commerce" in val or "bus" in val or "com" in val) and "BUS" in valid_codes:
-        return "BUS"
-    if ("science" in val or "sci" in val) and "SCI" in valid_codes:
-        return "SCI"
+    if ("lab" in val or "mlt" in val or "medical lab" in val) and "MLT" in valid_codes:
+        return "MLT"
+    if ("anaesthesia" in val or "theatre" in val or "otat" in val) and "OTAT" in valid_codes:
+        return "OTAT"
+    if ("radiography" in val or "radiology" in val or "rit" in val or "imaging" in val) and "RIT" in valid_codes:
+        return "RIT"
         
     return None
 

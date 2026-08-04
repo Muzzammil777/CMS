@@ -872,12 +872,9 @@ def is_class_assigned_py(class_id: str, class_label: str, assigned_classes: list
     normalized_id = class_id.lower()
     
     dept_codes = {
-        'cse': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-        'ece': ['electronics', 'electronics & communication', 'electronics and communication'],
-        'me': ['mechanical', 'mechanical engineering'],
-        'ce': ['civil', 'civil engineering'],
-        'it': ['information technology'],
-        'eee': ['electrical', 'electrical engineering', 'electrical & electronics', 'electrical and electronics']
+        'mlt': ['medical laboratory technology', 'medical lab technology', 'mlt'],
+        'otat': ['operation theatre & anaesthesia technology', 'operation theatre and anaesthesia technology', 'otat', 'anaesthesia'],
+        'rit': ['radiography & imaging technology', 'radiography and imaging technology', 'rit', 'radiology'],
     }
     
     for ac in assigned_classes:

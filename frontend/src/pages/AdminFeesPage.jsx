@@ -420,12 +420,7 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
     });
 
     if (combined.length === 0) {
-      return [
-        { id: 'STU-101', rollNumber: '2025-CS-001', name: 'Aarav Sharma', department: 'Computer Science & Engineering', email: 'aarav@mit.edu' },
-        { id: 'STU-102', rollNumber: '2025-ECE-002', name: 'Priya Ananya', department: 'Electronics & Communication', email: 'priya@mit.edu' },
-        { id: 'STU-103', rollNumber: '2025-ME-003', name: 'Rohan Verma', department: 'Mechanical Engineering', email: 'rohan@mit.edu' },
-        { id: 'STU-104', rollNumber: '2025-IT-004', name: 'Mohamed Riyasudeen', department: 'Information Technology', email: 'riyas@mit.edu' },
-      ];
+      return [];
     }
     return combined;
   }, [enrolledStudents, approvedStudents]);
@@ -433,7 +428,7 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
   const [formData, setFormData] = useState({
     assignmentType: 'individual',
     studentId: '',
-    department: 'Computer Science & Engineering',
+    department: 'Medical Laboratory Technology',
     semester: 'Semester 1',
     academicYear: '2025-2026',
     quota: 'Government Quota',
@@ -623,12 +618,9 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
                     onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                     className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white cursor-pointer"
                   >
-                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
-                    <option value="Electronics & Communication">Electronics & Communication</option>
-                    <option value="Mechanical Engineering">Mechanical Engineering</option>
-                    <option value="Information Technology">Information Technology</option>
-                    <option value="Mathematics">Mathematics</option>
                     <option value="Medical Laboratory Technology">Medical Laboratory Technology</option>
+                    <option value="Operation Theatre & Anaesthesia Technology">Operation Theatre & Anaesthesia Technology</option>
+                    <option value="Radiography & Imaging Technology">Radiography & Imaging Technology</option>
                   </select>
                 </div>
               )}

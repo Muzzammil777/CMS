@@ -13,7 +13,7 @@ def _student_seed(overrides: Optional[dict] = None) -> dict:
             "name": "Arun Kumar",
             "email": "arun@student.edu",
             "phone": "9876543210",
-            "bio": "Computer Science Student",
+            "bio": "Medical Laboratory Technology Student",
             "address": "Chennai",
         },
         "notifications": {
@@ -55,9 +55,9 @@ def _faculty_seed(overrides: Optional[dict] = None) -> dict:
         "profile": {
             "name": "Dr. Ravi",
             "email": "ravi@faculty.edu",
-            "department": "Computer Science",
+            "department": "Medical Laboratory Technology",
             "phone": "9123456789",
-            "bio": "Associate Professor - Distributed Systems",
+            "bio": "Associate Professor - Clinical Biochemistry",
         },
         "notifications": {
             "salaryCredit": True,
@@ -204,9 +204,9 @@ SETTINGS_DB = {
                 "profile": {
                     "name": "Dr. Rajesh Iyer",
                     "email": "rajesh@faculty.edu",
-                    "department": "School of Engineering",
+                    "department": "Operation Theatre & Anaesthesia Technology",
                     "phone": "9123456790",
-                    "bio": "Faculty Coordinator - Software Engineering",
+                    "bio": "Faculty Coordinator - Anaesthesia Technology",
                 },
                 "teachingPreferences": {
                     "preferredMode": "Offline",

@@ -63,11 +63,11 @@ const TT_STYLE = {
 
 const MONTHS_ALL  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const YEARS       = [2024, 2025, 2026];
-const DEPTS       = ['CS','Phys','Math','ECE','Mech'];
-const DEPT_FULL   = { CS:'Computer Science', Phys:'Physics', Math:'Mathematics', ECE:'Electronics', Mech:'Mechanical' };
+const DEPTS       = ['MLT', 'OTAT', 'RIT'];
+const DEPT_FULL   = { MLT: 'Medical Laboratory Technology', OTAT: 'Operation Theatre & Anaesthesia Technology', RIT: 'Radiography & Imaging Technology' };
 const SEMESTER_OPTS = ['All Semesters', 'Semester 4 (Current)','Semester 3','Semester 2','Semester 1'];
-const DEPT_OPTS     = ['All Departments','Computer Science','Physics','Mathematics','Electronics','Mechanical'];
-const DEPT_CODE     = { 'All Departments':null,'Computer Science':'CS','Physics':'Phys','Mathematics':'Math','Electronics':'ECE','Mechanical':'Mech' };
+const DEPT_OPTS     = ['All Departments', 'Medical Laboratory Technology', 'Operation Theatre & Anaesthesia Technology', 'Radiography & Imaging Technology'];
+const DEPT_CODE     = { 'All Departments': null, 'Medical Laboratory Technology': 'MLT', 'Operation Theatre & Anaesthesia Technology': 'OTAT', 'Radiography & Imaging Technology': 'RIT' };
 
 function myToKey({month,year}){return year*12+month;}
 function keyToMY(k){return{month:k%12,year:Math.floor(k/12)};}
@@ -76,13 +76,12 @@ function myLabel({month,year}){return`${MONTHS_ALL[month]} ${year}`;}
 function fmtCr(n){return n>=10000000?`₹${(n/10000000).toFixed(1)}Cr`:`₹${(n/100000).toFixed(1)}L`;}
 
 const MOCK_ANALYTICS_DATA = {
-  summaryData: { totalStudents: 1280, students: '1,280', faculty: '84', courses: '42', income: 18500000, expense: 14200000, scholarships: 15 },
+  summaryData: { totalStudents: 0, students: '0', faculty: '0', courses: '3', income: 0, expense: 0, scholarships: 0 },
   departmentData: [
-    { name: 'Computer Science', code: 'CS', avgAttendance: 92, passRate: 94, students: 420, faculty: 24, cgpa: 8.4 },
-    { name: 'Electronics', code: 'ECE', avgAttendance: 88, passRate: 89, students: 310, faculty: 18, cgpa: 7.9 },
-    { name: 'Mechanical', code: 'Mech', avgAttendance: 85, passRate: 86, students: 260, faculty: 16, cgpa: 7.6 },
-    { name: 'Physics', code: 'Phys', avgAttendance: 89, passRate: 91, students: 150, faculty: 14, cgpa: 8.1 },
-    { name: 'Mathematics', code: 'Math', avgAttendance: 91, passRate: 93, students: 140, faculty: 12, cgpa: 8.3 }
+    { name: 'Medical Laboratory Technology', code: 'MLT', avgAttendance: 0, passRate: 0, students: 0, faculty: 0, cgpa: 0 },
+    { name: 'Operation Theatre & Anaesthesia Technology', code: 'OTAT', avgAttendance: 0, passRate: 0, students: 0, faculty: 0, cgpa: 0 },
+    { name: 'Radiography & Imaging Technology', code: 'RIT', avgAttendance: 0, passRate: 0, students: 0, faculty: 0, cgpa: 0 },
+  ]
   ],
   studentsByDept: { CS: 420, ECE: 310, Mech: 260, Phys: 150, Math: 140 },
   studentsByYear: { '1st Year': 360, '2nd Year': 340, '3rd Year': 300, '4th Year': 280 },
@@ -253,10 +252,10 @@ export default function AnalyticsPage() {
   const { DEPTS, DEPT_FULL, DEPT_OPTS, DEPT_CODE } = useMemo(() => {
     if (dbDepartments.length === 0) {
       return {
-        DEPTS: ['CS','Phys','Math','ECE','Mech'],
-        DEPT_FULL: { CS:'Computer Science', Phys:'Physics', Math:'Mathematics', ECE:'Electronics', Mech:'Mechanical' },
-        DEPT_OPTS: ['All Departments','Computer Science','Physics','Mathematics','Electronics','Mechanical'],
-        DEPT_CODE: { 'All Departments':null,'Computer Science':'CS','Physics':'Phys','Mathematics':'Math','Electronics':'ECE','Mechanical':'Mech' }
+        DEPTS: ['MLT', 'OTAT', 'RIT'],
+        DEPT_FULL: { MLT: 'Medical Laboratory Technology', OTAT: 'Operation Theatre & Anaesthesia Technology', RIT: 'Radiography & Imaging Technology' },
+        DEPT_OPTS: ['All Departments', 'Medical Laboratory Technology', 'Operation Theatre & Anaesthesia Technology', 'Radiography & Imaging Technology'],
+        DEPT_CODE: { 'All Departments': null, 'Medical Laboratory Technology': 'MLT', 'Operation Theatre & Anaesthesia Technology': 'OTAT', 'Radiography & Imaging Technology': 'RIT' }
       };
     }
     const depts = dbDepartments.map(d => d.code || d.name.slice(0, 2).toUpperCase());

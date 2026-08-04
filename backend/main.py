@@ -43,6 +43,7 @@ from backend.routes.administration.admissions import router as admissions_router
 from backend.routes.administration.fees import router as fees_router
 from backend.routes.administration.invoices import router as invoices_router
 from backend.routes.user_settings import router as user_settings_router
+from backend.routes.settings import router as settings_router
 from backend.routes.auth import router as auth_router
 from backend.routes.newsletters import router as newsletters_router
 PORT = int(os.getenv("PORT", 5000))
@@ -263,6 +264,7 @@ app.include_router(students_router)
 app.include_router(admissions_router)
 app.include_router(fees_router)
 app.include_router(invoices_router)
+app.include_router(settings_router)
 app.include_router(user_settings_router)
 app.include_router(auth_router)
 app.include_router(newsletters_router)

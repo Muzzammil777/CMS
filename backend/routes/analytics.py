@@ -466,17 +466,16 @@ async def verify_collections():
 
 MONTHS_ALL = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-DEPTS = ["CS", "Phys", "Math", "ECE", "Mech"]
+DEPTS = ["MLT", "OTAT", "RIT"]
 DEPT_FULL = {
-    "CS": "Computer Science", "Phys": "Physics", "Math": "Mathematics",
-    "ECE": "Electronics", "Mech": "Mechanical",
+    "MLT": "Medical Laboratory Technology",
+    "OTAT": "Operation Theatre & Anaesthesia Technology",
+    "RIT": "Radiography & Imaging Technology",
 }
 DEPT_MAP = {
-    "CS": ["Computer Science", "CSE", "Computer Science & Engineering"],
-    "Phys": ["Physics", "Phys"],
-    "Math": ["Mathematics", "Math"],
-    "ECE": ["Electronics", "ECE", "Electronics & Communication"],
-    "Mech": ["Mechanical", "Mech", "Mechanical Eng.", "Mechanical Engineering"],
+    "MLT": ["Medical Laboratory Technology", "MLT", "Medical Lab Technology"],
+    "OTAT": ["Operation Theatre & Anaesthesia Technology", "OTAT", "Operation Theatre and Anaesthesia Technology"],
+    "RIT": ["Radiography & Imaging Technology", "RIT", "Radiography and Imaging Technology", "Radiology"],
 }
 
 

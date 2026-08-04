@@ -689,6 +689,9 @@ async def list_faculty(
 ):
     try:
         collection = await get_faculty_collection()
+        perf_col = await get_faculty_activity_collection("faculty_performance")
+        leave_col = await get_faculty_activity_collection("faculty_leave")
+        career_col = await get_faculty_activity_collection("career_pathways")
 
         query = {}
         if department_id:
@@ -748,10 +751,10 @@ async def list_faculty(
                     perf_map.setdefault(fid, []).append(p)
 
             leave_docs = await leave_col.find({"facultyId": {"$in": emp_ids}}).to_list(None)
-            for l in leave_docs:
-                fid = l.get("facultyId")
+            for leave_doc in leave_docs:
+                fid = leave_doc.get("facultyId")
                 if fid:
-                    leave_map.setdefault(fid, []).append(l)
+                    leave_map.setdefault(fid, []).append(leave_doc)
 
             career_docs = await career_col.find({"faculty_id": {"$in": emp_ids}}).to_list(None)
             for c in career_docs:
@@ -954,7 +957,7 @@ async def create_faculty(faculty: Faculty):
             import asyncio
             asyncio.create_task(send_email(email_to, subject, html_body))
         else:
-            print(f"[EMAIL WARNING] No email address found for faculty, skipping welcome email.")
+            print("[EMAIL WARNING] No email address found for faculty, skipping welcome email.")
     except Exception as email_err:
         print(f"[EMAIL ERROR] Failed to trigger welcome email for faculty: {str(email_err)}")
 

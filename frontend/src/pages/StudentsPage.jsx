@@ -25,7 +25,9 @@ export default function StudentsPage() {
   const [newAdmissionsCount, setNewAdmissionsCount] = useState(0)
 
   const session = getUserSession()
+  const user = session?.user || getUserData()
   const role = session?.role || 'admin'
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || ''
 
   // ── Sync URL view ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -39,7 +41,10 @@ export default function StudentsPage() {
   const fetchStudents = async () => {
     try {
       setLoading(true)
-      const studentsRes = await fetch(buildApiUrl('/students'))
+      const endpoint = role === 'hod' && hodDepartment
+        ? `/students?department=${encodeURIComponent(hodDepartment)}`
+        : '/students'
+      const studentsRes = await fetch(buildApiUrl(endpoint))
       if (!studentsRes.ok) throw new Error('Failed to fetch students')
       const data = await studentsRes.json()
       setStudentsList(Array.isArray(data) ? data : [])
@@ -148,6 +153,13 @@ export default function StudentsPage() {
   // ── Filter Logic ────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     return studentsList.filter(s => {
+      if (role === 'hod' && hodDepartment) {
+        const studentDept = (s.department || s.departmentId || s.department_id || '').toLowerCase()
+        const targetDept = hodDepartment.toLowerCase()
+        if (!studentDept.includes(targetDept) && !targetDept.includes(studentDept)) {
+          return false
+        }
+      }
       const q = searchQuery.toLowerCase()
       const matchSearch = !q || (
         (s.name || '').toLowerCase().includes(q) ||
@@ -162,7 +174,7 @@ export default function StudentsPage() {
         (s.feeStatus || '').toLowerCase() === activeFilters.feeStatus.toLowerCase()
       return matchSearch && matchDept && matchStatus && matchFee
     })
-  }, [studentsList, searchQuery, activeFilters])
+  }, [studentsList, searchQuery, activeFilters, role, hodDepartment])
 
   const filteredDrafts = useMemo(() => {
     return draftList.filter(d => {

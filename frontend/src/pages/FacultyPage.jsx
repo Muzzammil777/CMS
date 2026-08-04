@@ -22,6 +22,11 @@ export default function FacultyPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilters, setActiveFilters] = useState({ department: '', designation: '', status: '' })
 
+  const session = getUserSession()
+  const user = session?.user || getUserData()
+  const role = session?.role || 'admin'
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || ''
+
   // ── Sync URL view ────────────────────────────────────────────────────────
   useEffect(() => {
     const currentUrlView = searchParams.get('view') === 'drafts' ? 'drafts' : 'all'
@@ -34,7 +39,10 @@ export default function FacultyPage() {
   const fetchFaculty = async () => {
     setLoading(true)
     try {
-      const response = await fetch(buildApiUrl('/faculty'))
+      const endpoint = role === 'hod' && hodDepartment
+        ? `/faculty?department=${encodeURIComponent(hodDepartment)}`
+        : '/faculty'
+      const response = await fetch(buildApiUrl(endpoint))
       if (!response.ok) throw new Error('Failed to fetch faculty list')
       const data = await response.json()
       setFacultyList(Array.isArray(data) ? data : [])
@@ -144,12 +152,18 @@ export default function FacultyPage() {
   // ── Filtering Main Faculty ─────────────────────────────────────────────────
   const filteredFaculty = useMemo(() => {
     return facultyList.filter(f => {
+      const deptStr = getFacultyDept(f).toLowerCase()
+      if (role === 'hod' && hodDepartment) {
+        const targetDept = hodDepartment.toLowerCase()
+        if (!deptStr.includes(targetDept) && !targetDept.includes(deptStr)) {
+          return false
+        }
+      }
       const q = searchQuery.trim().toLowerCase()
       const nameStr = (f.name || f.fullName || '').toLowerCase()
       const idStr = (f.employeeId || f.id || f._id || '').toLowerCase()
       const emailStr = (f.email || '').toLowerCase()
       const phoneStr = (f.phone || '').toLowerCase()
-      const deptStr = getFacultyDept(f).toLowerCase()
       const desigStr = getFacultyDesig(f).toLowerCase()
 
       const matchSearch = !q || (
@@ -179,7 +193,7 @@ export default function FacultyPage() {
 
       return matchSearch && matchDept && matchDesig && matchStatus
     })
-  }, [facultyList, searchQuery, activeFilters])
+  }, [facultyList, searchQuery, activeFilters, role, hodDepartment])
 
   // ── Filtering Drafts ───────────────────────────────────────────────────────
   const filteredDrafts = useMemo(() => {

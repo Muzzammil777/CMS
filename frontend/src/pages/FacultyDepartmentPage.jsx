@@ -695,13 +695,23 @@ export default function FacultyDepartmentPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(3);
 
+  const user = session?.user || getUserData();
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || '';
+
   // Filtered list
   const filteredDepartments = useMemo(() => {
     return departments.filter((d) => {
+      if (role === 'hod' && hodDepartment) {
+        const dName = (d.name || d.code || '').toLowerCase();
+        const target = hodDepartment.toLowerCase();
+        if (!dName.includes(target) && !target.includes(dName)) {
+          return false;
+        }
+      }
       const q = searchQuery.toLowerCase();
       return !q || d.name?.toLowerCase().includes(q) || d.code?.toLowerCase().includes(q) || d.head?.toLowerCase().includes(q);
     });
-  }, [departments, searchQuery]);
+  }, [departments, searchQuery, role, hodDepartment]);
 
   useEffect(() => {
     setCurrentPage(1);

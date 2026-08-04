@@ -490,6 +490,7 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
     laundryPass: false,
     wifiPass: false,
     paymentPlan: 'Bi-Semester Installments',
+    splitBySemester: false,
   });
 
   // ── Merge student list ────────────────────────────────────────────────────
@@ -554,11 +555,20 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
   ) || allStudents[0];
 
   // ── Fee calculations ──────────────────────────────────────────────────────
+  const splitMult = formData.splitBySemester ? 0.5 : 1;
+
   const chargesSum = charges
     .filter(c => selectedChargeIds.includes(c.id))
-    .reduce((acc, c) => acc + Number(c.amount || 0), 0);
-  const customFeesSum = (formData.customFeeComponents || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
-  const grossAcademicFee = Number(formData.tuitionFee) + Number(formData.developmentFee) + Number(formData.libraryFee) + Number(formData.examFee) + Number(formData.activityFee) + customFeesSum + chargesSum;
+    .reduce((acc, c) => acc + Number(c.amount || 0), 0) * splitMult;
+  const customFeesSum = (formData.customFeeComponents || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0) * splitMult;
+  
+  const tuitionFeeCalc = Number(formData.tuitionFee) * splitMult;
+  const developmentFeeCalc = Number(formData.developmentFee) * splitMult;
+  const libraryFeeCalc = Number(formData.libraryFee) * splitMult;
+  const examFeeCalc = Number(formData.examFee) * splitMult;
+  const activityFeeCalc = Number(formData.activityFee) * splitMult;
+
+  const grossAcademicFee = tuitionFeeCalc + developmentFeeCalc + libraryFeeCalc + examFeeCalc + activityFeeCalc + customFeesSum + chargesSum;
 
   // ── Save charges list + selection to DB ─────────────────────────────────
   const persistCharges = async (updatedCharges, updatedSelectedIds) => {
@@ -588,26 +598,26 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
       setSavingCharge(false);
     }
   };
-  const quotaSurcharge = formData.quota === 'Management Quota' ? 35000 : formData.quota === 'NRI / Foreign National' ? 75000 : 0;
+  const quotaSurcharge = (formData.quota === 'Management Quota' ? 35000 : formData.quota === 'NRI / Foreign National' ? 75000 : 0) * splitMult;
 
   const selectedScheme = scholarships.find(s => s.value === formData.scholarshipType);
   let scholarshipDiscount = 0;
   if (selectedScheme && selectedScheme.discount_type === 'full') {
-    scholarshipDiscount = Number(formData.tuitionFee);
+    scholarshipDiscount = tuitionFeeCalc;
   } else if (selectedScheme && selectedScheme.discount_type === 'percent') {
-    scholarshipDiscount = Number(formData.tuitionFee) * (Number(selectedScheme.discount_amount) / 100);
+    scholarshipDiscount = tuitionFeeCalc * (Number(selectedScheme.discount_amount) / 100);
   } else if (selectedScheme && selectedScheme.discount_type === 'fixed') {
-    scholarshipDiscount = Number(selectedScheme.discount_amount);
+    scholarshipDiscount = Number(selectedScheme.discount_amount) * splitMult;
   }
-  scholarshipDiscount += Number(formData.customWaiver || 0);
+  scholarshipDiscount += Number(formData.customWaiver || 0) * splitMult;
 
   const selectedTransport = auxConfig.transport_zones.find(t => t.value === formData.transportZone);
-  const transportFee = selectedTransport ? Number(selectedTransport.amount || 0) : 0;
+  const transportFee = (selectedTransport ? Number(selectedTransport.amount || 0) : 0) * splitMult;
 
   const selectedHostel = auxConfig.hostel_types.find(h => h.value === formData.hostelType);
-  const hostelFee = selectedHostel ? Number(selectedHostel.amount || 0) : 0;
+  const hostelFee = (selectedHostel ? Number(selectedHostel.amount || 0) : 0) * splitMult;
 
-  const amenitiesFee = (formData.laundryPass ? 6000 : 0) + (formData.wifiPass ? 3500 : 0);
+  const amenitiesFee = ((formData.laundryPass ? 6000 : 0) + (formData.wifiPass ? 3500 : 0)) * splitMult;
   const netTotalFee = Math.max(0, grossAcademicFee + quotaSurcharge + transportFee + hostelFee + amenitiesFee - scholarshipDiscount);
 
   // ── Scholarship CRUD ──────────────────────────────────────────────────────
@@ -747,18 +757,18 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
         totalFee: netTotalFee,
         components: {
           grossAcademicFee,
-          tuitionFee: formData.tuitionFee,
-          developmentFee: formData.developmentFee,
-          libraryFee: formData.libraryFee,
-          examFee: formData.examFee,
-          activityFee: formData.activityFee,
+          tuitionFee: tuitionFeeCalc,
+          developmentFee: developmentFeeCalc,
+          libraryFee: libraryFeeCalc,
+          examFee: examFeeCalc,
+          activityFee: activityFeeCalc,
           chargesSum,
           quotaSurcharge,
           transportFee,
           hostelFee,
           amenitiesFee,
           scholarshipDiscount,
-          chargeItems: charges.filter(c => selectedChargeIds.includes(c.id)).map(c => ({ label: c.label, amount: c.amount })),
+          chargeItems: charges.filter(c => selectedChargeIds.includes(c.id)).map(c => ({ label: c.label, amount: c.amount * splitMult })),
         },
         options: {
           quota: formData.quota,
@@ -1696,6 +1706,18 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
                   <option key={p.id || p.value} value={p.value}>{p.label}</option>
                 ))}
               </select>
+            </div>
+
+            {/* ── Semester Split Toggle ───────────────────────── */}
+            <div className="mt-6 mb-6 p-4 bg-blue-50/50 border border-blue-100 rounded-xl flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-blue-900">Apply Semester Split</h4>
+                <p className="text-[10px] text-blue-700/70 mt-0.5">Divide the total annual fee by 2 for this semester's record.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={formData.splitBySemester} onChange={e => setFormData({ ...formData, splitBySemester: e.target.checked })} />
+                <div className="w-9 h-5 bg-blue-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
             </div>
 
             {/* ── Final Fee Breakdown ───────────────────────────── */}

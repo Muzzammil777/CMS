@@ -113,13 +113,13 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/timetable" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty']}><TimetablePage /></ProtectedRoute>} />
-            <Route path="/attendance" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty', 'finance']}><AttendancePage /></ProtectedRoute>} />
-            <Route path="/exams" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty']}><ExamsPage /></ProtectedRoute>} />
-            <Route path="/placement" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'student']}><PlacementPage /></ProtectedRoute>} />
-            <Route path="/facility" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><FacilityPage /></ProtectedRoute>} />
+            <Route path="/timetable" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty', 'hod']}><TimetablePage /></ProtectedRoute>} />
+            <Route path="/attendance" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty', 'finance', 'hod']}><AttendancePage /></ProtectedRoute>} />
+            <Route path="/exams" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty', 'hod']}><ExamsPage /></ProtectedRoute>} />
+            <Route path="/placement" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'student', 'hod']}><PlacementPage /></ProtectedRoute>} />
+            <Route path="/facility" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'hod']}><FacilityPage /></ProtectedRoute>} />
             <Route path="/payroll" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><PayrollPage /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><AnalyticsPage /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'hod']}><AnalyticsPage /></ProtectedRoute>} />
             <Route
               path="/settings"
               element={
@@ -136,24 +136,24 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/students" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><StudentPageWrapper /></ProtectedRoute>} />
-            <Route path="/students/:id" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'student']}><StudentProfilePage /></ProtectedRoute>} />
-            <Route path="/edit-student/:id" element={<ProtectedRoute allowedRoles={['admin']}><EditStudentPage /></ProtectedRoute>} />
-            <Route path="/bulk-upload-students" element={<ProtectedRoute allowedRoles={['admin']}><BulkUploadStudentPage /></ProtectedRoute>} />
-            <Route path="/faculty" element={<ProtectedRoute allowedRoles={['admin']}><FacultyPage /></ProtectedRoute>} />
-            <Route path="/faculty/:id" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><FacultyProfilePage /></ProtectedRoute>} />
+            <Route path="/students" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'hod']}><StudentPageWrapper /></ProtectedRoute>} />
+            <Route path="/students/:id" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'student', 'hod']}><StudentProfilePage /></ProtectedRoute>} />
+            <Route path="/edit-student/:id" element={<ProtectedRoute allowedRoles={['admin', 'hod']}><EditStudentPage /></ProtectedRoute>} />
+            <Route path="/bulk-upload-students" element={<ProtectedRoute allowedRoles={['admin', 'hod']}><BulkUploadStudentPage /></ProtectedRoute>} />
+            <Route path="/faculty" element={<ProtectedRoute allowedRoles={['admin', 'hod']}><FacultyPage /></ProtectedRoute>} />
+            <Route path="/faculty/:id" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'hod']}><FacultyProfilePage /></ProtectedRoute>} />
             <Route path="/edit-faculty/:id" element={<ProtectedRoute allowedRoles={['admin']}><EditFacultyPage /></ProtectedRoute>} />
             <Route path="/bulk-upload-faculty" element={<ProtectedRoute allowedRoles={['admin']}><BulkUploadFacultyPage /></ProtectedRoute>} />
-            <Route path="/department" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><FacultyDepartmentPage /></ProtectedRoute>} />
-            <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin', 'faculty']}><ComingSoonPage /></ProtectedRoute>} />
-            <Route path="/admission" element={<ProtectedRoute allowedRoles={['admin']}><AdmissionPage /></ProtectedRoute>} />
-            <Route path="/add-member" element={<ProtectedRoute allowedRoles={['admin']}><AddMemberSelectionPage /></ProtectedRoute>} />
-            <Route path="/add-student" element={<ProtectedRoute allowedRoles={['admin']}><AddStudentPage /></ProtectedRoute>} />
+            <Route path="/department" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'hod']}><FacultyDepartmentPage /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'hod']}><ComingSoonPage /></ProtectedRoute>} />
+            <Route path="/admission" element={<ProtectedRoute allowedRoles={['admin', 'hod']}><AdmissionPage /></ProtectedRoute>} />
+            <Route path="/add-member" element={<ProtectedRoute allowedRoles={['admin', 'hod']}><AddMemberSelectionPage /></ProtectedRoute>} />
+            <Route path="/add-student" element={<ProtectedRoute allowedRoles={['admin', 'hod']}><AddStudentPage /></ProtectedRoute>} />
             <Route path="/add-faculty" element={<ProtectedRoute allowedRoles={['admin']}><AddFacultyPage /></ProtectedRoute>} />
             <Route path="/fees" element={<ProtectedRoute allowedRoles={['student']}><FeesPage /></ProtectedRoute>} />
-            <Route path="/admin-fees" element={<ProtectedRoute allowedRoles={['admin', 'finance']}><AdminFeesPage /></ProtectedRoute>} />
+            <Route path="/admin-fees" element={<ProtectedRoute allowedRoles={['admin', 'finance', 'hod']}><AdminFeesPage /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute allowedRoles={['student']}><InvoicePage /></ProtectedRoute>} />
-            <Route path="/admin-invoices" element={<ProtectedRoute allowedRoles={['admin']}><AdminInvoicePage /></ProtectedRoute>} />
+            <Route path="/admin-invoices" element={<ProtectedRoute allowedRoles={['admin', 'hod']}><AdminInvoicePage /></ProtectedRoute>} />
             <Route path="/finance-invoices" element={<ProtectedRoute allowedRoles={['finance']}><FinanceInvoicePage /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

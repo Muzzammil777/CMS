@@ -269,6 +269,20 @@ app.include_router(user_settings_router)
 app.include_router(auth_router)
 app.include_router(newsletters_router)
 
+@app.get("/api/widget-data/{role}")
+async def get_widget_data(role: str):
+    """Telemetry data endpoint for widgets across all roles."""
+    return {
+        "status": "success",
+        "role": role,
+        "telemetry": {
+            "admissions_trend": 15.2,
+            "fee_collection": 630000,
+            "attendance_rate": 92.4,
+            "pending_requests": 5,
+        }
+    }
+
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
     """Catch-all route: serve frontend for valid paths or 404 for API paths."""

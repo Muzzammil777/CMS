@@ -431,7 +431,7 @@ def _admin_defaults() -> dict:
 
 
 def merge_defaults(role: str, existing_settings: dict) -> dict:
-    if role == "faculty":
+    if role in ("faculty", "hod"):
         defaults = _faculty_defaults()
     elif role == "finance":
         defaults = _finance_defaults()
@@ -468,6 +468,8 @@ def _normalize_role(role: str) -> Optional[str]:
         return "admin"
     if v == "finance":
         return "finance"
+    if v == "hod":
+        return "hod"
     return None
 
 
@@ -500,7 +502,7 @@ async def _get_or_create_settings(role: str, user_id: str) -> dict:
         return merge_defaults(role, doc)
 
     # Seed defaults based on role
-    if role == "faculty":
+    if role in ("faculty", "hod"):
         defaults = _faculty_defaults()
     elif role == "finance":
         defaults = _finance_defaults()

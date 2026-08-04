@@ -24,7 +24,7 @@ from backend.schemas.academics import (
     OdRequestPayload, OdRequestStatusUpdate, FacultyAttendanceMarkRecord
 )
 from backend.utils.mongo import serialize_doc
-from backend.utils.attendance_utils import compute_student_attendance_stats
+from backend.utils.attendance_utils import compute_student_attendance_stats, compute_bulk_student_attendance_stats
 from backend.dev_store import DEV_STORE
 
 router = APIRouter(prefix="/api/academics/attendance", tags=["academics:attendance"])
@@ -88,18 +88,19 @@ async def list_attendance(role: Optional[str] = None, person_id: Optional[str] =
                 {"student_id": person_id}
             ]
 
-        projection = {"_id": 1, "id": 1, "student_id": 1, "rollNumber": 1, "name": 1, "department": 1, "attendancePct": 1, "attendanceMonthly": 1}
-        async for student in db["students"].find(student_query, projection):
-            if person_id:
-                present, total, pct = await compute_student_attendance_stats(student, db=db)
-            else:
-                pct = student.get("attendancePct", 85)
-                total = 100
-                present = int(round(total * pct / 100))
+        students_docs = []
+        async for student in db["students"].find(student_query):
+            students_docs.append(student)
+
+        bulk_stats = await compute_bulk_student_attendance_stats(students_docs, db=db)
+
+        for student in students_docs:
+            key = student.get("id") or student.get("rollNumber") or str(student["_id"])
+            present, total, pct = bulk_stats.get(key, (0, 0, 0))
 
             records.append({
-                "id": student.get("id") or student.get("rollNumber") or str(student["_id"]),
-                "personId": student.get("id") or student.get("rollNumber") or str(student["_id"]),
+                "id": key,
+                "personId": key,
                 "name": student.get("name", "Unknown Student"),
                 "role": "student",
                 "courseOrDepartment": student.get("department", "Computer Science"),

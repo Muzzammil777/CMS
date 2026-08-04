@@ -366,17 +366,28 @@ async def get_student_admissions():
 
 @router.get("/students/approved-for-fees")
 async def get_approved_students_for_fees():
-    """Get only APPROVED students with valid ID fields - ready for fee assignment."""
+    """Get only APPROVED students with valid ID fields - ready for fee assignment.
+    STRICT validation: Only returns students that can be found with exact ID match."""
     try:
         admissions_collection = _admissions_collection()
+        data: list[dict[str, Any]] = []
+
         query = {
             "$and": [
                 {"$or": [{"role": "student"}, {"type": "student"}]},
                 {"status": "Approved"}
             ]
         }
-        docs = await asyncio.wait_for(admissions_collection.find(query).sort("created_at", -1).to_list(length=300), timeout=1.0)
-        data = [_serialize_admission(item) for item in docs if item.get("id") or item.get("_id")]
+        
+        seen_ids = set()
+        docs = await asyncio.wait_for(admissions_collection.find(query).sort("created_at", -1).to_list(length=300), timeout=2.0)
+        for item in docs:
+            serialized = _serialize_admission(item)
+            student_id = serialized.get("id")
+            if student_id and student_id not in seen_ids:
+                seen_ids.add(student_id)
+                data.append(serialized)
+
         return {"approved_students": data, "count": len(data)}
     except BaseException as err:
         print(f"Warning: get_approved_students_for_fees db error: {err}")
@@ -890,6 +901,7 @@ def _build_faculty_lookup_query(faculty_admission_id: str) -> dict[str, Any]:
 
 
 @router.get("/faculty")
+@router.get("/faculty/")
 async def get_faculty_admissions():
     """Get all faculty admissions"""
     faculty_admissions_collection = _faculty_admissions_collection()

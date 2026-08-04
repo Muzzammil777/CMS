@@ -357,6 +357,7 @@ export default function AddFacultyPage() {
               className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
             >
               <option value="">Select Designation</option>
+              <option>Head of Department (HOD)</option>
               <option>Professor</option>
               <option>Associate Professor</option>
               <option>Assistant Professor</option>

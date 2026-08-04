@@ -400,7 +400,7 @@ export default function FacultyAdmissionModal({ isOpen, onClose }) {
                     value={formData.role}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-                  ><option value="">Select Designation</option><option value="Professor">Professor</option><option value="Associate Professor">Associate Professor</option><option value="Assistant Professor">Assistant Professor</option><option value="Lecturer">Lecturer</option></select></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-gray-700 mb-2">Department *</label><select
+                  ><option value="">Select Designation</option><option value="Head of Department (HOD)">Head of Department (HOD)</option><option value="Professor">Professor</option><option value="Associate Professor">Associate Professor</option><option value="Assistant Professor">Assistant Professor</option><option value="Lecturer">Lecturer</option></select></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-gray-700 mb-2">Department *</label><select
                       name="department"
                       value={formData.department}
                       onChange={handleInputChange}

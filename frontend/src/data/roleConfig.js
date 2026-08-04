@@ -1,6 +1,7 @@
 export const demoUsers = {
   student: { userId: 'STU-2024-1547', password: 'student123' },
   admin: { userId: 'ADM-0001', password: 'admin123' },
+  hod: { userId: 'HOD-CS-001', password: 'hod123' },
   faculty: { userId: 'FAC-204', password: 'faculty123' },
   finance: { userId: 'FIN-880', password: 'finance123' },
 };
@@ -23,6 +24,15 @@ export const cmsRoles = {
     primaryAction: 'View Fees',
     secondaryAction: 'Manage Department',
     subtitle: 'Manage students, faculty, and departments.',
+  },
+  hod: {
+    label: 'HOD',
+    name: 'Head of Department',
+    team: 'Computer Science Department',
+    focus: 'Department Management',
+    primaryAction: 'Manage Department',
+    secondaryAction: 'View Analytics',
+    subtitle: 'Manage department students, faculty, academics, fees, and analytics.',
   },
   faculty: {
     label: 'Faculty',
@@ -64,6 +74,24 @@ export const roleMenuGroups = {
     },
   ],
   admin: [
+    {
+      title: 'Overview',
+      items: ['Dashboard', 'Students', 'Faculty', 'Department'],
+    },
+    {
+      title: 'Administration',
+      items: ['Admission', 'Fees', 'Invoices'],
+    },
+    {
+      title: 'Academics',
+      items: ['Exams', 'Timetable', 'Attendance', 'Placement', 'Facility'],
+    },
+    {
+      title: 'Intelligence',
+      items: ['Analytics', 'Settings'],
+    },
+  ],
+  hod: [
     {
       title: 'Overview',
       items: ['Dashboard', 'Students', 'Faculty', 'Department'],

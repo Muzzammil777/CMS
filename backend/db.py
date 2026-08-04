@@ -40,16 +40,17 @@ async def lifespan(app):
 
     print(f"Connecting to MongoDB at {mask_mongodb_uri(MONGODB_URI)}...")
     try:
+        import asyncio
         client = AsyncIOMotorClient(
             MONGODB_URI,
-            serverSelectionTimeoutMS=10000,
-            connectTimeoutMS=10000,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=5000,
             maxIdleTimeMS=60000,
             retryWrites=True,
             retryReads=True,
             readPreference="primaryPreferred"
         )
-        await client.admin.command("ping")
+        await asyncio.wait_for(client.admin.command("ping"), timeout=5.0)
 
         try:
             db = client["College_db"] if "mongodb.net" in str(MONGODB_URI) else client.get_database()
@@ -58,11 +59,26 @@ async def lifespan(app):
         except Exception:
             db = client["College_db"]
 
-
-
         print(f"Connected to MongoDB successfully (Database: {db.name})")
+
+        # Create indexes in background — fire-and-forget, never blocks startup
+        async def _ensure_indexes():
+            try:
+                admissions = db["admissions"]
+                await admissions.create_index([("role", 1), ("type", 1), ("status", 1)], background=True)
+                await admissions.create_index([("created_at", -1)], background=True)
+                await admissions.create_index([("id", 1)], background=True, unique=False)
+                departments_col = db["departments"]
+                await departments_col.create_index([("name", 1)], background=True)
+                print("MongoDB indexes ensured.")
+            except Exception as idx_err:
+                print(f"Index creation warning (non-fatal): {idx_err}")
+
+        asyncio.create_task(_ensure_indexes())
+
     except Exception as error:
         print(f"FAILED to connect to MongoDB: {error}")
+        db = None
         db = None
 
     yield

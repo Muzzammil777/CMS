@@ -102,28 +102,36 @@ async def update_profile_by_role(role: str, user_id: str, payload: PartialSettin
 
 # ===== DEPARTMENTS MANAGEMENT =====
 
+DEFAULT_DEPARTMENTS_SEED = [
+    { "id": 'DEPT-MLT', "name": 'Medical Laboratory Technology', "code": 'MLT', "head": 'Department Head', "email": 'mlt@dschs.edu.in', "phone": '+91 98765 43210', "office_location": 'Health Sciences Block, Room 101', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Medical Laboratory Technology (3 Years + 1 Year Internship)", "category": "Medical & Allied Health" },
+    { "id": 'DEPT-OTAT', "name": 'Operation Theatre & Anaesthesia Technology', "code": 'OTAT', "head": 'Department Head', "email": 'otat@dschs.edu.in', "phone": '+91 98765 43211', "office_location": 'Operation Theatre Complex, Block B', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Operation Theatre and Anaesthesia Technology (3 Years + 1 Year Internship)", "category": "Medical & Allied Health" },
+    { "id": 'DEPT-RIT', "name": 'Radiography & Imaging Technology', "code": 'RIT', "head": 'Department Head', "email": 'rit@dschs.edu.in', "phone": '+91 98765 43212', "office_location": 'Department of Radiology, Block C', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Radiography and Imaging Technology (3 Years + 1 Year Internship)", "category": "Medical & Allied Health" },
+]
+
 @router.get("/departments")
 async def get_departments():
+    import asyncio
     try:
         from backend.db import get_db
         db = get_db()
-        collection = db["departments"]
-        depts = []
-        async for doc in collection.find({}):
-            doc["id"] = str(doc.get("_id", doc.get("id")))
-            doc.pop("_id", None)
-            depts.append(doc)
-        if depts:
-            return depts
+        if db is not None:
+            collection = db["departments"]
+            docs = await asyncio.wait_for(collection.find({}).to_list(length=100), timeout=1.5)
+            if docs:
+                m_depts = []
+                for doc in docs:
+                    doc["id"] = str(doc.get("id") or doc.get("_id"))
+                    doc.pop("_id", None)
+                    m_depts.append(doc)
+                return m_depts
     except Exception:
         pass
-
+    
     from backend.dev_store import DEV_STORE
-    return DEV_STORE.setdefault("departments", [
-        { "id": 'DEPT-MLT', "name": 'Medical Laboratory Technology', "code": 'MLT', "head": 'Department Head', "email": 'mlt@dschs.edu.in', "phone": '+91 98765 43210', "office_location": 'Health Sciences Block, Room 101', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Medical Laboratory Technology (3 Years + 1 Year Internship)" },
-        { "id": 'DEPT-OTAT', "name": 'Operation Theatre & Anaesthesia Technology', "code": 'OTAT', "head": 'Department Head', "email": 'otat@dschs.edu.in', "phone": '+91 98765 43211', "office_location": 'Operation Theatre Complex, Block B', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Operation Theatre and Anaesthesia Technology (3 Years + 1 Year Internship)" },
-        { "id": 'DEPT-RIT', "name": 'Radiography & Imaging Technology', "code": 'RIT', "head": 'Department Head', "email": 'rit@dschs.edu.in', "phone": '+91 98765 43212', "office_location": 'Department of Radiology, Block C', "totalFaculty": 0, "totalStudents": 0, "courses": 1, "description": "B.Sc. Radiography and Imaging Technology (3 Years + 1 Year Internship)" },
-    ])
+    return DEV_STORE.get("departments", DEFAULT_DEPARTMENTS_SEED)
+
+
+    return store_depts
 
 @router.post("/departments")
 async def create_department(payload: dict = Body(...)):
@@ -329,8 +337,33 @@ async def export_data(user_id: str, role: Optional[str] = None):
 @router.post("/{role}/{user_id}/delete-request")
 async def request_account_deletion(user_id: str, payload: DeleteRequestPayload, role: Optional[str] = None):
     resolved_role = _resolve_user_role(role, user_id)
-    entry = create_delete_request(user_id, resolved_role, payload.reason)
-    return {"message": "Account deletion request submitted.", "data": entry}
+
+# ── Seat Allotment Quotas Endpoint ──────────────────────────────────────────
+
+DEFAULT_QUOTAS = [
+    {"id": "gov", "name": "Government Quota", "code": "GOV"},
+    {"id": "mgmt", "name": "Management Quota", "code": "MGMT"},
+    {"id": "nri", "name": "NRI Quota", "code": "NRI"}
+]
+
+@router.get("/quotas")
+async def get_quotas():
+    """Return available seat allotment quotas dynamically."""
+    try:
+        from backend.db import get_db
+        import asyncio
+        db = get_db()
+        if db is not None:
+            col = db["quotas"]
+            docs = await asyncio.wait_for(col.find({}).to_list(length=50), timeout=1.0)
+            if docs:
+                for d in docs:
+                    d.pop("_id", None)
+                return docs
+    except Exception:
+        pass
+    return DEFAULT_QUOTAS
+
 
 
 

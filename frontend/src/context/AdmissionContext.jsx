@@ -50,10 +50,6 @@ export function AdmissionProvider({ children }) {
   //  Fetch Approved Students
   const fetchApprovedStudents = async () =>{
     try {
-      await fetch(`${API_BASE}/admissions/purge-invalid-approved`, {
-        method: 'DELETE',
-      });
-
       const res = await fetch(`${API_BASE}/admissions/students/approved-for-fees`);
 
       if (res.ok) {

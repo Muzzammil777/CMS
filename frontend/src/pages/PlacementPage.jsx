@@ -12,6 +12,7 @@ export default function PlacementPage() {
   const user = session?.user || getUserData();
   const role = session?.role || 'admin';
   const hodDepartment = user?.department || user?.departmentId || user?.department_id || '';
+  const isStudent = role === 'student';
 
   const [placements, setPlacements] = useState([]);
   const [students, setStudents] = useState([]);

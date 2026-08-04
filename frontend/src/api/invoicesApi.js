@@ -11,18 +11,24 @@ async function parseResponse(res, fallbackMessage) {
 
 function normalizeInvoice(item) {
   if (!item) return item;
+  const rawAmt = item.totalAmount ?? item.total_amount ?? item.amount ?? item.total ?? item.total_fee ?? item.totalFee ?? item.feeAmount ?? 0;
+  const amount = Number(rawAmt) || 0;
+  const status = item.payment_status || item.paymentStatus || item.status || 'Pending';
   return {
     id: item.id || item._id || item.invoice_id,
     invoiceId: item.invoice_id || item.invoiceId || item.id || item._id,
     studentId: item.student_id || item.studentId,
     studentName: item.student_name || item.studentName,
-    course: item.course,
+    course: item.course || item.department,
     semester: item.semester,
     items: item.items || [],
-    total: item.total ?? 0,
+    total: amount,
+    totalAmount: amount,
+    amount: amount,
     generatedDate: item.generated_date || item.generatedDate || '',
-    paymentStatus: item.payment_status || item.paymentStatus || 'Pending',
-    status: item.status || item.payment_status || item.paymentStatus || 'Pending',
+    dueDate: item.dueDate || item.due_date || item.generated_date || item.generatedDate || '',
+    paymentStatus: status,
+    status: status,
     generatedFrom: item.generated_from || item.generatedFrom || '',
     paidDate: item.paid_date || item.paidDate || '',
     paymentMethod: item.payment_method || item.paymentMethod || '',

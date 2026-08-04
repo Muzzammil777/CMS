@@ -130,11 +130,7 @@ export const roleMenuGroups = {
     },
     {
       title: 'Administration',
-      items: ['Fees', 'Payroll'],
-    },
-    {
-      title: 'Academics',
-      items: ['Attendance'],
+      items: ['Fees', 'Payroll', 'Invoices'],
     },
     {
       title: 'Intelligence',

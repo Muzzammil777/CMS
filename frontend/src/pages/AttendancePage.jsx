@@ -4,19 +4,22 @@ import KpiCard from '../components/KpiCard'
 import KpiGrid from '../components/KpiGrid'
 import { TableSkeleton } from '../components/common'
 import EnterprisePageTemplate from '../components/EnterprisePageTemplate'
-import { getUserSession } from '../auth/sessionController'
+import { getUserSession, getUserData } from '../auth/sessionController'
 import { buildApiUrl } from '../api/apiBase'
 import { settingsApi } from '../api/settingsApi'
+import { Users, CheckCircle2, BookOpen, AlertTriangle, Eye, Lock, Unlock, Calendar, Download, FileText } from 'lucide-react'
 
 // List of all 8 college hours
 const HOURS_LIST = ['Hour 1', 'Hour 2', 'Hour 3', 'Hour 4', 'Hour 5', 'Hour 6', 'Hour 7', 'Hour 8']
 
 export default function AttendancePage({ noLayout = false }) {
   const session = getUserSession()
+  const user = session?.user || getUserData()
   const role = session?.role || 'student'
   const userId = session?.userId || ''
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || ''
 
-  const isAdmin = role === 'admin'
+  const isAdmin = role === 'admin' || role === 'hod'
   const isStudent = role === 'student'
   const isFaculty = role === 'faculty'
   const isFinance = role === 'finance'
@@ -43,7 +46,7 @@ export default function AttendancePage({ noLayout = false }) {
     setTimeout(() => setToast(null), 4000)
   }
 
-  // --- Admin States ---
+  // --- Admin / HOD States ---
   const [adminTab, setAdminTab] = useState('students') // 'students' | 'faculty'
   const [adminOverview, setAdminOverview] = useState({
     totalStudents: 0,
@@ -54,7 +57,7 @@ export default function AttendancePage({ noLayout = false }) {
   const [adminRecords, setAdminRecords] = useState([])
   const [adminSearch, setAdminSearch] = useState('')
   const [adminFilters, setAdminFilters] = useState({
-    department: '',
+    department: role === 'hod' && hodDepartment ? hodDepartment : '',
     semester: '',
     section: '',
     subject: '',
@@ -128,7 +131,14 @@ export default function AttendancePage({ noLayout = false }) {
     fetchDepts()
   }, [])
 
-  // Load Admin Data
+  // Load Admin / HOD Data
+  // Lock the department filter for HOD role
+  useEffect(() => {
+    if (role === 'hod' && hodDepartment && adminFilters.department !== hodDepartment) {
+      setAdminFilters(prev => ({ ...prev, department: hodDepartment }))
+    }
+  }, [role, hodDepartment])
+
   useEffect(() => {
     if (isAdmin) {
       fetchAdminData()
@@ -603,361 +613,221 @@ export default function AttendancePage({ noLayout = false }) {
       {/* ========================================================================= */}
       {/* ======================= ADMIN ATTENDANCE LAYOUT ======================== */}
       {/* ========================================================================= */}
-      {isAdmin && (
-        <div className="flex flex-col h-full min-h-0 gap-0">
+      {isAdmin && (() => {
+        const adminKpiCards = [
+          {
+            title: 'Total Students',
+            value: (adminOverview.totalStudents || 0).toLocaleString(),
+            sub: 'Enrolled students',
+            trend: 'Active records',
+            trendUp: true,
+            icon: <Users className="w-5 h-5" />,
+            gradient: 'indigo',
+          },
+          {
+            title: 'Total Sessions',
+            value: (adminOverview.totalSessions || 0).toLocaleString(),
+            sub: 'Marked class hours',
+            trend: 'Markings logged',
+            trendUp: true,
+            icon: <BookOpen className="w-5 h-5" />,
+            gradient: 'emerald',
+          },
+          {
+            title: 'Average Attendance',
+            value: `${adminOverview.averageAttendance || 0}%`,
+            sub: 'Overall percentage',
+            trend: (adminOverview.averageAttendance || 0) >= 75 ? 'Good standing' : 'Low average',
+            trendUp: (adminOverview.averageAttendance || 0) >= 75,
+            icon: <CheckCircle2 className="w-5 h-5" />,
+            gradient: 'amber',
+          },
+          {
+            title: 'Below Threshold (<75%)',
+            value: (adminOverview.belowThresholdCount || 0).toLocaleString(),
+            sub: 'Action required',
+            trend: adminOverview.belowThresholdCount === 0 ? 'Zero critical' : 'Needs attention',
+            trendUp: adminOverview.belowThresholdCount === 0,
+            icon: <AlertTriangle className="w-5 h-5" />,
+            gradient: 'rose',
+          },
+        ];
 
-          {/* ── TOP CONTROL BAR ─────────────────────────────────────── */}
-          <div className="flex-shrink-0 bg-white border-b border-[#E6EDF2] px-5 py-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-wrap">
+        const adminColumns = [
+          {
+            key: 'subject',
+            label: 'Subject Details',
+            render: (_, r) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#003A40] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                  {(r.subjectCode || 'S').charAt(0)}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{r.subjectName}</p>
+                  <span className="inline-block text-[9px] font-extrabold text-[#0A686A] bg-[#F2FBFA] border border-[#0A686A]/20 px-1.5 py-0.5 rounded mt-0.5">
+                    {r.subjectCode}
+                  </span>
+                </div>
+              </div>
+            ),
+          },
+          {
+            key: 'department',
+            label: 'Department & Class',
+            render: (_, r) => (
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{r.department}</p>
+                <p className="text-[10px] text-[#8C98A5] font-medium truncate">{r.semester} • {r.section}</p>
+              </div>
+            ),
+          },
+          {
+            key: 'faculty',
+            label: 'Faculty',
+            render: (_, r) => (
+              <span className="text-xs font-semibold text-[#5F6B7A] block truncate">{r.faculty || 'System'}</span>
+            ),
+          },
+          {
+            key: 'date',
+            label: 'Date & Hour',
+            render: (_, r) => (
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{r.date}</p>
+                <p className="text-[10px] text-[#8C98A5] font-medium truncate">{r.hour}</p>
+              </div>
+            ),
+          },
+          {
+            key: 'attendance',
+            label: 'Present / Absent',
+            render: (_, r) => (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {r.presentCount} P
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                  {r.absentCount} A
+                </span>
+              </div>
+            ),
+          },
+          {
+            key: 'attendancePct',
+            label: 'Attendance %',
+            render: (_, r) => (
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                r.attendancePct >= 75 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}>
+                {r.attendancePct}%
+              </span>
+            ),
+          },
+        ];
 
-              {/* Tab pill switcher */}
+        const adminActionsList = [
+          {
+            icon: <Eye className="w-3.5 h-3.5" />,
+            label: 'View History',
+            color: 'teal',
+            onClick: (r) => {
+              setAdminSelectedRecord(r);
+              loadRecordHistory(r);
+            },
+          },
+          {
+            icon: <Lock className="w-3.5 h-3.5" />,
+            label: 'Toggle Lock',
+            color: 'amber',
+            onClick: (r) => handleToggleLock(r),
+          },
+        ];
+
+        const adminFilterOptions = [
+          ...(role !== 'hod' ? [{
+            key: 'department',
+            label: 'Department',
+            options: departments.map(d => ({ value: d.name, label: d.name }))
+          }] : []),
+          {
+            key: 'semester',
+            label: 'Semester',
+            options: [1, 2, 3, 4, 5, 6, 7, 8].map(s => ({ value: String(s), label: `Semester ${s}` }))
+          },
+          {
+            key: 'section',
+            label: 'Section',
+            options: [
+              { value: 'A', label: 'Section A' },
+              { value: 'B', label: 'Section B' },
+              { value: 'C', label: 'Section C' }
+            ]
+          }
+        ];
+
+        return (
+          <div className="flex flex-col h-full min-h-0 gap-0">
+            {/* Tab Pill Switcher Header */}
+            <div className="flex-shrink-0 bg-white border-b border-[#E6EDF2] px-5 py-3 flex items-center justify-between gap-3">
               <div className="inline-flex bg-[#F2FBFA] border border-[#E6EDF2] rounded-xl p-1 gap-1">
                 <button
                   type="button"
                   onClick={() => setAdminTab('students')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${adminTab === 'students'
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    adminTab === 'students'
                       ? 'bg-[#003A40] text-white shadow-sm'
                       : 'text-[#5F6B7A] hover:text-[#003A40]'
-                    }`}
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-sm">groups</span>
+                  <Users className="w-3.5 h-3.5" />
                   Student Attendance
                 </button>
                 <button
                   type="button"
                   onClick={() => setAdminTab('faculty')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${adminTab === 'faculty'
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    adminTab === 'faculty'
                       ? 'bg-[#003A40] text-white shadow-sm'
                       : 'text-[#5F6B7A] hover:text-[#003A40]'
-                    }`}
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-sm">badge</span>
+                  <BookOpen className="w-3.5 h-3.5" />
                   Faculty Attendance
                 </button>
               </div>
 
-              {/* Divider */}
-              <div className="w-px h-6 bg-[#E6EDF2] hidden sm:block" />
+              {role === 'hod' && hodDepartment && (
+                <span className="text-xs font-bold text-[#0A686A] bg-[#F2FBFA] px-3 py-1.5 rounded-xl border border-[#0A686A]/20">
+                  Dept: {hodDepartment}
+                </span>
+              )}
+            </div>
 
-              {/* Search Bar */}
-              <div className="relative flex-shrink-0">
-                <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-[#9AAAB4] pointer-events-none">search</span>
-                <input
-                  type="text"
-                  placeholder="Search records, subject..."
-                  value={adminSearch}
-                  onChange={(e) => setAdminSearch(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs font-medium border border-[#E6EDF2] rounded-xl bg-[#F8FAFC] text-[#003A40] placeholder-[#9AAAB4] outline-none focus:border-[#0A686A] focus:ring-2 focus:ring-[#0A686A]/10 w-52 transition-all"
+            {adminTab === 'students' ? (
+              <div style={{ height: 'calc(100vh - 140px)' }}>
+                <EnterprisePageTemplate
+                  kpiCards={adminKpiCards}
+                  columns={adminColumns}
+                  rows={filteredAdminRecords}
+                  actions={adminActionsList}
+                  rowKey="id"
+                  searchQuery={adminSearch}
+                  onSearchChange={setAdminSearch}
+                  searchPlaceholder="Search record by subject, faculty..."
+                  filterOptions={adminFilterOptions}
+                  activeFilters={adminFilters}
+                  onFilterChange={(key, val) => setAdminFilters(prev => ({ ...prev, [key]: val }))}
+                  onExportCSV={() => handleExportCSV(adminRecords, ['date', 'subjectCode', 'subjectName', 'faculty', 'department', 'semester', 'section', 'presentCount', 'absentCount', 'attendancePct'], 'Attendance-Report.csv')}
+                  loading={loading}
+                  emptyMessage="No attendance records found matching filters."
                 />
-                {adminSearch && (
-                  <button
-                    onClick={() => setAdminSearch('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9AAAB4] hover:text-[#003A40] transition-colors cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm">close</span>
-                  </button>
-                )}
               </div>
-
-              {/* Toggle Filters Button */}
-              <button
-                type="button"
-                onClick={() => setShowFilters(prev => !prev)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${showFilters || activeFilterCount > 0
-                    ? 'bg-[#F2FBFA] text-[#0A686A] border border-[#0A686A]/30'
-                    : 'bg-[#F4F7FF] text-[#5F6B7A] border border-[#E6EDF2] hover:text-[#003A40]'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-sm">filter_alt</span>
-                Filters
-                {activeFilterCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-[#0A686A] text-white text-[9px] font-black flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* Export CSV button */}
-            <button
-              onClick={() => handleExportCSV(adminRecords, ['date', 'subjectCode', 'subjectName', 'faculty', 'department', 'semester', 'section', 'presentCount', 'absentCount', 'attendancePct'], 'Admin-Attendance-Report.csv')}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#003A40] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all cursor-pointer shadow-2xs"
-            >
-              <span className="material-symbols-outlined text-sm">download</span>
-              Export CSV
-            </button>
-          </div>
-
-          {/* ── COLLAPSIBLE FILTERS DRAWER ───────────────────────────── */}
-          {showFilters && adminTab === 'students' && (
-            <div className="flex-shrink-0 bg-white border-b border-[#E6EDF2] p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                <div>
-                  <label className="block text-[10px] font-extrabold text-[#5F6B7A] uppercase mb-1">Department</label>
-                  <select
-                    className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl outline-none text-xs text-[#003A40] font-semibold bg-[#FAFBFC]"
-                    value={adminFilters.department}
-                    onChange={(e) => setAdminFilters({ ...adminFilters, department: e.target.value })}
-                  >
-                    <option value="">All Depts</option>
-                    {departments.map(d => (
-                      <option key={d.code} value={d.name}>{d.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-extrabold text-[#5F6B7A] uppercase mb-1">Semester</label>
-                  <select
-                    className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl outline-none text-xs text-[#003A40] font-semibold bg-[#FAFBFC]"
-                    value={adminFilters.semester}
-                    onChange={(e) => setAdminFilters({ ...adminFilters, semester: e.target.value })}
-                  >
-                    <option value="">All Sems</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                      <option key={s} value={String(s)}>{`Semester ${s}`}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-extrabold text-[#5F6B7A] uppercase mb-1">Section</label>
-                  <select
-                    className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl outline-none text-xs text-[#003A40] font-semibold bg-[#FAFBFC]"
-                    value={adminFilters.section}
-                    onChange={(e) => setAdminFilters({ ...adminFilters, section: e.target.value })}
-                  >
-                    <option value="">All Secs</option>
-                    <option value="A">Section A</option>
-                    <option value="B">Section B</option>
-                    <option value="C">Section C</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-extrabold text-[#5F6B7A] uppercase mb-1">Subject</label>
-                  <input
-                    type="text"
-                    placeholder="Subject code/name..."
-                    className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl outline-none text-xs text-[#003A40] font-semibold bg-[#FAFBFC]"
-                    value={adminFilters.subject}
-                    onChange={(e) => setAdminFilters({ ...adminFilters, subject: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-extrabold text-[#5F6B7A] uppercase mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl outline-none text-xs text-[#003A40] font-semibold bg-[#FAFBFC]"
-                    value={adminFilters.startDate}
-                    onChange={(e) => setAdminFilters({ ...adminFilters, startDate: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-extrabold text-[#5F6B7A] uppercase mb-1">End Date</label>
-                  <input
-                    type="date"
-                    className="w-full px-2.5 py-1.5 border border-[#E6EDF2] rounded-xl outline-none text-xs text-[#003A40] font-semibold bg-[#FAFBFC]"
-                    value={adminFilters.endDate}
-                    onChange={(e) => setAdminFilters({ ...adminFilters, endDate: e.target.value })}
-                  />
-                </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={() => {
-                      setAdminFilters({ department: '', semester: '', section: '', subject: '', faculty: '', startDate: '', endDate: '' })
-                      setAdminSearch('')
-                    }}
-                    className="w-full px-3 py-1.5 bg-[#F4F7FF] hover:bg-slate-200 text-[#5F6B7A] rounded-xl text-xs font-bold transition-all cursor-pointer"
-                  >
-                    Clear All
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── MAIN CONTENT AREA ─────────────────────────────────────── */}
-          <div className="flex-1 overflow-y-auto min-h-0 flex flex-col p-5 gap-4">
-
-            {adminTab === 'students' && (
-              <Fragment>
-                {/* KPI Cards */}
-                <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                      <span className="material-symbols-outlined text-blue-600">group</span>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black text-[#003A40] leading-none">{adminOverview.totalStudents}</p>
-                      <p className="text-[10px] font-extrabold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Total Students</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                      <span className="material-symbols-outlined text-emerald-600">fact_check</span>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black text-[#003A40] leading-none">{adminOverview.totalSessions}</p>
-                      <p className="text-[10px] font-extrabold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Total Sessions</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                      <span className="material-symbols-outlined text-indigo-600">analytics</span>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black text-[#003A40] leading-none">{adminOverview.averageAttendance}%</p>
-                      <p className="text-[10px] font-extrabold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Avg Attendance %</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-                      <span className="material-symbols-outlined text-orange-600">warning</span>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-black text-[#003A40] leading-none">{adminOverview.belowThresholdCount}</p>
-                      <p className="text-[10px] font-extrabold text-[#5F6B7A] mt-0.5 uppercase tracking-wider">Below Threshold (&lt;75%)</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Attendance Table */}
-                <div className="bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs overflow-hidden flex-1 min-h-0 flex flex-col">
-                  <div className="overflow-x-auto flex-1 custom-scrollbar">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-[#F8FAFC] text-[#5F6B7A] text-[10px] font-extrabold uppercase tracking-widest border-b border-[#E6EDF2] sticky top-0 z-10">
-                          <th className="px-5 py-3">Date &amp; Hour</th>
-                          <th className="px-5 py-3">Subject</th>
-                          <th className="px-5 py-3">Faculty</th>
-                          <th className="px-5 py-3">Class</th>
-                          <th className="px-4 py-3 text-center">Present</th>
-                          <th className="px-4 py-3 text-center">Absent</th>
-                          <th className="px-4 py-3 text-center">Attendance %</th>
-                          <th className="px-5 py-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E6EDF2]">
-                        {loading ? (
-                          <tr>
-                            <td colSpan={8} className="p-0">
-                              <TableSkeleton cols={8} rows={6} />
-                            </td>
-                          </tr>
-                        ) : paginatedRecords.length === 0 ? (
-                          <tr>
-                            <td colSpan={8} className="px-6 py-12 text-center text-[#5F6B7A] text-xs font-semibold">No attendance records found matching filters.</td>
-                          </tr>
-                        ) : (
-                          paginatedRecords.map((r, idx) => (
-                            <tr key={r.id} className={`hover:bg-[#F2FBFA] transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-[#FAFBFC]'}`}>
-                              <td className="px-5 py-3.5 text-xs font-bold text-[#003A40]">
-                                <div>{r.date}</div>
-                                <div className="text-[11px] text-[#5F6B7A] font-medium mt-0.5">{r.hour}</div>
-                              </td>
-                              <td className="px-5 py-3.5">
-                                <div className="text-xs font-bold text-[#003A40] leading-tight">{r.subjectName}</div>
-                                <span className="inline-block text-[9px] font-extrabold text-[#0A686A] bg-[#F2FBFA] border border-[#0A686A]/20 px-1.5 py-0.5 rounded mt-0.5">
-                                  {r.subjectCode}
-                                </span>
-                              </td>
-                              <td className="px-5 py-3.5 text-xs font-semibold text-[#5F6B7A]">{r.faculty}</td>
-                              <td className="px-5 py-3.5">
-                                <div className="text-xs font-bold text-[#003A40]">{r.department}</div>
-                                <div className="text-[11px] text-[#5F6B7A] font-medium">{r.semester} • {r.section}</div>
-                              </td>
-                              <td className="px-4 py-3.5 text-center">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  {r.presentCount}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 text-center">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-extrabold bg-rose-50 text-rose-700 border border-rose-200">
-                                  {r.absentCount}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 text-center">
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold border ${r.attendancePct >= 75 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
-                                  }`}>
-                                  {r.attendancePct}%
-                                </span>
-                              </td>
-                              <td className="px-5 py-3.5 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <button
-                                    onClick={() => {
-                                      setAdminSelectedRecord(r)
-                                      loadRecordHistory(r)
-                                    }}
-                                    className="p-1 rounded-lg text-[#5F6B7A] hover:text-[#003A40] hover:bg-[#F2FBFA] transition-colors cursor-pointer"
-                                    title="View Details &amp; History"
-                                  >
-                                    <span className="material-symbols-outlined text-base">info</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleToggleLock(r)}
-                                    className={`p-1 rounded-lg transition-colors cursor-pointer ${r.locked ? 'text-rose-600 hover:bg-rose-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
-                                      }`}
-                                    title={r.locked ? 'Unlock Record' : 'Lock Record'}
-                                  >
-                                    <span className="material-symbols-outlined text-base">{r.locked ? 'lock' : 'lock_open'}</span>
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Pagination Footer */}
-                  {filteredAdminRecords.length > 0 && (
-                    <div className="flex-shrink-0 border-t border-[#E6EDF2] px-5 py-2.5 flex items-center justify-between bg-[#FAFBFC]">
-                      <span className="text-[11px] font-semibold text-[#5F6B7A]">
-                        Showing {Math.min((currentPage - 1) * pageSize + 1, filteredAdminRecords.length)}–{Math.min(currentPage * pageSize, filteredAdminRecords.length)} of {filteredAdminRecords.length} records
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                          disabled={currentPage === 1}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#E6EDF2] text-[#5F6B7A] disabled:opacity-40 hover:bg-[#F2FBFA] transition-colors cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-sm">chevron_left</span>
-                        </button>
-                        {[...Array(Math.max(1, Math.ceil(filteredAdminRecords.length / pageSize)))].map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setCurrentPage(i + 1)}
-                            className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentPage === i + 1
-                                ? 'bg-[#003A40] text-white'
-                                : 'border border-[#E6EDF2] text-[#5F6B7A] hover:bg-[#F2FBFA]'
-                              }`}
-                          >
-                            {i + 1}
-                          </button>
-                        ))}
-                        <button
-                          onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredAdminRecords.length / pageSize), p + 1))}
-                          disabled={currentPage >= Math.ceil(filteredAdminRecords.length / pageSize)}
-                          className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#E6EDF2] text-[#5F6B7A] disabled:opacity-40 hover:bg-[#F2FBFA] transition-colors cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-sm">chevron_right</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </Fragment>
-            )}
-
-            {adminTab === 'faculty' && (
-              <div className="space-y-6">
-                {/* Date Picker & Search controls */}
+            ) : (
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {/* Faculty Attendance Management */}
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                   <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                    <span className="material-symbols-outlined text-slate-500 text-lg">calendar_today</span>
+                    <Calendar className="w-4 h-4 text-slate-500" />
                     <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Faculty Attendance Management</h3>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -972,16 +842,22 @@ export default function AttendancePage({ noLayout = false }) {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Department</label>
-                      <select
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                        value={adminFacultyDept}
-                        onChange={(e) => setAdminFacultyDept(e.target.value)}
-                      >
-                        <option value="">All Departments</option>
-                        {departments.map(d => (
-                          <option key={d.code} value={d.name}>{d.name}</option>
-                        ))}
-                      </select>
+                      {role === 'hod' ? (
+                        <div className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-700 bg-slate-100 cursor-not-allowed">
+                          {hodDepartment || 'Department'}
+                        </div>
+                      ) : (
+                        <select
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                          value={adminFacultyDept}
+                          onChange={(e) => setAdminFacultyDept(e.target.value)}
+                        >
+                          <option value="">All Departments</option>
+                          {departments.map(d => (
+                            <option key={d.code} value={d.name}>{d.name}</option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Search Faculty</label>
@@ -1226,8 +1102,8 @@ export default function AttendancePage({ noLayout = false }) {
               </div>
             )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ========================================================================= */}
       {/* ======================= FACULTY ATTENDANCE LAYOUT ======================== */}

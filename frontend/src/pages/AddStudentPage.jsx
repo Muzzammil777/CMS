@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EnterpriseWizardTemplate from '../components/common/EnterpriseWizardTemplate';
 import { API_BASE } from '../api/apiBase';
@@ -188,8 +188,6 @@ export default function AddStudentPage() {
         newErrors.roomType = 'Room type is required for hostel';
       }
     } else if (s === 7) {
-      if (!formData.paymentMethod) newErrors.paymentMethod = 'Payment method is required';
-    } else if (s === 8) {
       if (!formData.guardianName) newErrors.guardianName = 'Guardian Name is required';
       if (!formData.guardianPhone) newErrors.guardianPhone = 'Guardian Phone is required';
     }
@@ -200,7 +198,7 @@ export default function AddStudentPage() {
 
   const handleNext = () => {
     if (validateStep(step)) {
-      if (step < 8) setStep(s => s + 1);
+      if (step < 7) setStep(s => s + 1);
       else handleSubmit();
     }
   };
@@ -225,7 +223,7 @@ export default function AddStudentPage() {
       department: formData.department || 'Unassigned',
       rollNumber: formData.id || 'Pending',
       currentStep: step,
-      totalSteps: 8,
+      totalSteps: 7,
       completionPercentage,
       stepName: steps[step - 1]?.title || 'Personal',
       type: 'Student Admission',
@@ -352,8 +350,7 @@ export default function AddStudentPage() {
     { id: 4, title: 'Category', icon: 'category', helpText: 'Specify seat allotment quota under which candidate is seeking admission.' },
     { id: 5, title: 'Accommodation', icon: 'bed', helpText: 'Indicate whether student requires campus hostel lodging or is a day scholar.' },
     { id: 6, title: 'Documents', icon: 'upload_file', helpText: 'Upload mandatory verification documents in PDF or Image format.' },
-    { id: 7, title: 'Payment', icon: 'payments', helpText: 'Select fee payment method and verify total application processing fee.' },
-    { id: 8, title: 'Review', icon: 'rate_review', helpText: 'Provide emergency parent/guardian info and review submission details.' },
+    { id: 7, title: 'Review', icon: 'rate_review', helpText: 'Provide emergency parent/guardian info and review submission details.' },
   ];
 
   const currentStepObj = steps[step - 1];
@@ -1160,174 +1157,78 @@ export default function AddStudentPage() {
         </div>
       )}
 
-      {/* STEP 7: PAYMENT & FEE STRUCTURE */}
+      {/* STEP 7: REVIEW & GUARDIAN */}
       {step === 7 && (
-        <div className="space-y-4">
-          {/* Application Processing Fee */}
-          <div className="p-4 bg-[#E6F4F1] border border-[#0A686A]/20 rounded-xl flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-bold text-[#0A686A] uppercase tracking-wider block">APPLICATION PROCESSING FEE</span>
-              <span className="text-2xl font-black text-[#003A40]">₹500.00</span>
-            </div>
-            <span className="px-3 py-1 bg-[#003A40] text-white rounded-full text-[10px] font-bold uppercase">ONE-TIME FEE</span>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Select Payment Method *</label>
-            <select
-              name="paymentMethod"
-              value={formData.paymentMethod}
-              onChange={handleChange}
-              className="w-full px-3.5 py-2.5 text-xs font-semibold rounded-xl border border-[#E6EDF2] bg-[#FAFBFC]"
-            >
-              <option value="">Select Payment Method</option>
-              <option>UPI / QR Code</option>
-              <option>Credit / Debit Card</option>
-              <option>Net Banking</option>
-            </select>
-          </div>
-
-          {/* ── Dept Fee Structure Preview ── */}
-          {formData.department && (
-            <div className="border border-[#003A40]/15 rounded-2xl overflow-hidden">
-              <div className="bg-[#003A40] px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-emerald-300">receipt_long</span>
-                  <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-200">Department Fee Structure</span>
-                </div>
-                <span className="text-[10px] text-white/60 font-semibold">{formData.department}</span>
+        <div className="space-y-6">
+          {/* Data Summary */}
+          <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <h4 className="text-xs font-extrabold text-[#003A40] mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">Personal Details</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Name</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.name || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">DOB</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.dob || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Gender</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.gender || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Blood Group</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.bloodGroup || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Email</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.email || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Phone</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.phone || '-'}</p></div>
+                <div className="col-span-3"><span className="text-[9px] font-bold text-slate-400 uppercase">Address</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.address || '-'}</p></div>
               </div>
+            </div>
 
-              {feeTemplateLoading ? (
-                <div className="p-6 text-center">
-                  <div className="w-6 h-6 border-2 border-[#0A686A] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-xs text-slate-400 font-semibold">Loading fee template…</p>
-                </div>
-              ) : !deptFeeTemplate ? (
-                <div className="p-4 text-center">
-                  <span className="material-symbols-outlined text-3xl text-slate-300">info</span>
-                  <p className="text-xs text-slate-400 font-semibold mt-1">No fee template configured for this department yet.</p>
-                  <p className="text-[10px] text-slate-300 mt-0.5">Go to Fee Management → Assign Fee Structure to create one.</p>
-                </div>
-              ) : (
-                <div className="p-4 space-y-4">
-                  {/* Base fee summary */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { label: 'Tuition Fee', value: deptFeeTemplate.tuitionFee },
-                      { label: 'Development', value: deptFeeTemplate.developmentFee },
-                      { label: 'Library', value: deptFeeTemplate.libraryFee },
-                      { label: 'Exam Fee', value: deptFeeTemplate.examFee },
-                      { label: 'Activity', value: deptFeeTemplate.activityFee },
-                    ].filter(f => f.value > 0).map(f => (
-                      <div key={f.label} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{f.label}</span>
-                        <span className="text-xs font-extrabold text-[#003A40] font-mono">₹{Number(f.value).toLocaleString('en-IN')}</span>
-                      </div>
-                    ))}
-                  </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <h4 className="text-xs font-extrabold text-[#003A40] mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">Academic Background</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2"><span className="text-[9px] font-bold text-slate-400 uppercase">Previous School</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.previousSchool || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Board</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.board || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Year of Passing</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.yearOfPassing || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Marks Percentage</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.marksPercentage ? formData.marksPercentage + '%' : '-'}</p></div>
+              </div>
+            </div>
 
-                  {/* Scholarship selector */}
-                  {feeScholarships.length > 0 && (
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1.5">Fee Category / Scholarship Scheme</label>
-                      <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                        {feeScholarships.map(sch => {
-                          const isSelected = feeSelection.scholarshipType === sch.value;
-                          return (
-                            <div
-                              key={sch.id}
-                              onClick={() => setFeeSelection(prev => ({ ...prev, scholarshipType: sch.value }))}
-                              className={`p-2.5 rounded-xl border cursor-pointer transition-all text-xs flex flex-col justify-between ${
-                                isSelected ? 'border-[#0A686A] bg-[#F0FDFA] shadow-xs' : 'border-[#E6EDF2] bg-white hover:bg-slate-50'
-                              }`}
-                            >
-                              <div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase tracking-wider">
-                                    {sch.scheme_type || 'Standard'}
-                                  </span>
-                                  {isSelected && <span className="material-symbols-outlined text-[14px] text-[#0A686A]">check_circle</span>}
-                                </div>
-                                <span className="font-bold text-[#003A40] text-[11px] leading-tight block">{sch.label}</span>
-                              </div>
-                              <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                                <span className="text-slate-500 font-medium">
-                                  {sch.discount_type === 'percent' ? `${sch.discount_amount}% off tuition` : sch.discount_type === 'full' ? '100% Fee Waiver' : sch.discount_amount > 0 ? `-₹${Number(sch.discount_amount).toLocaleString('en-IN')}` : 'No discount'}
-                                </span>
-                                {sch.eligibility && (
-                                  <span className="text-[9px] text-slate-400 font-medium truncate max-w-[110px]" title={sch.eligibility}>
-                                    {sch.eligibility}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <h4 className="text-xs font-extrabold text-[#003A40] mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">Program Details</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2"><span className="text-[9px] font-bold text-slate-400 uppercase">Department</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.department || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Course</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.course || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Admission Type</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.admissionType || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Semester & Section</span><p className="text-[11px] font-semibold text-[#003A40]">Sem {formData.semester || '-'} / Sec {formData.section || '-'}</p></div>
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Quota & Category</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.quota || '-'} ({formData.courseCategory || '-'})</p></div>
+              </div>
+            </div>
 
-                  {/* Hostel selector */}
-                  {feeAuxConfig.hostel_types?.length > 0 && (
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1.5">Hostel Package</label>
-                      <select
-                        value={feeSelection.hostelType}
-                        onChange={e => setFeeSelection(prev => ({ ...prev, hostelType: e.target.value }))}
-                        className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white"
-                      >
-                        {feeAuxConfig.hostel_types.map(h => (
-                          <option key={h.id} value={h.value}>{h.label} {h.amount > 0 ? `— ₹${Number(h.amount).toLocaleString('en-IN')}/yr` : '— Free'}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <h4 className="text-xs font-extrabold text-[#003A40] mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">Accommodation</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <div><span className="text-[9px] font-bold text-slate-400 uppercase">Type</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.accommodation || '-'}</p></div>
+                {formData.accommodation === 'Hostel Required' && (
+                  <>
+                    <div><span className="text-[9px] font-bold text-slate-400 uppercase">Room Type</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.roomType || '-'}</p></div>
+                    <div><span className="text-[9px] font-bold text-slate-400 uppercase">Hostel Name</span><p className="text-[11px] font-semibold text-[#003A40]">{formData.hostelName || '-'}</p></div>
+                  </>
+                )}
+              </div>
+            </div>
 
-                  {/* Transport selector */}
-                  {feeAuxConfig.transport_zones?.length > 0 && (
-                    <div>
-                      <label className="text-[10px] font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1.5">Bus Transport Zone</label>
-                      <select
-                        value={feeSelection.transportZone}
-                        onChange={e => setFeeSelection(prev => ({ ...prev, transportZone: e.target.value }))}
-                        className="w-full px-3.5 py-2.5 border border-[#E6EDF2] rounded-xl text-xs font-semibold outline-none focus:border-[#0A686A] bg-white"
-                      >
-                        {feeAuxConfig.transport_zones.map(t => (
-                          <option key={t.id} value={t.value}>{t.label} {t.amount > 0 ? `— ₹${Number(t.amount).toLocaleString('en-IN')}/yr` : '— Free'}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Net fee pill */}
-                  <div className="flex items-center justify-between p-3 bg-[#003A40] rounded-xl text-white">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-200">Estimated Net Fee Payable</span>
-                    <span className="text-base font-black font-mono">
-                      ₹{(() => {
-                        const selScheme = feeScholarships.find(s => s.value === feeSelection.scholarshipType);
-                        let disc = 0;
-                        if (selScheme?.discount_type === 'full') disc = (deptFeeTemplate.tuitionFee || 0);
-                        else if (selScheme?.discount_type === 'percent') disc = (deptFeeTemplate.tuitionFee || 0) * (selScheme.discount_amount / 100);
-                        else if (selScheme?.discount_type === 'fixed') disc = selScheme.discount_amount || 0;
-                        const tFee = feeAuxConfig.transport_zones?.find(t => t.value === feeSelection.transportZone)?.amount || 0;
-                        const hFee = feeAuxConfig.hostel_types?.find(h => h.value === feeSelection.hostelType)?.amount || 0;
-                        const gross = (deptFeeTemplate.tuitionFee||0)+(deptFeeTemplate.developmentFee||0)+(deptFeeTemplate.libraryFee||0)+(deptFeeTemplate.examFee||0)+(deptFeeTemplate.activityFee||0);
-                        return Math.max(0, gross + tFee + hFee - disc).toLocaleString('en-IN');
-                      })()}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <h4 className="text-xs font-extrabold text-[#003A40] mb-3 border-b border-slate-200 pb-2 flex items-center gap-2">Documents Provided</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Aadhaar Card', field: 'aadhaarCard' },
+                  { label: 'Marksheet', field: 'marksheet' },
+                  { label: 'Transfer Certificate', field: 'transferCertificate' },
+                  { label: 'Passport Photo', field: 'passportPhoto' },
+                ].map(doc => (
+                  <div key={doc.field} className="flex justify-between items-center bg-white p-2 border border-slate-200 rounded-lg">
+                    <span className="text-[10px] font-semibold text-[#003A40]">{doc.label}</span>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${formData.docs[doc.field] ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                      {formData.docs[doc.field] ? 'Uploaded' : 'Pending'}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-medium text-center">Fee record will be auto-assigned to this student upon enrollment</p>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
 
-      {/* STEP 8: REVIEW & GUARDIAN */}
-      {step === 8 && (
-        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold text-[#5F6B7A] uppercase tracking-wider block mb-1">Guardian Name *</label>

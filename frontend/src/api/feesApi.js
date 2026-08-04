@@ -45,6 +45,8 @@ function normalizeFeeAssignment(item) {
     transactionId: item.transaction_id || item.transactionId,
     firstGraduate: item.first_graduate ?? item.firstGraduate,
     hostelRequired: item.hostel_required ?? item.hostelRequired,
+    components: item.components || breakdown || {}, // Keep full breakdown mapping
+    paidAmount: item.paid_amount || item.paidAmount || 0,
   };
 }
 

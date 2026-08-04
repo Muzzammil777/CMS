@@ -4,10 +4,10 @@ import EnterprisePageTemplate from '../components/EnterprisePageTemplate';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { useAdmission } from '../context/AdmissionContext';
 import { getUserSession } from '../auth/sessionController';
-import { listFees, assignFee, deleteFeeAssignment } from '../api/feesApi';
+import { listFees, assignFee, deleteFeeAssignment, updateFeePayment } from '../api/feesApi';
 import { createInvoice } from '../api/invoicesApi';
 import { fetchStudents } from '../api/studentsApi';
-import { Eye, Plus, Trash2, DollarSign, CheckCircle2, Clock, AlertTriangle, X, Edit2, Check, Tag, Star, Award, Bus, Building2, ShieldCheck, Package } from 'lucide-react';
+import { Eye, Plus, Trash2, DollarSign, CheckCircle2, Clock, AlertTriangle, X, Edit2, Check, Tag, Star, Award, Bus, Building2, ShieldCheck, Package, CreditCard } from 'lucide-react';
 import EnterpriseWizardTemplate from '../components/common/EnterpriseWizardTemplate';
 import { useDepartments } from '../hooks/useDepartments';
 
@@ -25,6 +25,9 @@ export default function AdminFeesPage() {
   const [enrolledStudents, setEnrolledStudents] = useState([]);
   const [selectedEnrolledStudentId, setSelectedEnrolledStudentId] = useState('');
   const [expandedFee, setExpandedFee] = useState(null);
+  const [paymentModal, setPaymentModal] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('UPI / QR Code');
+  const [paymentAmount, setPaymentAmount] = useState(0);
 
   const [assignFormData, setAssignFormData] = useState({
     semester: '',
@@ -209,6 +212,16 @@ export default function AdminFeesPage() {
 
   const tableActions = [
     {
+      icon: <CreditCard className="w-3.5 h-3.5" />,
+      label: 'Make Payment',
+      color: 'blue',
+      onClick: (f) => {
+        setPaymentModal(f);
+        setPaymentMethod(f.paymentMethod || 'UPI / QR Code');
+        setPaymentAmount((f.totalFee || 0) - (f.paidAmount || 0));
+      },
+    },
+    {
       icon: <Eye className="w-3.5 h-3.5" />,
       label: 'View Breakdown',
       color: 'teal',
@@ -251,6 +264,21 @@ export default function AdminFeesPage() {
               setFeeAssignments((prev) => [feeRecord, ...prev]);
               alert('Fee structure assigned successfully!');
             }
+          }}
+        />
+      </Layout>
+    );
+  }
+
+  if (paymentModal) {
+    return (
+      <Layout title="Process Payment">
+        <PaymentFullView 
+          fee={paymentModal}
+          onCancel={() => setPaymentModal(null)}
+          onSuccess={() => {
+            setPaymentModal(null);
+            fetchFees();
           }}
         />
       </Layout>
@@ -323,6 +351,7 @@ export default function AdminFeesPage() {
             </button>
           </div>
         </div>
+      )}
       )}
     </Layout>
   );
@@ -1752,5 +1781,167 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
 
       </div>
     </EnterpriseWizardTemplate>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FULL PAGE PAYMENT PROCESSOR
+   ══════════════════════════════════════════════════════════════════════════ */
+function PaymentFullView({ fee, onCancel, onSuccess }) {
+  const [paymentMethod, setPaymentMethod] = useState(fee.paymentMethod || 'UPI / QR Code');
+  const [paymentAmount, setPaymentAmount] = useState((fee.totalFee || 0) - (fee.paidAmount || 0));
+
+  const remainingBalance = (fee.totalFee || 0) - (fee.paidAmount || 0) - paymentAmount;
+  
+  // Calculate Target Date (30 days from now)
+  const targetDate = new Date();
+  targetDate.setDate(targetDate.getDate() + 30);
+  const targetDateStr = targetDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  return (
+    <div className="bg-white rounded-3xl border border-[#E6EDF2] p-8 shadow-sm flex flex-col md:flex-row gap-8">
+      
+      {/* LEFT: Fee Breakdown */}
+      <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl p-6">
+        <h3 className="text-sm font-extrabold text-[#003A40] mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-[20px]">receipt_long</span> 
+          Fee Breakdown
+        </h3>
+        
+        <div className="space-y-3 text-xs text-[#5F6B7A]">
+          <div className="flex justify-between py-2 border-b border-slate-200/60">
+            <span className="font-bold">Student Name:</span>
+            <span className="font-bold text-[#003A40]">{fee.studentName} ({fee.studentId})</span>
+          </div>
+          <div className="flex justify-between py-2 border-b border-slate-200/60">
+            <span className="font-bold">Semester:</span>
+            <span className="font-bold text-[#003A40]">Semester {fee.semester}</span>
+          </div>
+          
+          <div className="pt-4 pb-2">
+            <h4 className="font-extrabold text-[#003A40] mb-2 uppercase tracking-wider text-[10px]">Components</h4>
+            <div className="flex justify-between py-1">
+              <span>Tuition / Semester Fee:</span>
+              <span className="font-bold text-[#003A40]">₹{(fee.components?.semesterFee || fee.components?.tuitionFee || 0).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span>Books & Digital Library:</span>
+              <span className="font-bold text-[#003A40]">₹{(fee.components?.bookFee || fee.components?.libraryFee || 0).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span>Exam Fee:</span>
+              <span className="font-bold text-[#003A40]">₹{(fee.components?.examFee || 0).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span>Hostel & Mess:</span>
+              <span className="font-bold text-[#003A40]">₹{(fee.components?.hostelFee || 0).toLocaleString()}</span>
+            </div>
+            {fee.components?.scholarshipDiscount > 0 && (
+              <div className="flex justify-between py-1 text-emerald-600 font-bold">
+                <span>Scholarship Waiver:</span>
+                <span>-₹{fee.components.scholarshipDiscount.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="pt-4 flex justify-between items-end border-t border-slate-200/60">
+            <span className="font-extrabold text-sm text-[#003A40]">Total Fee:</span>
+            <div className="text-right">
+              <span className="block text-lg font-black text-[#0A686A]">₹{(fee.totalFee || 0).toLocaleString()}</span>
+              <span className="text-[10px] font-bold text-slate-500">Already Paid: ₹{(fee.paidAmount || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: Payment Processing */}
+      <div className="flex-1 flex flex-col justify-between">
+        <div>
+          <h3 className="text-sm font-extrabold text-[#003A40] mb-6 flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-blue-500" /> Process Payment
+          </h3>
+
+          <div className="space-y-5">
+            <div>
+              <label className="text-[10px] font-bold text-[#5F6B7A] uppercase mb-1.5 block">Payment Method</label>
+              <select
+                value={paymentMethod}
+                onChange={e => setPaymentMethod(e.target.value)}
+                className="w-full px-4 py-3 text-xs font-semibold border border-slate-200 rounded-xl focus:outline-none focus:border-[#0A686A] bg-[#FAFBFC]"
+              >
+                <option value="UPI / QR Code">UPI / QR Code</option>
+                <option value="Credit / Debit Card">Credit / Debit Card</option>
+                <option value="Net Banking">Net Banking</option>
+                <option value="Cash">Cash</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="text-[10px] font-bold text-[#5F6B7A] uppercase mb-1.5 block">Amount to Pay Now</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3 text-slate-400 font-black text-sm">₹</span>
+                <input
+                  type="number"
+                  value={paymentAmount}
+                  onChange={e => setPaymentAmount(Number(e.target.value))}
+                  className="w-full pl-9 pr-4 py-3 text-sm font-black border border-slate-200 rounded-xl focus:outline-none focus:border-[#0A686A] bg-[#FAFBFC]"
+                />
+              </div>
+            </div>
+
+            {remainingBalance > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 mt-4">
+                <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5" />
+                <div>
+                  <h4 className="text-[11px] font-extrabold text-amber-800">Remaining Balance: ₹{remainingBalance.toLocaleString()}</h4>
+                  <p className="text-[10px] font-bold text-amber-700/70 mt-1">Target to pay within 30 days ({targetDateStr})</p>
+                </div>
+              </div>
+            )}
+            
+            {remainingBalance < 0 && (
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-start gap-3 mt-4">
+                <AlertTriangle className="w-4 h-4 text-rose-500 mt-0.5" />
+                <div>
+                  <h4 className="text-[11px] font-extrabold text-rose-800">Overpayment: ₹{Math.abs(remainingBalance).toLocaleString()}</h4>
+                  <p className="text-[10px] font-bold text-rose-700/70 mt-1">Payment amount exceeds the total due.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-8">
+          <button
+            onClick={onCancel}
+            className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={remainingBalance < 0 || paymentAmount <= 0}
+            onClick={async () => {
+              try {
+                // Ensure correct status updates based on remaining balance
+                const totalPaidNow = (fee.paidAmount || 0) + paymentAmount;
+                const newStatus = totalPaidNow >= fee.totalFee ? 'Paid' : 'Partial';
+                await updateFeePayment(fee.id, {
+                  status: newStatus,
+                  paymentMethod,
+                  paidAmount: totalPaidNow,
+                });
+                alert('Payment recorded successfully!');
+                onSuccess();
+              } catch (err) {
+                alert('Failed to record payment');
+              }
+            }}
+            className="flex-1 py-3 bg-[#003A40] text-white rounded-xl font-bold text-xs hover:bg-[#0A686A] transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Confirm & Process Payment
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

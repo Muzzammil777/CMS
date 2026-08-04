@@ -55,6 +55,7 @@ export function AdmissionProvider({ children }) {
     }
   };
 
+  //  Fetch Approved Students (lazy — only call when needed, e.g. from Fees page)
   const fetchApprovedStudents = async () =>{
     try {
       // Skip the expensive purge on every call — run it only on explicit admin action

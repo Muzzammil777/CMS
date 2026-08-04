@@ -12,7 +12,6 @@ export default function PlacementPage() {
   const user = session?.user || getUserData();
   const role = session?.role || 'admin';
   const hodDepartment = user?.department || user?.departmentId || user?.department_id || '';
-  const isStudent = role === 'student';
 
   const [placements, setPlacements] = useState([]);
   const [students, setStudents] = useState([]);
@@ -45,12 +44,7 @@ export default function PlacementPage() {
         fetch(`${API_BASE}/students`).then(res => res.ok ? res.json() : []).catch(() => [])
       ]);
 
-      let placementsData = Array.isArray(data) ? data : [];
-      if (isStudent && session?.userId) {
-        placementsData = placementsData.filter(p => (p.student_id === session.userId || p.id === session.userId));
-      }
-
-      setPlacements(placementsData);
+      setPlacements(Array.isArray(data) ? data : []);
       setStudents(Array.isArray(stuRes) ? stuRes : []);
     } catch (err) {
       console.error('Failed to fetch placements:', err);

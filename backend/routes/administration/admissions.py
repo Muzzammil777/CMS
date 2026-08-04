@@ -353,25 +353,33 @@ async def get_all_admissions():
 
 @router.get("/students")
 async def get_student_admissions(department: str = None):
-    try:
-        admissions_collection = _admissions_collection()
-        query = {"$or": [{"role": "student"}, {"type": "student"}]}
-        if department:
-            import re as _re
-            dept_esc = _re.escape(department.strip())
-            dept_filter = {"$or": [
-                {"department": {"$regex": dept_esc, "$options": "i"}},
-                {"courseCategory": {"$regex": dept_esc, "$options": "i"}},
-                {"course": {"$regex": dept_esc, "$options": "i"}},
-                {"program": {"$regex": dept_esc, "$options": "i"}},
-            ]}
-            query = {"$and": [query, dept_filter]}
-        docs = await asyncio.wait_for(admissions_collection.find(query).sort("created_at", -1).to_list(length=300), timeout=1.0)
-        return [_serialize_admission(item) for item in docs]
-    except BaseException as err:
-        print(f"Warning: get_student_admissions encountered db error: {err}")
-        from backend.dev_store import DEV_STORE
-        return DEV_STORE.get("admissions_students", [])
+    admissions_collection = _admissions_collection()
+    data: list[dict[str, Any]] = []
+
+    query: dict[str, Any] = {"$or": [{"role": "student"}, {"type": "student"}]}
+    if department:
+        import re as _re
+        dept_esc = _re.escape(department.strip())
+        dept_filter = {"$or": [
+            {"department": {"$regex": dept_esc, "$options": "i"}},
+            {"courseCategory": {"$regex": dept_esc, "$options": "i"}},
+            {"course": {"$regex": dept_esc, "$options": "i"}},
+            {"program": {"$regex": dept_esc, "$options": "i"}},
+        ]}
+        query = {"$and": [query, dept_filter]}
+
+    for attempt in range(2):
+        try:
+            async for item in admissions_collection.find(query).sort("created_at", -1):
+                data.append(_serialize_admission(item))
+            break
+        except (AutoReconnect, ServerSelectionTimeoutError, PyMongoError) as err:
+            if attempt == 1:
+                print(f"Warning: get_student_admissions encountered db error: {err}")
+                break
+            await asyncio.sleep(0.3)
+
+    return data
 
 
 @router.get("/students/approved-for-fees")

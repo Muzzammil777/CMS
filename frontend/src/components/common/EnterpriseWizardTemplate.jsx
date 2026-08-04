@@ -101,7 +101,7 @@ export default function EnterpriseWizardTemplate({
         {/* ── MAIN CONTENT GRID (8 COLS FORM + 4 COLS SIDEBAR) ────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-[460px]">
           {/* LEFT FORM CARD (8 COLS) */}
-          <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs space-y-6 flex flex-col justify-between">
+          <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs space-y-6 flex flex-col">
             {/* STEP TITLE HEADER */}
             <div className="flex items-center gap-2.5 pb-4 border-b border-[#E6EDF2]">
               <div className="w-8 h-8 rounded-xl bg-[#E6F4F1] text-[#003A40] flex items-center justify-center shrink-0">
@@ -111,7 +111,7 @@ export default function EnterpriseWizardTemplate({
             </div>
 
             {/* FORM BODY */}
-            <div className="space-y-4">{children}</div>
+            <div className="space-y-4 flex-1">{children}</div>
           </div>
 
           {/* RIGHT SIDEBAR CARDS (4 COLS) */}

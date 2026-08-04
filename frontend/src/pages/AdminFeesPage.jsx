@@ -380,7 +380,6 @@ export default function AdminFeesPage() {
           </div>
         </div>
       )}
-      )}
     </Layout>
   );
 }
@@ -573,18 +572,18 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
   ) || allStudents[0];
 
   // ── Fee calculations ──────────────────────────────────────────────────────
-  const splitMult = formData.splitBySemester ? 0.5 : 1;
+  const splitMult = 1;
 
   const chargesSum = charges
     .filter(c => selectedChargeIds.includes(c.id))
-    .reduce((acc, c) => acc + Number(c.amount || 0), 0) * splitMult;
-  const customFeesSum = (formData.customFeeComponents || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0) * splitMult;
+    .reduce((acc, c) => acc + Number(c.amount || 0), 0);
+  const customFeesSum = (formData.customFeeComponents || []).reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
   
-  const tuitionFeeCalc = Number(formData.tuitionFee) * splitMult;
-  const developmentFeeCalc = Number(formData.developmentFee) * splitMult;
-  const libraryFeeCalc = Number(formData.libraryFee) * splitMult;
-  const examFeeCalc = Number(formData.examFee) * splitMult;
-  const activityFeeCalc = Number(formData.activityFee) * splitMult;
+  const tuitionFeeCalc = Number(formData.tuitionFee || 0);
+  const developmentFeeCalc = Number(formData.developmentFee || 0);
+  const libraryFeeCalc = Number(formData.libraryFee || 0);
+  const examFeeCalc = Number(formData.examFee || 0);
+  const activityFeeCalc = Number(formData.activityFee || 0);
 
   const grossAcademicFee = tuitionFeeCalc + developmentFeeCalc + libraryFeeCalc + examFeeCalc + activityFeeCalc + customFeesSum + chargesSum;
 
@@ -761,7 +760,7 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
     if (currentStep < 4) {
       setCurrentStep(prev => prev + 1);
     } else {
-      setIsSubmitting(true);
+      const assignedTotalFee = formData.splitBySemester ? Math.round(netTotalFee * 0.5) : netTotalFee;
       const feeRecord = {
         id: `FEE-${Date.now()}`,
         applicationId: selectedStudent?.id || `APP-${Date.now()}`,
@@ -772,7 +771,7 @@ function AssignFeeFullView({ onCancel, onSave, enrolledStudents = [], approvedSt
         email: selectedStudent?.email || '',
         course: formData.department,
         semester: formData.semester,
-        totalFee: netTotalFee,
+        totalFee: assignedTotalFee,
         components: {
           grossAcademicFee,
           tuitionFee: tuitionFeeCalc,

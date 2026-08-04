@@ -105,32 +105,22 @@ DEV_STORE = {
     "newsletters": [
         {
             "id": "news_001",
-            "title": "Placement Drive: TechCorp Recruitment 2026",
-            "summary": "TechCorp is visiting campus for a mega placement drive for CS, IT and ECE graduates. registrations close this Friday.",
-            "content": "### Mega Placement Drive by TechCorp\n\nWe are pleased to announce that TechCorp, a global software leader, is visiting our campus for a placement drive.\n\n- **Role**: Associate Software Engineer\n- **Eligibility**: final year B.Tech/M.Tech (CS, IT, ECE) with CGPA >= 7.5\n- **Salary Package**: ₹12,00,000 per annum\n- **Selection Process**: Online Coding Test followed by Technical & HR Interviews\n- **Date**: May 15, 2026\n- **Registration Deadline**: April 24, 2026, EOD\n\nEligible students must register via the Placement Portal and upload their updated resumes immediately. Contact the Placement Cell for any queries.",
-            "category": "Placement",
-            "author": "Campus Placement Cell",
+            "title": "Hospital Clinical Internship Drive 2026",
+            "summary": "Clinical internship drives for B.Sc MLT, OTAT, and RIT students are scheduled to begin next month.",
+            "content": "### Clinical Internship Drive at DSCHS\n\nWe are pleased to announce clinical internship opportunities across affiliated super-specialty hospitals for our B.Sc. Medical Laboratory Technology, Operation Theatre & Anaesthesia Technology, and Radiography & Imaging Technology students.\n\n- **Programs**: B.Sc MLT, B.Sc OTAT, B.Sc RIT\n- **Affiliation**: The Tamil Nadu Dr. M.G.R. Medical University, Chennai\n- **Duration**: 1 Year Clinical Internship\n\nEligible students should submit their preference forms to the Academic Office.",
+            "category": "Academic",
+            "author": "Academic Affairs",
             "targetRoles": ["ALL"],
             "publishedAt": "2026-04-18T09:00:00Z"
         },
         {
             "id": "news_002",
-            "title": "Annual Cultural Fest 'MILANGE 2026' Announced",
-            "summary": "Get ready for the biggest event of the year! Milange 2026 will be held from May 5th to May 7th. Registrations for events are open.",
-            "content": "### MILANGE 2026: The Cultural Extravaganza\n\nThe Department of Student Affairs is thrilled to announce the dates for **Milange 2026**, our annual cultural festival. Join us for three days of music, dance, coding battles, drama, and culinary arts!\n\n- **Dates**: May 5th to May 7th, 2026\n- **Highlights**: Rock Show, Hack-a-thon, Street Play, and Fashion Show\n- **Chief Guest**: Renowned Director Vikram Sen\n- **Event Registrations**: Open from April 20th onwards on the Student Portal\n\nLet us come together to celebrate talent, creativity, and college spirit! Volunteers can register at the Student Council desk in Room 302.",
-            "category": "Event",
-            "author": "Student Council Office",
-            "targetRoles": ["student", "faculty"],
-            "publishedAt": "2026-04-17T14:30:00Z"
-        },
-        {
-            "id": "news_003",
-            "title": "New Research Grants & Facility Expansion",
-            "summary": "The administration has received new grants to expand our robotics lab facilities and support research projects.",
-            "content": "### Expansion of Campus Research Infrastructure\n\nWe are proud to share that MIT Connect has been awarded a research grant of ₹50,00,000 by the National Research Council. \n\nThis grant will be directed towards:\n1. **Advanced Robotics Lab Expansion**: Purchasing high-performance compute units and edge AI devices.\n2. **Faculty-led Research Fellowships**: Financial support for ongoing research projects in sustainable engineering.\n\nFaculty members interested in applying for project funding can submit their proposals to the Dean of Research by April 30, 2026.",
+            "title": "State-of-the-Art Laboratory Facility Inauguration",
+            "summary": "DSCHS inaugurates modern clinical lab and radiology suites for technologist practical training.",
+            "content": "### Expansion of Health Sciences Infrastructure\n\nDindigul Shifa College of Health Sciences has expanded its modern laboratory facilities with advanced diagnostic instruments, CT/MRI simulator suites, and specialized operation theatre equipment to deliver world-class practical training.",
             "category": "Academic",
-            "author": "Office of the Dean",
-            "targetRoles": ["faculty", "admin"],
+            "author": "College Management",
+            "targetRoles": ["student", "faculty"],
             "publishedAt": "2026-04-16T11:00:00Z"
         }
     ],

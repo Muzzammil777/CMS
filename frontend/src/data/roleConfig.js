@@ -8,8 +8,8 @@ export const demoUsers = {
 export const cmsRoles = {
   student: {
     label: 'Student',
-    name: 'John Anderson',
-    team: 'Computer Science',
+    name: 'Student Portal',
+    team: 'Medical Laboratory Technology',
     focus: 'Academics',
     primaryAction: 'View Timetable',
     secondaryAction: 'Track Attendance',
@@ -17,7 +17,7 @@ export const cmsRoles = {
   },
   admin: {
     label: 'Admin',
-    name: 'Nisha Verma',
+    name: 'Administrator',
     team: 'Campus Administration',
     focus: 'Operations',
     primaryAction: 'View Fees',
@@ -26,8 +26,8 @@ export const cmsRoles = {
   },
   faculty: {
     label: 'Faculty',
-    name: 'Dr. Rajesh Iyer',
-    team: 'School of Engineering',
+    name: 'Faculty Member',
+    team: 'Dindigul Shifa College of Health Sciences',
     focus: 'Teaching',
     primaryAction: 'Mark Attendance',
     secondaryAction: 'Publish Internal Marks',

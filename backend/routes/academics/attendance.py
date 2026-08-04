@@ -233,12 +233,9 @@ def is_class_assigned_py(class_id: str, class_label: str, assigned_classes: list
     normalized_id = class_id.lower()
     
     dept_codes = {
-        'cse': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-        'ece': ['electronics', 'electronics & communication', 'electronics and communication'],
-        'me': ['mechanical', 'mechanical engineering'],
-        'ce': ['civil', 'civil engineering'],
-        'it': ['information technology'],
-        'eee': ['electrical', 'electrical engineering', 'electrical & electronics', 'electrical and electronics']
+        'mlt': ['medical laboratory technology', 'medical lab technology', 'mlt'],
+        'otat': ['operation theatre & anaesthesia technology', 'operation theatre and anaesthesia technology', 'otat', 'anaesthesia'],
+        'rit': ['radiography & imaging technology', 'radiography and imaging technology', 'rit', 'radiology'],
     }
     
     for ac in assigned_classes:
@@ -304,14 +301,9 @@ async def check_faculty_attendance_permission(db, faculty_id: str, class_id: str
         # Fallback: Check if the classId belongs to a timetable that maps to the
         # faculty's assigned classes via department abbreviation matching (e.g. CSE-A -> CO-S6A)
         dept_abbrev_map = {
-            'cse': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-            'cs': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-            'co': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-            'ece': ['electronics', 'electronics and communication', 'electronics & communication'],
-            'me': ['mechanical', 'mechanical engineering'],
-            'ce': ['civil', 'civil engineering'],
-            'it': ['information technology'],
-            'eee': ['electrical', 'electrical engineering', 'electrical & electronics'],
+            'mlt': ['medical laboratory technology', 'medical lab technology', 'mlt'],
+            'otat': ['operation theatre & anaesthesia technology', 'operation theatre and anaesthesia technology', 'otat'],
+            'rit': ['radiography & imaging technology', 'radiography and imaging technology', 'rit'],
         }
         
         timetable_match = False
@@ -623,14 +615,9 @@ async def get_faculty_subjects(faculty_id: str):
     if not assigned_subjects and faculty_courses:
         # Build a mapping of dept abbreviations to timetable info
         dept_abbrev_map = {
-            'cse': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-            'cs': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-            'co': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-            'ece': ['electronics', 'electronics and communication', 'electronics & communication'],
-            'me': ['mechanical', 'mechanical engineering'],
-            'ce': ['civil', 'civil engineering'],
-            'it': ['information technology'],
-            'eee': ['electrical', 'electrical engineering', 'electrical & electronics'],
+            'mlt': ['medical laboratory technology', 'medical lab technology', 'mlt'],
+            'otat': ['operation theatre & anaesthesia technology', 'operation theatre and anaesthesia technology', 'otat'],
+            'rit': ['radiography & imaging technology', 'radiography and imaging technology', 'rit'],
         }
 
         faculty_dept = norm_text(faculty.get("department", "")) if faculty else ""

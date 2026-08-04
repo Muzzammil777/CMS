@@ -428,7 +428,7 @@ export default function FacultyPage() {
   // ── Filter Options ───────────────────────────────────────────────────────
   const deptOptions = useMemo(() => {
     const rawDepts = facultyList.map(getFacultyDept).filter(Boolean)
-    const defaults = ['Computer Science', 'Information Technology', 'Electronics', 'Mechanical', 'Civil', 'Mathematics']
+    const defaults = ['Medical Laboratory Technology', 'Operation Theatre & Anaesthesia Technology', 'Radiography & Imaging Technology']
     const all = [...new Set([...rawDepts, ...defaults])]
     return all.map(d => ({ value: d, label: d }))
   }, [facultyList])

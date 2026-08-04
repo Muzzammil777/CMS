@@ -26,29 +26,38 @@ function getCleanCode(dept) {
 }
 
 /* ── Full Page Enterprise Add Department View ──────────────────────────── */
-function AddDepartmentFullView({ onCancel, onSave, allFaculty = [] }) {
+function AddDepartmentFullView({ onCancel, onSave, allFaculty = [], initialData = null }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    code: '',
-    category: 'Engineering & Technology',
-    established_year: new Date().getFullYear().toString(),
-    office_location: 'Academic Building A, Room 301',
-    description: '',
-    head: '',
-    head_id: '',
-    email: '',
-    phone: '',
-    deputy_head: '',
-    programs: ['B.Tech', 'M.Tech'],
-    totalStudents: 300,
-    totalFaculty: 15,
-    courses: 10,
-    accreditation: 'NBA Tier-1 Accredited',
-    budget: '5000000',
+  const buildInitialFormState = (data) => ({
+    id: data?.id || '',
+    name: data?.name || '',
+    code: data?.code || '',
+    category: data?.category || 'Medical & Allied Health',
+    established_year: data?.established_year || data?.establishedYear || new Date().getFullYear().toString(),
+    office_location: data?.office_location || data?.location || 'DSCHS Main Building, Floor 1',
+    description: data?.description || '',
+    head: data?.head || data?.hod || '',
+    head_id: data?.head_id || data?.headId || '',
+    email: data?.email || '',
+    phone: data?.phone || '',
+    deputy_head: data?.deputy_head || data?.deputyHead || '',
+    programs: data?.programs || (data?.degree ? [data.degree] : ['B.Sc (Medical Lab Technology)', 'B.Sc (Operation Theatre and Anaesthesia Technology)', 'B.Sc (Radiography and Imaging Technology)']),
+    totalStudents: data?.totalStudents ?? 0,
+    totalFaculty: data?.totalFaculty ?? 0,
+    courses: data?.courses ?? 1,
+    accreditation: data?.accreditation || 'NBA Tier-1 Accredited',
+    budget: data?.budget || '5000000',
   });
+
+  const [formData, setFormData] = useState(() => buildInitialFormState(initialData));
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData(buildInitialFormState(initialData));
+    }
+  }, [initialData]);
 
   const steps = [
     { title: 'General Info', label: 'General Info' },
@@ -94,7 +103,12 @@ function AddDepartmentFullView({ onCancel, onSave, allFaculty = [] }) {
     } else {
       setIsSubmitting(true);
       const code = formData.code ? formData.code.toUpperCase() : getCleanCode({ name: formData.name });
-      await onSave({ ...formData, code, id: `DEPT-${Date.now()}` });
+      const payload = {
+        ...formData,
+        code,
+        id: formData.id || initialData?.id || `DEPT-${Date.now()}`
+      };
+      await onSave(payload);
       setIsSubmitting(false);
       onCancel();
     }
@@ -113,8 +127,8 @@ function AddDepartmentFullView({ onCancel, onSave, allFaculty = [] }) {
   return (
     <EnterpriseWizardTemplate
       noLayout={true}
-      title="Create New Academic Department"
-      subtitle="Configure department metadata, assign HOD leadership, and set academic intake capacity"
+      title={initialData ? `Edit Department: ${initialData.name}` : "Create New Academic Department"}
+      subtitle={initialData ? "Update department metadata, assign HOD leadership, and set academic intake capacity" : "Configure department metadata, assign HOD leadership, and set academic intake capacity"}
       steps={steps}
       currentStep={currentStep}
       totalSteps={4}
@@ -383,127 +397,7 @@ function AddDepartmentFullView({ onCancel, onSave, allFaculty = [] }) {
   );
 }
 
-/* ── Enterprise Edit Department Modal ─────────────────────────────────────── */
-function EditDepartmentModal({ isOpen, onClose, department, onSave, allFaculty = [] }) {
-  const [formData, setFormData] = useState(department || {});
 
-  useEffect(() => {
-    if (department) setFormData(department);
-  }, [department]);
-
-  if (!isOpen || !department) return null;
-
-  const handleHodSelect = (facId) => {
-    if (!facId) return;
-    const fac = allFaculty.find(f => (f.id === facId || f._id === facId));
-    if (fac) {
-      setFormData(prev => ({
-        ...prev,
-        head_id: facId,
-        head: fac.name || fac.fullName || '',
-        email: fac.email || prev.email,
-        phone: fac.phone || fac.contactNumber || prev.phone,
-      }));
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-[#E6EDF2] p-6 max-w-lg w-full shadow-xl space-y-4">
-        <div className="flex items-center justify-between border-b border-[#EEF4F7] pb-3">
-          <h3 className="text-base font-bold text-[#003A40] font-['Outfit'] flex items-center gap-2">
-            <Pencil className="w-4 h-4 text-[#0A686A]" /> Edit Department — {getCleanCode(department)}
-          </h3>
-          <button type="button" onClick={onClose} className="text-[#8C98A5] hover:text-rose-500 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Department Name</label>
-            <input
-              type="text"
-              required
-              value={formData.name || ''}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Short Code</label>
-            <input
-              type="text"
-              required
-              value={formData.code || ''}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-              className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Select HOD from Faculty Directory</label>
-          <select
-            value={formData.head_id || ''}
-            onChange={(e) => handleHodSelect(e.target.value)}
-            className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A] bg-white cursor-pointer"
-          >
-            <option value="">-- Choose Assigned Faculty Member --</option>
-            {allFaculty.map((fac) => (
-              <option key={fac.id || fac._id} value={fac.id || fac._id}>
-                {fac.name || fac.fullName} ({fac.designation || 'Faculty'})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">HOD Display Name</label>
-            <input
-              type="text"
-              value={formData.head || ''}
-              onChange={(e) => setFormData({ ...formData, head: e.target.value })}
-              className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-[#5F6B7A] block mb-1">Contact Email</label>
-            <input
-              type="email"
-              value={formData.email || ''}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-[#E6EDF2] rounded-xl text-xs outline-none focus:border-[#0A686A]"
-            />
-          </div>
-        </div>
-
-        <div className="flex gap-2 pt-2 border-t border-[#EEF4F7]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2 border border-[#E6EDF2] text-[#5F6B7A] rounded-xl font-bold text-xs hover:bg-[#F4F7FF]"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="flex-1 py-2 bg-[#003A40] text-white rounded-xl font-bold text-xs hover:bg-[#0A686A]"
-          >
-            Save Changes
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
 
 /* ── View Department Detail Modal / Drawer ───────────────────────────────── */
 function DepartmentDetailModal({ department, onClose, facultyList }) {
@@ -676,12 +570,51 @@ export default function FacultyDepartmentPage() {
   const [editingDept, setEditingDept] = useState(null);
 
   const DEFAULT_DEPARTMENTS = [
-    { id: 'DEPT-1', name: 'Computer Science', code: 'CS', head: 'Dr. Ramesh Kumar', email: 'hod.cs@mit.edu', phone: '+91 98765 43210', office_location: 'Building A, Room 301', totalFaculty: 14, totalStudents: 420, courses: 12 },
-    { id: 'DEPT-2', name: 'Electronics & Communication', code: 'ECE', head: 'Dr. Sunita Sharma', email: 'hod.ece@mit.edu', phone: '+91 98765 43213', office_location: 'Building B, Room 201', totalFaculty: 10, totalStudents: 310, courses: 9 },
-    { id: 'DEPT-3', name: 'Mechanical Engineering', code: 'ME', head: 'Dr. Venkat Reddy', email: 'hod.me@mit.edu', phone: '+91 98765 43221', office_location: 'Building D, Room 301', totalFaculty: 8, totalStudents: 260, courses: 8 },
-    { id: 'DEPT-4', name: 'Mathematics', code: 'MATH', head: 'Dr. Deepak Gupta', email: 'hod.math@mit.edu', phone: '+91 98765 43218', office_location: 'Building C, Room 301', totalFaculty: 6, totalStudents: 180, courses: 6 },
-    { id: 'DEPT-5', name: 'Information Technology', code: 'IT', head: 'Dr. Geetha V', email: 'hod.it@mit.edu', phone: '+91 98765 43230', office_location: 'Building A, Room 305', totalFaculty: 11, totalStudents: 350, courses: 10 },
-    { id: 'DEPT-6', name: 'Medical Laboratory Technology', code: 'MLT', head: 'Dr. K. Rahini', email: 'hod.mlt@mit.edu', phone: '+91 98765 43240', office_location: 'Building E, Room 101', totalFaculty: 7, totalStudents: 210, courses: 6 },
+    {
+      id: 'DEPT-MLT',
+      name: 'Medical Laboratory Technology',
+      code: 'MLT',
+      degree: 'B.Sc (Medical Laboratory Technology)',
+      duration: '3 Years + 1 Year Internship',
+      head: 'Department Head',
+      email: 'mlt@dschs.edu.in',
+      phone: '+91 98765 43210',
+      office_location: 'Health Sciences Block, Room 101',
+      totalFaculty: 0,
+      totalStudents: 0,
+      courses: 1,
+      description: 'Laboratory services play a vital role in the diagnosis and study of various diseases, forming the backbone of effective medical treatment. With rapid advancements in laboratory science, Dindigul Shifa College of Health Sciences (DSCHS) offers B.Sc. Medical Laboratory Technology, affiliated with The Tamil Nadu Dr. M.G.R. Medical University, Chennai.'
+    },
+    {
+      id: 'DEPT-OTAT',
+      name: 'Operation Theatre & Anaesthesia Technology',
+      code: 'OTAT',
+      degree: 'B.Sc (Operation Theatre and Anaesthesia Technology)',
+      duration: '3 Years + 1 Year Internship',
+      head: 'Department Head',
+      email: 'otat@dschs.edu.in',
+      phone: '+91 98765 43211',
+      office_location: 'Operation Theatre Complex, Block B',
+      totalFaculty: 0,
+      totalStudents: 0,
+      courses: 1,
+      description: 'Provides comprehensive training in subjects such as anatomy, physiology, biochemistry, pharmacology, microbiology, medicine, sterilization techniques, and medical ethics, equipping students for ICUs and surgical operating theatres.'
+    },
+    {
+      id: 'DEPT-RIT',
+      name: 'Radiography & Imaging Technology',
+      code: 'RIT',
+      degree: 'B.Sc (Radiography and Imaging Technology)',
+      duration: '3 Years + 1 Year Internship',
+      head: 'Department Head',
+      email: 'rit@dschs.edu.in',
+      phone: '+91 98765 43212',
+      office_location: 'Department of Radiology, Block C',
+      totalFaculty: 0,
+      totalStudents: 0,
+      courses: 1,
+      description: 'Provides structured training across key radiological modalities including X-ray, CT, MRI, ultrasound, and DSA under the affiliation of The Tamil Nadu Dr. M.G.R. Medical University, Chennai.'
+    },
   ];
 
   // Fetch departments & faculty
@@ -784,13 +717,17 @@ export default function FacultyDepartmentPage() {
   const totalFacultyCount = departments.reduce((sum, d) => sum + (d.totalFaculty || 10), 0);
   const totalStudentCount = departments.reduce((sum, d) => sum + (d.totalStudents || 300), 0);
 
-  if (isAddOpen) {
+  if (isAddOpen || editingDept) {
     return (
-      <Layout title="Add Department">
+      <Layout title={editingDept ? "Edit Department" : "Add Department"}>
         <AddDepartmentFullView
-          onCancel={() => setIsAddOpen(false)}
-          onSave={handleAddDepartment}
+          onCancel={() => {
+            setIsAddOpen(false);
+            setEditingDept(null);
+          }}
+          onSave={editingDept ? handleEditSave : handleAddDepartment}
           allFaculty={allFaculty}
+          initialData={editingDept}
         />
       </Layout>
     );
@@ -1016,17 +953,7 @@ export default function FacultyDepartmentPage() {
             />
           )}
 
-          {/* Edit Modal */}
-          <EditDepartmentModal
-            isOpen={isEditOpen}
-            onClose={() => {
-              setIsEditOpen(false);
-              setEditingDept(null);
-            }}
-            department={editingDept}
-            onSave={handleEditSave}
-            allFaculty={allFaculty}
-          />
+
         </div>
       )}
     </Layout>

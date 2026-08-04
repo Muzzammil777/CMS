@@ -14,12 +14,9 @@ function isClassAssigned(classId, classLabel, assignedClasses) {
   const normalizedId = classId.toLowerCase();
   
   const deptCodes = {
-    'cse': ['computer science', 'computer science & engineering', 'computer science and engineering'],
-    'ece': ['electronics', 'electronics & communication', 'electronics and communication'],
-    'me': ['mechanical', 'mechanical engineering'],
-    'ce': ['civil', 'civil engineering'],
-    'it': ['information technology'],
-    'eee': ['electrical', 'electrical engineering', 'electrical & electronics', 'electrical and electronics']
+    'mlt': ['medical laboratory technology', 'medical lab technology', 'mlt'],
+    'otat': ['operation theatre & anaesthesia technology', 'operation theatre and anaesthesia technology', 'otat', 'anaesthesia'],
+    'rit': ['radiography & imaging technology', 'radiography and imaging technology', 'rit', 'radiology'],
   };
   
   return assignedClasses.some(ac => {

@@ -4,8 +4,12 @@ import EnterprisePageTemplate from '../components/EnterprisePageTemplate';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { fetchPlacements, createPlacement, deletePlacement } from '../api/placementApi';
 import { Eye, Plus, Trash2, Briefcase, Award, TrendingUp, Building } from 'lucide-react';
+import { getUserSession } from '../auth/sessionController';
 
 export default function PlacementPage() {
+  const session = getUserSession();
+  const isStudent = session?.role === 'student';
+
   const [placements, setPlacements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,7 +32,13 @@ export default function PlacementPage() {
     setLoading(true);
     try {
       const data = await fetchPlacements();
-      setPlacements(Array.isArray(data) ? data : []);
+      let placementsData = Array.isArray(data) ? data : [];
+      
+      if (isStudent && session?.userId) {
+        placementsData = placementsData.filter(p => (p.student_id === session.userId || p.id === session.userId));
+      }
+      
+      setPlacements(placementsData);
     } catch (err) {
       console.error('Failed to fetch placements:', err);
       setPlacements([]);
@@ -238,12 +248,12 @@ export default function PlacementPage() {
       color: 'teal',
       onClick: (p) => setSelectedPlacement(p),
     },
-    {
+    ...(!isStudent ? [{
       icon: <Trash2 className="w-3.5 h-3.5" />,
       label: 'Delete Record',
       color: 'red',
       onClick: (p) => handleDelete(p.id || p._id),
-    },
+    }] : []),
   ];
 
   const filterOptions = [
@@ -276,7 +286,7 @@ export default function PlacementPage() {
           activeFilters={activeFilters}
           onFilterChange={(key, val) => setActiveFilters((prev) => ({ ...prev, [key]: val }))}
           onExportCSV={handleExportCSV}
-          onAdd={() => setShowAddModal(true)}
+          onAdd={!isStudent ? () => setShowAddModal(true) : undefined}
           addLabel="Add Placement Record"
           loading={false}
           emptyMessage="No placement records match your search."

@@ -3,6 +3,7 @@ import Layout from '../components/Layout'
 import KpiCard from '../components/KpiCard'
 import KpiGrid from '../components/KpiGrid'
 import { TableSkeleton } from '../components/common'
+import EnterprisePageTemplate from '../components/EnterprisePageTemplate'
 import { getUserSession } from '../auth/sessionController'
 import { buildApiUrl } from '../api/apiBase'
 import { settingsApi } from '../api/settingsApi'
@@ -64,7 +65,7 @@ export default function AttendancePage({ noLayout = false }) {
   const [showFilters, setShowFilters] = useState(false)
   const [adminSelectedRecord, setAdminSelectedRecord] = useState(null) // For detailed log & history modal
   const [adminRecordHistory, setAdminRecordHistory] = useState([])
-  
+
   // Admin Faculty Marking States
   const [adminFacultyDate, setAdminFacultyDate] = useState(new Date().toISOString().split('T')[0])
   const [adminFacultySearch, setAdminFacultySearch] = useState('')
@@ -133,6 +134,16 @@ export default function AttendancePage({ noLayout = false }) {
       fetchAdminData()
     }
   }, [isAdmin, adminFilters])
+
+  useEffect(() => {
+    if (isStudent) {
+      setLoading(true)
+      const timer = setTimeout(() => {
+        setLoading(false)
+      }, 800)
+      return () => clearTimeout(timer)
+    }
+  }, [isStudent])
 
   const fetchAdminData = async () => {
     setLoading(true)
@@ -363,7 +374,7 @@ export default function AttendancePage({ noLayout = false }) {
 
         const markRes = await fetch(buildApiUrl(`/academics/attendance/markings?${mq}`))
         const markJson = await markRes.json()
-        
+
         const initialStatuses = {}
         const initialRemarks = {}
 
@@ -579,9 +590,8 @@ export default function AttendancePage({ noLayout = false }) {
     <div className="flex flex-col h-full min-h-0 gap-0 overflow-hidden bg-[#F8FAFC]">
       {/* Toast Notification Banner */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl transition-all duration-300 animate-slide-in ${
-          toast.type === 'error' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl transition-all duration-300 animate-slide-in ${toast.type === 'error' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'
+          }`}>
           <span className="material-symbols-outlined text-lg">
             {toast.type === 'error' ? 'error' : 'check_circle'}
           </span>
@@ -595,21 +605,20 @@ export default function AttendancePage({ noLayout = false }) {
       {/* ========================================================================= */}
       {isAdmin && (
         <div className="flex flex-col h-full min-h-0 gap-0">
-          
+
           {/* ── TOP CONTROL BAR ─────────────────────────────────────── */}
           <div className="flex-shrink-0 bg-white border-b border-[#E6EDF2] px-5 py-3 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3 flex-wrap">
-              
+
               {/* Tab pill switcher */}
               <div className="inline-flex bg-[#F2FBFA] border border-[#E6EDF2] rounded-xl p-1 gap-1">
                 <button
                   type="button"
                   onClick={() => setAdminTab('students')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    adminTab === 'students'
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${adminTab === 'students'
                       ? 'bg-[#003A40] text-white shadow-sm'
                       : 'text-[#5F6B7A] hover:text-[#003A40]'
-                  }`}
+                    }`}
                 >
                   <span className="material-symbols-outlined text-sm">groups</span>
                   Student Attendance
@@ -617,11 +626,10 @@ export default function AttendancePage({ noLayout = false }) {
                 <button
                   type="button"
                   onClick={() => setAdminTab('faculty')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    adminTab === 'faculty'
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${adminTab === 'faculty'
                       ? 'bg-[#003A40] text-white shadow-sm'
                       : 'text-[#5F6B7A] hover:text-[#003A40]'
-                  }`}
+                    }`}
                 >
                   <span className="material-symbols-outlined text-sm">badge</span>
                   Faculty Attendance
@@ -655,11 +663,10 @@ export default function AttendancePage({ noLayout = false }) {
               <button
                 type="button"
                 onClick={() => setShowFilters(prev => !prev)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  showFilters || activeFilterCount > 0
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${showFilters || activeFilterCount > 0
                     ? 'bg-[#F2FBFA] text-[#0A686A] border border-[#0A686A]/30'
                     : 'bg-[#F4F7FF] text-[#5F6B7A] border border-[#E6EDF2] hover:text-[#003A40]'
-                }`}
+                  }`}
               >
                 <span className="material-symbols-outlined text-sm">filter_alt</span>
                 Filters
@@ -871,9 +878,8 @@ export default function AttendancePage({ noLayout = false }) {
                                 </span>
                               </td>
                               <td className="px-4 py-3.5 text-center">
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold border ${
-                                  r.attendancePct >= 75 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
-                                }`}>
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold border ${r.attendancePct >= 75 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+                                  }`}>
                                   {r.attendancePct}%
                                 </span>
                               </td>
@@ -891,9 +897,8 @@ export default function AttendancePage({ noLayout = false }) {
                                   </button>
                                   <button
                                     onClick={() => handleToggleLock(r)}
-                                    className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                                      r.locked ? 'text-rose-600 hover:bg-rose-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
-                                    }`}
+                                    className={`p-1 rounded-lg transition-colors cursor-pointer ${r.locked ? 'text-rose-600 hover:bg-rose-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                                      }`}
                                     title={r.locked ? 'Unlock Record' : 'Lock Record'}
                                   >
                                     <span className="material-symbols-outlined text-base">{r.locked ? 'lock' : 'lock_open'}</span>
@@ -911,11 +916,11 @@ export default function AttendancePage({ noLayout = false }) {
                   {filteredAdminRecords.length > 0 && (
                     <div className="flex-shrink-0 border-t border-[#E6EDF2] px-5 py-2.5 flex items-center justify-between bg-[#FAFBFC]">
                       <span className="text-[11px] font-semibold text-[#5F6B7A]">
-                        Showing {Math.min((currentPage-1)*pageSize+1, filteredAdminRecords.length)}–{Math.min(currentPage*pageSize, filteredAdminRecords.length)} of {filteredAdminRecords.length} records
+                        Showing {Math.min((currentPage - 1) * pageSize + 1, filteredAdminRecords.length)}–{Math.min(currentPage * pageSize, filteredAdminRecords.length)} of {filteredAdminRecords.length} records
                       </span>
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => setCurrentPage(p => Math.max(1, p-1))}
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                           disabled={currentPage === 1}
                           className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#E6EDF2] text-[#5F6B7A] disabled:opacity-40 hover:bg-[#F2FBFA] transition-colors cursor-pointer"
                         >
@@ -924,18 +929,17 @@ export default function AttendancePage({ noLayout = false }) {
                         {[...Array(Math.max(1, Math.ceil(filteredAdminRecords.length / pageSize)))].map((_, i) => (
                           <button
                             key={i}
-                            onClick={() => setCurrentPage(i+1)}
-                            className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                              currentPage === i+1
+                            onClick={() => setCurrentPage(i + 1)}
+                            className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-colors cursor-pointer ${currentPage === i + 1
                                 ? 'bg-[#003A40] text-white'
                                 : 'border border-[#E6EDF2] text-[#5F6B7A] hover:bg-[#F2FBFA]'
-                            }`}
+                              }`}
                           >
-                            {i+1}
+                            {i + 1}
                           </button>
                         ))}
                         <button
-                          onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredAdminRecords.length / pageSize), p+1))}
+                          onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredAdminRecords.length / pageSize), p + 1))}
                           disabled={currentPage >= Math.ceil(filteredAdminRecords.length / pageSize)}
                           className="w-7 h-7 flex items-center justify-center rounded-lg border border-[#E6EDF2] text-[#5F6B7A] disabled:opacity-40 hover:bg-[#F2FBFA] transition-colors cursor-pointer"
                         >
@@ -949,171 +953,170 @@ export default function AttendancePage({ noLayout = false }) {
             )}
 
             {adminTab === 'faculty' && (
-            <div className="space-y-6">
-              {/* Date Picker & Search controls */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <span className="material-symbols-outlined text-slate-500 text-lg">calendar_today</span>
-                  <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Faculty Attendance Management</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Attendance Date</label>
-                    <input
-                      type="date"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                      value={adminFacultyDate}
-                      onChange={(e) => setAdminFacultyDate(e.target.value)}
-                    />
+              <div className="space-y-6">
+                {/* Date Picker & Search controls */}
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                    <span className="material-symbols-outlined text-slate-500 text-lg">calendar_today</span>
+                    <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Faculty Attendance Management</h3>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Department</label>
-                    <select
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                      value={adminFacultyDept}
-                      onChange={(e) => setAdminFacultyDept(e.target.value)}
-                    >
-                      <option value="">All Departments</option>
-                      {departments.map(d => (
-                        <option key={d.code} value={d.name}>{d.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Search Faculty</label>
-                    <input
-                      type="text"
-                      placeholder="Search by name or ID..."
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                      value={adminFacultySearch}
-                      onChange={(e) => setAdminFacultySearch(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Faculty Markings Table */}
-              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                <div className="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50">
-                  <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Faculty List & Marking</h4>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!adminFacultyMarking) return
-                        const updated = adminFacultyMarking.entries.map(e => ({ ...e, status: 'Present' }))
-                        setAdminFacultyMarking({ ...adminFacultyMarking, entries: updated })
-                      }}
-                      className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200"
-                    >
-                      Mark All Present
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!adminFacultyMarking) return
-                        const updated = adminFacultyMarking.entries.map(e => ({ ...e, status: 'Absent' }))
-                        setAdminFacultyMarking({ ...adminFacultyMarking, entries: updated })
-                      }}
-                      className="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold transition-all border border-rose-200"
-                    >
-                      Mark All Absent
-                    </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Attendance Date</label>
+                      <input
+                        type="date"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                        value={adminFacultyDate}
+                        onChange={(e) => setAdminFacultyDate(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Department</label>
+                      <select
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                        value={adminFacultyDept}
+                        onChange={(e) => setAdminFacultyDept(e.target.value)}
+                      >
+                        <option value="">All Departments</option>
+                        {departments.map(d => (
+                          <option key={d.code} value={d.name}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Search Faculty</label>
+                      <input
+                        type="text"
+                        placeholder="Search by name or ID..."
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                        value={adminFacultySearch}
+                        onChange={(e) => setAdminFacultySearch(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-                        <th className="px-6 py-4">Faculty Member</th>
-                        <th className="px-6 py-4">Department & Designation</th>
-                        <th className="px-6 py-4 text-center">Attendance Status</th>
-                        <th className="px-6 py-4 text-right">Remarks</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {!adminFacultyMarking || !adminFacultyMarking.entries || adminFacultyMarking.entries.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="px-6 py-10 text-center text-slate-400 text-sm">No faculty members found.</td>
+                {/* Faculty Markings Table */}
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                  <div className="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50">
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Faculty List & Marking</h4>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!adminFacultyMarking) return
+                          const updated = adminFacultyMarking.entries.map(e => ({ ...e, status: 'Present' }))
+                          setAdminFacultyMarking({ ...adminFacultyMarking, entries: updated })
+                        }}
+                        className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200"
+                      >
+                        Mark All Present
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!adminFacultyMarking) return
+                          const updated = adminFacultyMarking.entries.map(e => ({ ...e, status: 'Absent' }))
+                          setAdminFacultyMarking({ ...adminFacultyMarking, entries: updated })
+                        }}
+                        className="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold transition-all border border-rose-200"
+                      >
+                        Mark All Absent
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                          <th className="px-6 py-4">Faculty Member</th>
+                          <th className="px-6 py-4">Department & Designation</th>
+                          <th className="px-6 py-4 text-center">Attendance Status</th>
+                          <th className="px-6 py-4 text-right">Remarks</th>
                         </tr>
-                      ) : (
-                        adminFacultyMarking.entries
-                          .filter(e => {
-                            const deptMatch = !adminFacultyDept || e.department === adminFacultyDept
-                            const searchLower = adminFacultySearch.toLowerCase()
-                            const nameMatch = !adminFacultySearch || 
-                              e.name.toLowerCase().includes(searchLower) || 
-                              e.facultyId.toLowerCase().includes(searchLower)
-                            return deptMatch && nameMatch
-                          })
-                          .map(e => (
-                            <tr key={e.facultyId} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="text-sm font-semibold text-slate-900">{e.name}</div>
-                                <div className="text-xs font-mono text-slate-500">{e.facultyId}</div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="text-sm text-slate-800">{e.department}</div>
-                                <div className="text-xs text-slate-500">{e.designation}</div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  {['Present', 'Absent', 'On Leave'].map(status => {
-                                    const isSelected = e.status === status
-                                    return (
-                                      <button
-                                        key={status}
-                                        type="button"
-                                        onClick={() => updateFacultyStatus(e.facultyId, status)}
-                                        className={`px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
-                                          isSelected ? (
-                                            status === 'Present' ? 'bg-emerald-500 text-white border-emerald-500' :
-                                            status === 'Absent' ? 'bg-rose-500 text-white border-rose-500' :
-                                            'bg-amber-500 text-white border-amber-500'
-                                          ) : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                                        }`}
-                                      >
-                                        {status}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <input
-                                  type="text"
-                                  placeholder="Add remarks..."
-                                  className="px-3 py-1 border border-slate-200 rounded-lg outline-none text-xs w-48 bg-slate-50 focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500/10 text-slate-700"
-                                  value={e.remarks || ''}
-                                  onChange={(eVal) => updateFacultyRemarks(e.facultyId, eVal.target.value)}
-                                />
-                              </td>
-                            </tr>
-                          ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {adminFacultyMarking && adminFacultyMarking.entries && adminFacultyMarking.entries.length > 0 && (
-                  <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={handleSaveFacultyAttendance}
-                      className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-600/10"
-                    >
-                      <span className="material-symbols-outlined text-base">save</span>
-                      Submit Faculty Attendance
-                    </button>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {!adminFacultyMarking || !adminFacultyMarking.entries || adminFacultyMarking.entries.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="px-6 py-10 text-center text-slate-400 text-sm">No faculty members found.</td>
+                          </tr>
+                        ) : (
+                          adminFacultyMarking.entries
+                            .filter(e => {
+                              const deptMatch = !adminFacultyDept || e.department === adminFacultyDept
+                              const searchLower = adminFacultySearch.toLowerCase()
+                              const nameMatch = !adminFacultySearch ||
+                                e.name.toLowerCase().includes(searchLower) ||
+                                e.facultyId.toLowerCase().includes(searchLower)
+                              return deptMatch && nameMatch
+                            })
+                            .map(e => (
+                              <tr key={e.facultyId} className="hover:bg-slate-50 transition-colors">
+                                <td className="px-6 py-4">
+                                  <div className="text-sm font-semibold text-slate-900">{e.name}</div>
+                                  <div className="text-xs font-mono text-slate-500">{e.facultyId}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="text-sm text-slate-800">{e.department}</div>
+                                  <div className="text-xs text-slate-500">{e.designation}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    {['Present', 'Absent', 'On Leave'].map(status => {
+                                      const isSelected = e.status === status
+                                      return (
+                                        <button
+                                          key={status}
+                                          type="button"
+                                          onClick={() => updateFacultyStatus(e.facultyId, status)}
+                                          className={`px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${isSelected ? (
+                                              status === 'Present' ? 'bg-emerald-500 text-white border-emerald-500' :
+                                                status === 'Absent' ? 'bg-rose-500 text-white border-rose-500' :
+                                                  'bg-amber-500 text-white border-amber-500'
+                                            ) : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                            }`}
+                                        >
+                                          {status}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <input
+                                    type="text"
+                                    placeholder="Add remarks..."
+                                    className="px-3 py-1 border border-slate-200 rounded-lg outline-none text-xs w-48 bg-slate-50 focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500/10 text-slate-700"
+                                    value={e.remarks || ''}
+                                    onChange={(eVal) => updateFacultyRemarks(e.facultyId, eVal.target.value)}
+                                  />
+                                </td>
+                              </tr>
+                            ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* Detailed Record Modal (Admin View) */}
-          {adminSelectedRecord && (
+                  {adminFacultyMarking && adminFacultyMarking.entries && adminFacultyMarking.entries.length > 0 && (
+                    <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end">
+                      <button
+                        type="button"
+                        onClick={handleSaveFacultyAttendance}
+                        className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-600/10"
+                      >
+                        <span className="material-symbols-outlined text-base">save</span>
+                        Submit Faculty Attendance
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Record Modal (Admin View) */}
+            {adminSelectedRecord && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-zoom-in">
                   <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -1147,9 +1150,8 @@ export default function AttendancePage({ noLayout = false }) {
                       <div>
                         <span className="text-xs text-slate-500 uppercase font-semibold">Lock State</span>
                         <div className="text-sm font-semibold">
-                          <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-xs font-semibold ${
-                            adminSelectedRecord.locked ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'
-                          }`}>
+                          <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-xs font-semibold ${adminSelectedRecord.locked ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'
+                            }`}>
                             <span className="material-symbols-outlined text-xs">
                               {adminSelectedRecord.locked ? 'lock' : 'lock_open'}
                             </span>
@@ -1181,11 +1183,10 @@ export default function AttendancePage({ noLayout = false }) {
                                   <td className="px-4 py-2 font-mono text-slate-600 text-xs">{e.studentId}</td>
                                   <td className="px-4 py-2 text-slate-800 font-medium">{e.name}</td>
                                   <td className="px-4 py-2 text-right">
-                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                      e.status === 'Present' ? 'bg-emerald-50 text-emerald-700' :
-                                      e.status === 'On Duty' ? 'bg-sky-50 text-sky-700' :
-                                      e.status === 'Leave' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
-                                    }`}>
+                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${e.status === 'Present' ? 'bg-emerald-50 text-emerald-700' :
+                                        e.status === 'On Duty' ? 'bg-sky-50 text-sky-700' :
+                                          e.status === 'Leave' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
+                                      }`}>
                                       {e.status}
                                     </span>
                                   </td>
@@ -1228,741 +1229,739 @@ export default function AttendancePage({ noLayout = false }) {
         </div>
       )}
 
-        {/* ========================================================================= */}
-        {/* ======================= FACULTY ATTENDANCE LAYOUT ======================== */}
-        {/* ========================================================================= */}
-        {isFaculty && (
-          <div className="space-y-6">
-            {/* Faculty Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-px overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <button
-                type="button"
-                onClick={() => setFacultyTab('mark')}
-                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${
-                  facultyTab === 'mark' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+      {/* ========================================================================= */}
+      {/* ======================= FACULTY ATTENDANCE LAYOUT ======================== */}
+      {/* ========================================================================= */}
+      {isFaculty && (
+        <div className="space-y-6">
+          {/* Faculty Tabs */}
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-px overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <button
+              type="button"
+              onClick={() => setFacultyTab('mark')}
+              className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${facultyTab === 'mark' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
-              >
-                Mark Attendance
-              </button>
-              <button
-                type="button"
-                onClick={() => setFacultyTab('history')}
-                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${
-                  facultyTab === 'history' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+            >
+              Mark Attendance
+            </button>
+            <button
+              type="button"
+              onClick={() => setFacultyTab('history')}
+              className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${facultyTab === 'history' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
-              >
-                Attendance History
-              </button>
-              <button
-                type="button"
-                onClick={() => setFacultyTab('leaves')}
-                className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${
-                  facultyTab === 'leaves' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
+            >
+              Attendance History
+            </button>
+            <button
+              type="button"
+              onClick={() => setFacultyTab('leaves')}
+              className={`px-4 py-2 text-sm font-bold border-b-2 transition-all cursor-pointer flex-shrink-0 ${facultyTab === 'leaves' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'
                 }`}
-              >
-                My Leaves & Applications
-              </button>
-            </div>
+            >
+              My Leaves & Applications
+            </button>
+          </div>
 
-            {facultyTab === 'mark' && (
-              <div className="space-y-6">
-                {/* Faculty filter selections */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {facultyTab === 'mark' && (
+            <div className="space-y-6">
+              {/* Faculty filter selections */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Assigned Subject</label>
+                    <select
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                      value={selectedSubject ? `${selectedSubject.classId}::${selectedSubject.code}` : ''}
+                      onChange={(e) => {
+                        const [classId, code] = e.target.value.split('::')
+                        const sub = facultySubjects.find(s => s.classId === classId && s.code === code)
+                        setSelectedSubject(sub)
+                      }}
+                    >
+                      {facultySubjects.length === 0 ? (
+                        <option value="">No assigned subjects found</option>
+                      ) : (
+                        facultySubjects.map(s => (
+                          <option key={`${s.classId}::${s.code}`} value={`${s.classId}::${s.code}`}>
+                            {s.name} ({s.code.toUpperCase()}) • {s.classId}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Date</label>
+                    <input
+                      type="date"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                      value={facultyDate}
+                      onChange={(e) => setFacultyDate(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Period / Hour</label>
+                    <select
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                      value={facultyHour}
+                      onChange={(e) => setFacultyHour(e.target.value)}
+                    >
+                      {HOURS_LIST.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {selectedSubject && (
+                  <div className="grid grid-cols-3 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Assigned Subject</label>
-                      <select
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                        value={selectedSubject ? `${selectedSubject.classId}::${selectedSubject.code}` : ''}
-                        onChange={(e) => {
-                          const [classId, code] = e.target.value.split('::')
-                          const sub = facultySubjects.find(s => s.classId === classId && s.code === code)
-                          setSelectedSubject(sub)
-                        }}
-                      >
-                        {facultySubjects.length === 0 ? (
-                          <option value="">No assigned subjects found</option>
-                        ) : (
-                          facultySubjects.map(s => (
-                            <option key={`${s.classId}::${s.code}`} value={`${s.classId}::${s.code}`}>
-                              {s.name} ({s.code.toUpperCase()}) • {s.classId}
-                            </option>
-                          ))
-                        )}
-                      </select>
+                      <span className="text-slate-400 block mb-0.5">Department</span>
+                      <span className="font-bold text-slate-800">{selectedSubject.department}</span>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Date</label>
-                      <input
-                        type="date"
+                      <span className="text-slate-400 block mb-0.5">Semester</span>
+                      <span className="font-bold text-slate-800">{selectedSubject.semester}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block mb-0.5">Section</span>
+                      <span className="font-bold text-slate-800">{selectedSubject.section}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mark Table */}
+              <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50">
+                  <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Students Roll Call</h4>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const updated = {}
+                        studentList.forEach(s => { updated[s.id] = 'Present' })
+                        setAttendanceStatuses(updated)
+                      }}
+                      className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200"
+                    >
+                      Mark All Present
+                    </button>
+                    <button
+                      onClick={() => {
+                        const updated = {}
+                        studentList.forEach(s => { updated[s.id] = 'Absent' })
+                        setAttendanceStatuses(updated)
+                      }}
+                      className="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold transition-all border border-rose-200"
+                    >
+                      Mark All Absent
+                    </button>
+                    <button
+                      onClick={() => {
+                        const updated = {}
+                        studentList.forEach(s => { updated[s.id] = 'Present' })
+                        setAttendanceStatuses(updated)
+                        setAttendanceRemarks({})
+                      }}
+                      className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition-all border border-slate-200"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                        <th className="px-6 py-4">Register Number</th>
+                        <th className="px-6 py-4">Student Name</th>
+                        <th className="px-6 py-4 text-center">Status</th>
+                        <th className="px-6 py-4 text-right">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {studentList.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-10 text-center text-slate-400 text-sm">No students enrolled in this subject class.</td>
+                        </tr>
+                      ) : (
+                        studentList.map(s => (
+                          <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-sm font-mono text-slate-600">{s.rollNumber}</td>
+                            <td className="px-6 py-4 text-sm font-semibold text-slate-900">{s.name}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center justify-center gap-1.5">
+                                {['Present', 'Absent', 'Leave', 'On Duty'].map(status => {
+                                  const isSelected = attendanceStatuses[s.id] === status
+                                  return (
+                                    <button
+                                      key={status}
+                                      onClick={() => setAttendanceStatuses(prev => ({ ...prev, [s.id]: status }))}
+                                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${isSelected ? (
+                                          status === 'Present' ? 'bg-emerald-500 text-white border-emerald-500' :
+                                            status === 'Absent' ? 'bg-rose-500 text-white border-rose-500' :
+                                              status === 'Leave' ? 'bg-amber-500 text-white border-amber-500' : 'bg-sky-500 text-white border-sky-500'
+                                        ) : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                        }`}
+                                    >
+                                      {status === 'On Duty' ? 'OD' : status}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <input
+                                type="text"
+                                placeholder="Add remarks..."
+                                className="px-3 py-1 border border-slate-200 rounded-lg outline-none text-xs w-44 bg-slate-50 focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500/10 text-slate-700"
+                                value={attendanceRemarks[s.id] || ''}
+                                onChange={(e) => setAttendanceRemarks(prev => ({ ...prev, [s.id]: e.target.value }))}
+                              />
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {studentList.length > 0 && (
+                  <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end">
+                    <button
+                      onClick={handleSaveAttendance}
+                      className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-600/10"
+                    >
+                      <span className="material-symbols-outlined text-base">save</span>
+                      Submit Attendance
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {facultyTab === 'history' && (
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+                <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Marked Sessions History</h4>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4">Period</th>
+                      <th className="px-6 py-4">Subject</th>
+                      <th className="px-6 py-4">Class Room</th>
+                      <th className="px-6 py-4 text-center">Present</th>
+                      <th className="px-6 py-4 text-center">Absent</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {facultyMarkingsHistory.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-10 text-center text-slate-400 text-sm">No attendance records matching your account.</td>
+                      </tr>
+                    ) : (
+                      facultyMarkingsHistory.map(m => {
+                        const pCount = m.entries?.filter(e => e.status === 'Present' || e.status === 'On Duty').length || 0
+                        const aCount = m.entries?.filter(e => e.status === 'Absent').length || 0
+                        return (
+                          <tr key={m.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-sm font-medium text-slate-800">{m.date}</td>
+                            <td className="px-6 py-4 text-sm text-slate-600">{m.hour}</td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-semibold text-slate-900">{m.subjectName}</div>
+                              <div className="text-xs text-slate-400">{m.subjectCode ? m.subjectCode.toUpperCase() : ''}</div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-600">{m.classLabel || m.classId}</td>
+                            <td className="px-6 py-4 text-center text-sm font-bold text-emerald-600">{pCount}</td>
+                            <td className="px-6 py-4 text-center text-sm font-bold text-rose-500">{aCount}</td>
+                            <td className="px-6 py-4 text-right">
+                              <button
+                                onClick={() => {
+                                  // Switch to mark view and load subject
+                                  const sub = facultySubjects.find(s => s.classId === m.classId && s.code === m.subjectCode)
+                                  if (sub) {
+                                    setSelectedSubject(sub)
+                                  }
+                                  setFacultyDate(m.date)
+                                  setFacultyHour(m.hour)
+                                  setFacultyTab('mark')
+                                }}
+                                disabled={m.locked}
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg transition-all border border-slate-200 cursor-pointer"
+                              >
+                                {m.locked ? 'Locked' : 'Edit'}
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {facultyTab === 'leaves' && (
+            <div className="space-y-6">
+              {/* Leave Balance Grid */}
+              {leaveBalance && (
+                <KpiGrid className="lg:grid-cols-4">
+                  <KpiCard
+                    icon="date_range"
+                    label="Casual Leave"
+                    value={`${(leaveBalance.casual_leave || 15) - (leaveBalance.used_casual || leaveBalance.casual_used || 0)} Remaining`}
+                    colorScheme="emerald"
+                    subtitle={`Total Days: ${leaveBalance.casual_leave || 15}`}
+                  />
+                  <KpiCard
+                    icon="medical_services"
+                    label="Sick Leave"
+                    value={`${(leaveBalance.sick_leave || 10) - (leaveBalance.used_sick || leaveBalance.sick_used || 0)} Remaining`}
+                    colorScheme="rose"
+                    subtitle={`Total Days: ${leaveBalance.sick_leave || 10}`}
+                  />
+                  <KpiCard
+                    icon="school"
+                    label="Academic Leave"
+                    value={`${(leaveBalance.academic_leave || 5) - (leaveBalance.used_academic || leaveBalance.academic_used || 0)} Remaining`}
+                    colorScheme="blue"
+                    subtitle={`Total Days: ${leaveBalance.academic_leave || 5}`}
+                  />
+                  <KpiCard
+                    icon="work_off"
+                    label="Maternity Leave"
+                    value={`${(leaveBalance.maternity_leave || 90) - (leaveBalance.used_maternity || leaveBalance.maternity_used || 0)} Remaining`}
+                    colorScheme="indigo"
+                    subtitle={`Total Days: ${leaveBalance.maternity_leave || 90}`}
+                  />
+                </KpiGrid>
+              )}
+
+              {/* Leave Apply Form */}
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                  <span className="material-symbols-outlined text-slate-500 text-lg font-bold">add_circle</span>
+                  <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Apply for Leave</h3>
+                </div>
+
+                <form onSubmit={handleSubmitLeave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Leave Type</label>
+                      <select
                         className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                        value={facultyDate}
-                        onChange={(e) => setFacultyDate(e.target.value)}
+                        value={leaveForm.leave_type}
+                        onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
+                        required
+                      >
+                        <option value="Casual">Casual Leave</option>
+                        <option value="Sick">Sick Leave</option>
+                        <option value="Academic">Academic Leave</option>
+                        <option value="Maternity">Maternity Leave</option>
+                        <option value="Sabbatical">Sabbatical</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                          value={leaveForm.start_date}
+                          onChange={(e) => setLeaveForm({ ...leaveForm, start_date: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">End Date</label>
+                        <input
+                          type="date"
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                          value={leaveForm.end_date}
+                          onChange={(e) => setLeaveForm({ ...leaveForm, end_date: e.target.value })}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col justify-between space-y-4">
+                    <div className="flex-1 flex flex-col">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Reason</label>
+                      <textarea
+                        placeholder="Please describe the reason for your leave request..."
+                        rows="3"
+                        className="flex-1 w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600 resize-none text-slate-700"
+                        value={leaveForm.reason}
+                        onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                        required
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Period / Hour</label>
-                      <select
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                        value={facultyHour}
-                        onChange={(e) => setFacultyHour(e.target.value)}
-                      >
-                        {HOURS_LIST.map(h => (
-                          <option key={h} value={h}>{h}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {selectedSubject && (
-                    <div className="grid grid-cols-3 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
-                      <div>
-                        <span className="text-slate-400 block mb-0.5">Department</span>
-                        <span className="font-bold text-slate-800">{selectedSubject.department}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block mb-0.5">Semester</span>
-                        <span className="font-bold text-slate-800">{selectedSubject.semester}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block mb-0.5">Section</span>
-                        <span className="font-bold text-slate-800">{selectedSubject.section}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Mark Table */}
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Students Roll Call</h4>
-                    <div className="flex gap-2">
+                    <div className="flex justify-end pt-2">
                       <button
-                        onClick={() => {
-                          const updated = {}
-                          studentList.forEach(s => { updated[s.id] = 'Present' })
-                          setAttendanceStatuses(updated)
-                        }}
-                        className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all border border-emerald-200"
+                        type="submit"
+                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-600/10 active:scale-95 cursor-pointer"
                       >
-                        Mark All Present
-                      </button>
-                      <button
-                        onClick={() => {
-                          const updated = {}
-                          studentList.forEach(s => { updated[s.id] = 'Absent' })
-                          setAttendanceStatuses(updated)
-                        }}
-                        className="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-xs font-bold transition-all border border-rose-200"
-                      >
-                        Mark All Absent
-                      </button>
-                      <button
-                        onClick={() => {
-                          const updated = {}
-                          studentList.forEach(s => { updated[s.id] = 'Present' })
-                          setAttendanceStatuses(updated)
-                          setAttendanceRemarks({})
-                        }}
-                        className="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition-all border border-slate-200"
-                      >
-                        Reset
+                        Submit Leave Request
                       </button>
                     </div>
                   </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-                          <th className="px-6 py-4">Register Number</th>
-                          <th className="px-6 py-4">Student Name</th>
-                          <th className="px-6 py-4 text-center">Status</th>
-                          <th className="px-6 py-4 text-right">Remarks</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {studentList.length === 0 ? (
-                          <tr>
-                            <td colSpan={4} className="px-6 py-10 text-center text-slate-400 text-sm">No students enrolled in this subject class.</td>
-                          </tr>
-                        ) : (
-                          studentList.map(s => (
-                            <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-6 py-4 text-sm font-mono text-slate-600">{s.rollNumber}</td>
-                              <td className="px-6 py-4 text-sm font-semibold text-slate-900">{s.name}</td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center justify-center gap-1.5">
-                                  {['Present', 'Absent', 'Leave', 'On Duty'].map(status => {
-                                    const isSelected = attendanceStatuses[s.id] === status
-                                    return (
-                                      <button
-                                        key={status}
-                                        onClick={() => setAttendanceStatuses(prev => ({ ...prev, [s.id]: status }))}
-                                        className={`px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
-                                          isSelected ? (
-                                            status === 'Present' ? 'bg-emerald-500 text-white border-emerald-500' :
-                                            status === 'Absent' ? 'bg-rose-500 text-white border-rose-500' :
-                                            status === 'Leave' ? 'bg-amber-500 text-white border-amber-500' : 'bg-sky-500 text-white border-sky-500'
-                                          ) : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                                        }`}
-                                      >
-                                        {status === 'On Duty' ? 'OD' : status}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <input
-                                  type="text"
-                                  placeholder="Add remarks..."
-                                  className="px-3 py-1 border border-slate-200 rounded-lg outline-none text-xs w-44 bg-slate-50 focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500/10 text-slate-700"
-                                  value={attendanceRemarks[s.id] || ''}
-                                  onChange={(e) => setAttendanceRemarks(prev => ({ ...prev, [s.id]: e.target.value }))}
-                                />
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {studentList.length > 0 && (
-                    <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end">
-                      <button
-                        onClick={handleSaveAttendance}
-                        className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-600/10"
-                      >
-                        <span className="material-symbols-outlined text-base">save</span>
-                        Submit Attendance
-                      </button>
-                    </div>
-                  )}
-                </div>
+                </form>
               </div>
-            )}
 
-            {facultyTab === 'history' && (
+              {/* Leave History Table */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                 <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-                  <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Marked Sessions History</h4>
+                  <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Leave Applications History</h4>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
                       <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-                        <th className="px-6 py-4">Date</th>
-                        <th className="px-6 py-4">Period</th>
-                        <th className="px-6 py-4">Subject</th>
-                        <th className="px-6 py-4">Class Room</th>
-                        <th className="px-6 py-4 text-center">Present</th>
-                        <th className="px-6 py-4 text-center">Absent</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
+                        <th className="px-6 py-4">Applied On</th>
+                        <th className="px-6 py-4">Leave Type</th>
+                        <th className="px-6 py-4">Duration</th>
+                        <th className="px-6 py-4 text-center">Days</th>
+                        <th className="px-6 py-4">Reason</th>
+                        <th className="px-6 py-4 text-right">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {facultyMarkingsHistory.length === 0 ? (
+                    <tbody className="divide-y divide-slate-200">
+                      {leaveHistory.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="px-6 py-10 text-center text-slate-400 text-sm">No attendance records matching your account.</td>
+                          <td colSpan={6} className="px-6 py-10 text-center text-slate-400 text-sm">No leave requests found.</td>
                         </tr>
                       ) : (
-                        facultyMarkingsHistory.map(m => {
-                          const pCount = m.entries?.filter(e => e.status === 'Present' || e.status === 'On Duty').length || 0
-                          const aCount = m.entries?.filter(e => e.status === 'Absent').length || 0
-                          return (
-                            <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-6 py-4 text-sm font-medium text-slate-800">{m.date}</td>
-                              <td className="px-6 py-4 text-sm text-slate-600">{m.hour}</td>
-                              <td className="px-6 py-4">
-                                <div className="text-sm font-semibold text-slate-900">{m.subjectName}</div>
-                                <div className="text-xs text-slate-400">{m.subjectCode ? m.subjectCode.toUpperCase() : ''}</div>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-slate-600">{m.classLabel || m.classId}</td>
-                              <td className="px-6 py-4 text-center text-sm font-bold text-emerald-600">{pCount}</td>
-                              <td className="px-6 py-4 text-center text-sm font-bold text-rose-500">{aCount}</td>
-                              <td className="px-6 py-4 text-right">
-                                <button
-                                  onClick={() => {
-                                    // Switch to mark view and load subject
-                                    const sub = facultySubjects.find(s => s.classId === m.classId && s.code === m.subjectCode)
-                                    if (sub) {
-                                      setSelectedSubject(sub)
-                                    }
-                                    setFacultyDate(m.date)
-                                    setFacultyHour(m.hour)
-                                    setFacultyTab('mark')
-                                  }}
-                                  disabled={m.locked}
-                                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg transition-all border border-slate-200 cursor-pointer"
-                                >
-                                  {m.locked ? 'Locked' : 'Edit'}
-                                </button>
-                              </td>
-                            </tr>
-                          )
-                        })
+                        leaveHistory.map((l) => (
+                          <tr key={l.id || l._id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-sm text-slate-600">
+                              {l.appliedOn ? new Date(l.appliedOn).toLocaleDateString() : '—'}
+                            </td>
+                            <td className="px-6 py-4 text-sm font-semibold text-slate-900">{l.leaveType || l.leave_type}</td>
+                            <td className="px-6 py-4 text-sm text-slate-700">
+                              {l.startDate || l.start_date} to {l.endDate || l.end_date}
+                            </td>
+                            <td className="px-6 py-4 text-center text-sm font-bold text-slate-800">{l.noOfDays || l.no_of_days}</td>
+                            <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate" title={l.reason}>
+                              {l.reason}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${l.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                  l.status === 'Rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                                    'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                {l.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>
                 </div>
               </div>
-            )}
-
-            {facultyTab === 'leaves' && (
-              <div className="space-y-6">
-                {/* Leave Balance Grid */}
-                {leaveBalance && (
-                  <KpiGrid className="lg:grid-cols-4">
-                    <KpiCard
-                      icon="date_range"
-                      label="Casual Leave"
-                      value={`${(leaveBalance.casual_leave || 15) - (leaveBalance.used_casual || leaveBalance.casual_used || 0)} Remaining`}
-                      colorScheme="emerald"
-                      subtitle={`Total Days: ${leaveBalance.casual_leave || 15}`}
-                    />
-                    <KpiCard
-                      icon="medical_services"
-                      label="Sick Leave"
-                      value={`${(leaveBalance.sick_leave || 10) - (leaveBalance.used_sick || leaveBalance.sick_used || 0)} Remaining`}
-                      colorScheme="rose"
-                      subtitle={`Total Days: ${leaveBalance.sick_leave || 10}`}
-                    />
-                    <KpiCard
-                      icon="school"
-                      label="Academic Leave"
-                      value={`${(leaveBalance.academic_leave || 5) - (leaveBalance.used_academic || leaveBalance.academic_used || 0)} Remaining`}
-                      colorScheme="blue"
-                      subtitle={`Total Days: ${leaveBalance.academic_leave || 5}`}
-                    />
-                    <KpiCard
-                      icon="work_off"
-                      label="Maternity Leave"
-                      value={`${(leaveBalance.maternity_leave || 90) - (leaveBalance.used_maternity || leaveBalance.maternity_used || 0)} Remaining`}
-                      colorScheme="indigo"
-                      subtitle={`Total Days: ${leaveBalance.maternity_leave || 90}`}
-                    />
-                  </KpiGrid>
-                )}
-
-                {/* Leave Apply Form */}
-                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
-                    <span className="material-symbols-outlined text-slate-500 text-lg font-bold">add_circle</span>
-                    <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Apply for Leave</h3>
-                  </div>
-
-                  <form onSubmit={handleSubmitLeave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Leave Type</label>
-                        <select
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                          value={leaveForm.leave_type}
-                          onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
-                          required
-                        >
-                          <option value="Casual">Casual Leave</option>
-                          <option value="Sick">Sick Leave</option>
-                          <option value="Academic">Academic Leave</option>
-                          <option value="Maternity">Maternity Leave</option>
-                          <option value="Sabbatical">Sabbatical</option>
-                        </select>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-500 mb-1">Start Date</label>
-                          <input
-                            type="date"
-                            className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                            value={leaveForm.start_date}
-                            onChange={(e) => setLeaveForm({ ...leaveForm, start_date: e.target.value })}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-500 mb-1">End Date</label>
-                          <input
-                            type="date"
-                            className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                            value={leaveForm.end_date}
-                            onChange={(e) => setLeaveForm({ ...leaveForm, end_date: e.target.value })}
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col justify-between space-y-4">
-                      <div className="flex-1 flex flex-col">
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Reason</label>
-                        <textarea
-                          placeholder="Please describe the reason for your leave request..."
-                          rows="3"
-                          className="flex-1 w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600 resize-none text-slate-700"
-                          value={leaveForm.reason}
-                          onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="flex justify-end pt-2">
-                        <button
-                          type="submit"
-                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-600/10 active:scale-95 cursor-pointer"
-                        >
-                          Submit Leave Request
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-
-                {/* Leave History Table */}
-                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                  <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Leave Applications History</h4>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-                          <th className="px-6 py-4">Applied On</th>
-                          <th className="px-6 py-4">Leave Type</th>
-                          <th className="px-6 py-4">Duration</th>
-                          <th className="px-6 py-4 text-center">Days</th>
-                          <th className="px-6 py-4">Reason</th>
-                          <th className="px-6 py-4 text-right">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {leaveHistory.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="px-6 py-10 text-center text-slate-400 text-sm">No leave requests found.</td>
-                          </tr>
-                        ) : (
-                          leaveHistory.map((l) => (
-                            <tr key={l.id || l._id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-6 py-4 text-sm text-slate-600">
-                                {l.appliedOn ? new Date(l.appliedOn).toLocaleDateString() : '—'}
-                              </td>
-                              <td className="px-6 py-4 text-sm font-semibold text-slate-900">{l.leaveType || l.leave_type}</td>
-                              <td className="px-6 py-4 text-sm text-slate-700">
-                                {l.startDate || l.start_date} to {l.endDate || l.end_date}
-                              </td>
-                              <td className="px-6 py-4 text-center text-sm font-bold text-slate-800">{l.noOfDays || l.no_of_days}</td>
-                              <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate" title={l.reason}>
-                                {l.reason}
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
-                                  l.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                                  l.status === 'Rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
-                                  'bg-amber-50 text-amber-700 border border-amber-200'
-                                }`}>
-                                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                  {l.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* ======================= STUDENT ATTENDANCE LAYOUT ======================= */}
-        {/* ========================================================================= */}
-        {isStudent && (
-          <div className="space-y-6">
-            {/* Alerts Block */}
-            {studentSummary.overallAttendancePct < 75.0 && (
-              <div className={`p-4 rounded-2xl border flex items-start gap-3 shadow-sm animate-pulse ${
-                studentSummary.overallAttendancePct < 60.0 
-                  ? 'bg-rose-50 border-rose-200 text-rose-800' 
-                  : 'bg-amber-50 border-amber-200 text-amber-800'
-              }`}>
-                <span className="material-symbols-outlined text-xl">
-                  {studentSummary.overallAttendancePct < 60.0 ? 'dangerous' : 'warning'}
-                </span>
-                <div>
-                  <h4 className="font-bold text-sm">
-                    {studentSummary.overallAttendancePct < 60.0 ? 'Critical Attendance Warning!' : 'Low Attendance Alert'}
-                  </h4>
-                  <p className="text-xs mt-1">
-                    Your attendance is currently <b>{studentSummary.overallAttendancePct}%</b>. 
-                    {studentSummary.overallAttendancePct < 60.0 
-                      ? ' You are in danger of being barred from examinations. Please meet with your coordinator immediately.'
-                      : ` Attendance below 75% requires an official explanation. Attend the next few classes to reach safety.`}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Attendance Summary KPIs */}
-            <KpiGrid className="lg:grid-cols-3">
-              <KpiCard icon="analytics" label="Overall Attendance %" value={`${studentSummary.overallAttendancePct}%`} colorScheme={studentSummary.overallAttendancePct >= 75.0 ? 'emerald' : 'orange'} />
-              <KpiCard icon="check_circle" label="Total Classes Attended" value={studentSummary.totalClassesAttended} colorScheme="blue" />
-              <KpiCard icon="cancel" label="Total Classes Missed" value={studentSummary.totalClassesMissed} colorScheme="rose" />
-            </KpiGrid>
-
-            {/* Subject wise table */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
-                <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Subject-wise Percentage Breakdown</h4>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-                      <th className="px-6 py-4">Subject</th>
-                      <th className="px-6 py-4 text-center">Present</th>
-                      <th className="px-6 py-4 text-center">Absent</th>
-                      <th className="px-6 py-4 text-center">Leave</th>
-                      <th className="px-6 py-4 text-center">OD</th>
-                      <th className="px-6 py-4 text-center">Total Classes</th>
-                      <th className="px-6 py-4 text-center">Attendance %</th>
-                      <th className="px-6 py-4 text-right">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {studentSummary.subjectWise.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="px-6 py-10 text-center text-slate-400 text-sm">No subject-wise attendance logs recorded yet.</td>
-                      </tr>
-                    ) : (
-                      studentSummary.subjectWise.map(s => (
-                        <tr key={s.code} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="text-sm font-semibold text-slate-900">{s.subject}</div>
-                            <div className="text-xs text-slate-500 uppercase">{s.code}</div>
-                          </td>
-                          <td className="px-6 py-4 text-center text-sm font-medium text-emerald-600">{s.present}</td>
-                          <td className="px-6 py-4 text-center text-sm font-medium text-rose-500">{s.absent}</td>
-                          <td className="px-6 py-4 text-center text-sm font-medium text-amber-500">{s.leave}</td>
-                          <td className="px-6 py-4 text-center text-sm font-medium text-sky-500">{s.od}</td>
-                          <td className="px-6 py-4 text-center text-sm text-slate-600">{s.total}</td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                              s.attendancePct >= 75.0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
-                            }`}>
-                              {s.attendancePct}%
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => setStudentSelectedSubjectCode(s.code)}
-                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 cursor-pointer"
-                            >
-                              Logs
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
             </div>
+          )}
+        </div>
+      )}
 
-            {/* Subject Log Drilldown Modal */}
-            {studentSelectedSubjectCode && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-zoom-in">
-                  <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-base">Detailed Subject Logs</h3>
-                      <p className="text-xs text-slate-500">Subject Code: {studentSelectedSubjectCode ? studentSelectedSubjectCode.toUpperCase() : ''}</p>
+      {/* ========================================================================= */}
+      {/* ======================= STUDENT ATTENDANCE LAYOUT ======================= */}
+      {/* ========================================================================= */}
+      {isStudent && (
+        <div className="space-y-6">
+          <EnterprisePageTemplate
+            kpiCards={[
+              {
+                title: 'Overall Attendance',
+                value: `${studentSummary.overallAttendancePct}%`,
+                sub: studentSummary.overallAttendancePct >= 75 ? 'Good standing' : 'Action required',
+                trend: studentSummary.overallAttendancePct >= 75 ? 'Safe' : 'Critical',
+                trendUp: studentSummary.overallAttendancePct >= 75,
+                icon: <span className="material-symbols-outlined">analytics</span>,
+                gradient: studentSummary.overallAttendancePct >= 75 ? 'emerald' : 'rose'
+              },
+              {
+                title: 'Total Classes Attended',
+                value: studentSummary.totalClassesAttended.toString(),
+                sub: 'Classes Present',
+                trend: 'Active participation',
+                trendUp: true,
+                icon: <span className="material-symbols-outlined">check_circle</span>,
+                gradient: 'blue'
+              },
+              {
+                title: 'Total Classes Missed',
+                value: studentSummary.totalClassesMissed.toString(),
+                sub: 'Classes Absent',
+                trend: studentSummary.totalClassesMissed > 5 ? 'High absence' : 'Normal',
+                trendUp: studentSummary.totalClassesMissed <= 5,
+                icon: <span className="material-symbols-outlined">cancel</span>,
+                gradient: 'amber'
+              }
+            ]}
+            columns={[
+              {
+                key: 'subject',
+                label: 'Subject Details',
+                render: (_, s) => (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#F4F7FF] border border-[#E6EDF2] text-[#003A40] flex items-center justify-center font-bold text-xs flex-shrink-0">
+                      <span className="material-symbols-outlined text-sm text-[#0A686A]">book</span>
                     </div>
-                    <button
-                      onClick={() => setStudentSelectedSubjectCode('')}
-                      className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 hover:bg-slate-300 border-0 outline-none cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-lg">close</span>
-                    </button>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{s.subject || 'Subject'}</p>
+                      <p className="text-[10px] text-[#8C98A5] font-medium truncate uppercase">{s.code}</p>
+                    </div>
                   </div>
+                )
+              },
+              {
+                key: 'classes',
+                label: 'Classes (P/A/L/OD)',
+                render: (_, s) => (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-emerald-600" title="Present">{s.present}</span> /
+                    <span className="text-xs font-semibold text-rose-500" title="Absent">{s.absent}</span> /
+                    <span className="text-xs font-semibold text-amber-500" title="Leave">{s.leave}</span> /
+                    <span className="text-xs font-semibold text-sky-500" title="On Duty">{s.od}</span>
+                  </div>
+                )
+              },
+              {
+                key: 'total',
+                label: 'Total Classes',
+                render: (_, s) => <span className="text-xs font-semibold text-[#5F6B7A]">{s.total}</span>
+              },
+              {
+                key: 'attendancePct',
+                label: 'Attendance %',
+                render: (_, s) => (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${s.attendancePct >= 75 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+                    }`}>
+                    {s.attendancePct}%
+                  </span>
+                )
+              }
+            ]}
+            rows={studentSummary.subjectWise}
+            rowKey="code"
+            searchQuery=""
+            onSearchChange={() => { }}
+            searchPlaceholder="Search subject..."
+            filterOptions={[]}
+            activeFilters={{}}
+            onFilterChange={() => { }}
+            loading={loading}
+            emptyMessage="No subject-wise attendance logs recorded yet."
+            actions={[
+              {
+                icon: <span className="material-symbols-outlined text-[14px]">info</span>,
+                label: 'View Logs',
+                color: 'indigo',
+                onClick: (s) => setStudentSelectedSubjectCode(s.code),
+                showIf: () => true
+              }
+            ]}
+          />
 
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
-                          <th className="px-4 py-3">Date</th>
-                          <th className="px-4 py-3">Hour</th>
-                          <th className="px-4 py-3">Status</th>
-                          <th className="px-4 py-3 text-right">Remarks</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {studentSummary.detailedLog
-                          .filter(l => l.subjectCode === studentSelectedSubjectCode)
-                          .map((l, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50">
-                              <td className="px-4 py-3 text-slate-800 font-medium">{l.date}</td>
-                              <td className="px-4 py-3 text-slate-500">{l.period}</td>
-                              <td className="px-4 py-3">
-                                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                                  l.status === 'Present' ? 'bg-emerald-50 text-emerald-700' :
+          {/* Subject Log Drilldown Modal */}
+          {studentSelectedSubjectCode && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-zoom-in">
+                <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-base">Detailed Subject Logs</h3>
+                    <p className="text-xs text-slate-500">Subject Code: {studentSelectedSubjectCode ? studentSelectedSubjectCode.toUpperCase() : ''}</p>
+                  </div>
+                  <button
+                    onClick={() => setStudentSelectedSubjectCode('')}
+                    className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 hover:bg-slate-300 border-0 outline-none cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                        <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3">Hour</th>
+                        <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3 text-right">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {studentSummary.detailedLog
+                        .filter(l => l.subjectCode === studentSelectedSubjectCode)
+                        .map((l, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 text-slate-800 font-medium">{l.date}</td>
+                            <td className="px-4 py-3 text-slate-500">{l.period}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${l.status === 'Present' ? 'bg-emerald-50 text-emerald-700' :
                                   l.status === 'On Duty' ? 'bg-sky-50 text-sky-700' :
-                                  l.status === 'Leave' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
+                                    l.status === 'Leave' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
                                 }`}>
-                                  {l.status}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right text-xs text-slate-500 italic">{l.remarks || '—'}</td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* ======================= FINANCE ATTENDANCE LAYOUT ======================== */}
-        {/* ========================================================================= */}
-        {isFinance && (
-          <div className="space-y-6">
-            {/* Finance Filter Panel */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <span className="material-symbols-outlined text-slate-500 text-lg">filter_list</span>
-                <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Eligibility Filters</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Department</label>
-                  <select
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                    value={financeFilters.department}
-                    onChange={(e) => setFinanceFilters({ ...financeFilters, department: e.target.value })}
-                  >
-                    <option value="">All Departments</option>
-                    {departments.map(d => (
-                      <option key={d.code} value={d.name}>{d.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Semester</label>
-                  <select
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                    value={financeFilters.semester}
-                    onChange={(e) => setFinanceFilters({ ...financeFilters, semester: e.target.value })}
-                  >
-                    <option value="">All Semesters</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                      <option key={s} value={String(s)}>{`Semester ${s}`}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Section</label>
-                  <select
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                    value={financeFilters.section}
-                    onChange={(e) => setFinanceFilters({ ...financeFilters, section: e.target.value })}
-                  >
-                    <option value="">All Sections</option>
-                    <option value="A">Section A</option>
-                    <option value="B">Section B</option>
-                    <option value="C">Section C</option>
-                  </select>
-                </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={() => {
-                      setFinanceFilters({ department: '', semester: '', section: '' })
-                      setFinanceSearch('')
-                    }}
-                    className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-all"
-                  >
-                    Clear Filters
-                  </button>
+                                {l.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right text-xs text-slate-500 italic">{l.remarks || '—'}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
+          )}
+        </div>
+      )}
 
-            {/* Eligibility Table Panel */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50">
-                <div className="relative w-full sm:max-w-xs">
-                  <input
-                    type="text"
-                    placeholder="Search student name/roll number..."
-                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl outline-none text-sm focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                    value={financeSearch}
-                    onChange={(e) => setFinanceSearch(e.target.value)}
-                  />
-                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleExportCSV(financeEligibility, ['rollNumber', 'studentName', 'department', 'semester', 'attendancePct', 'eligibilityStatus'], 'Attendance-Eligibility-Report.csv')}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
-                  >
-                    <span className="material-symbols-outlined text-base">download</span>
-                    Export Eligibility Report
-                  </button>
-                </div>
+      {/* ========================================================================= */}
+      {/* ======================= FINANCE ATTENDANCE LAYOUT ======================== */}
+      {/* ========================================================================= */}
+      {isFinance && (
+        <div className="space-y-6">
+          {/* Finance Filter Panel */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <span className="material-symbols-outlined text-slate-500 text-lg">filter_list</span>
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Eligibility Filters</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Department</label>
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                  value={financeFilters.department}
+                  onChange={(e) => setFinanceFilters({ ...financeFilters, department: e.target.value })}
+                >
+                  <option value="">All Departments</option>
+                  {departments.map(d => (
+                    <option key={d.code} value={d.name}>{d.name}</option>
+                  ))}
+                </select>
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Semester</label>
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                  value={financeFilters.semester}
+                  onChange={(e) => setFinanceFilters({ ...financeFilters, semester: e.target.value })}
+                >
+                  <option value="">All Semesters</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                    <option key={s} value={String(s)}>{`Semester ${s}`}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Section</label>
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                  value={financeFilters.section}
+                  onChange={(e) => setFinanceFilters({ ...financeFilters, section: e.target.value })}
+                >
+                  <option value="">All Sections</option>
+                  <option value="A">Section A</option>
+                  <option value="B">Section B</option>
+                  <option value="C">Section C</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={() => {
+                    setFinanceFilters({ department: '', semester: '', section: '' })
+                    setFinanceSearch('')
+                  }}
+                  className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-                      <th className="px-6 py-4">Register Number</th>
-                      <th className="px-6 py-4">Student Name</th>
-                      <th className="px-6 py-4">Department & Class</th>
-                      <th className="px-6 py-4 text-center">Attendance %</th>
-                      <th className="px-6 py-4 text-right">Eligibility Status</th>
+          {/* Eligibility Table Panel */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50">
+              <div className="relative w-full sm:max-w-xs">
+                <input
+                  type="text"
+                  placeholder="Search student name/roll number..."
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl outline-none text-sm focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                  value={financeSearch}
+                  onChange={(e) => setFinanceSearch(e.target.value)}
+                />
+                <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleExportCSV(financeEligibility, ['rollNumber', 'studentName', 'department', 'semester', 'attendancePct', 'eligibilityStatus'], 'Attendance-Eligibility-Report.csv')}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-base">download</span>
+                  Export Eligibility Report
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                    <th className="px-6 py-4">Register Number</th>
+                    <th className="px-6 py-4">Student Name</th>
+                    <th className="px-6 py-4">Department & Class</th>
+                    <th className="px-6 py-4 text-center">Attendance %</th>
+                    <th className="px-6 py-4 text-right">Eligibility Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredFinanceEligibility.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-10 text-center text-slate-400 text-sm">No student records found.</td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredFinanceEligibility.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-10 text-center text-slate-400 text-sm">No student records found.</td>
-                      </tr>
-                    ) : (
-                      filteredFinanceEligibility.map(e => (
-                        <tr key={e.rollNumber} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-6 py-4 text-sm font-mono text-slate-600 font-medium">{e.rollNumber}</td>
-                          <td className="px-6 py-4 text-sm font-semibold text-slate-900">{e.studentName}</td>
-                          <td className="px-6 py-4 text-sm text-slate-700">
-                            {e.department} — {e.semester}
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className="font-semibold text-sm">{e.attendancePct}%</span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
-                              e.eligibilityStatus === 'Eligible' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                  ) : (
+                    filteredFinanceEligibility.map(e => (
+                      <tr key={e.rollNumber} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 text-sm font-mono text-slate-600 font-medium">{e.rollNumber}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">{e.studentName}</td>
+                        <td className="px-6 py-4 text-sm text-slate-700">
+                          {e.department} — {e.semester}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="font-semibold text-sm">{e.attendancePct}%</span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${e.eligibilityStatus === 'Eligible' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                               e.eligibilityStatus === 'Warning' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                              'bg-rose-50 text-rose-700 border border-rose-200'
+                                'bg-rose-50 text-rose-700 border border-rose-200'
                             }`}>
-                              <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                              {e.eligibilityStatus}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                            {e.eligibilityStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
   )
 
   return noLayout ? inner : <Layout title="Attendance Dashboard" noPadding>{inner}</Layout>

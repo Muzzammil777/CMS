@@ -30,6 +30,7 @@ import {
   listSeatAssignments,
 } from '../api/examsApi'
 import { getStudentById } from '../data/studentData'
+import StudentExamsPage from './StudentExamsPage'
 
 export default function ExamsPage({ noLayout = false }) {
   const session = getUserSession()
@@ -37,6 +38,11 @@ export default function ExamsPage({ noLayout = false }) {
   const isStudent = session?.role === 'student'
   const isFaculty = session?.role === 'faculty'
   const isAdmin = session?.role === 'admin'
+  
+  if (isStudent) {
+    return <StudentExamsPage />
+  }
+
   const [exams, setExams] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)

@@ -1,22 +1,50 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUserSession, getUserData } from '../auth/sessionController';
-import { cmsRoles, roleMenuGroups } from '../data/roleConfig';
 import { API_BASE } from '../api/apiBase';
 import Layout from '../components/Layout';
-import { Bell, Settings, User } from 'lucide-react';
-import SectionAccess from '../components/SectionAccess';
-import NewsletterWidget from '../components/NewsletterWidget';
+import DashboardSkeleton from '../components/DashboardSkeleton';
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
+import { 
+  Users, 
+  UserCheck, 
+  BookOpen, 
+  Clock, 
+  ShieldAlert, 
+  TrendingUp, 
+  Calendar as CalendarIcon, 
+  ChevronDown, 
+  FileText, 
+  CheckCircle2, 
+  Activity, 
+  Bell, 
+  Plus, 
+  Award, 
+  Briefcase,
+  Sparkles,
+  ClipboardList,
+  GraduationCap
+} from 'lucide-react';
 
-// Mock modal component for attendance
+// Attendance Marking Modal Component
 function AttendanceModal({ isOpen, onClose, onSubmit }) {
   const [selectedClass, setSelectedClass] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
   const classes = [
-    { id: 1, code: 'CS-303', name: 'Data Structures', time: '09:00 - 10:30' },
-    { id: 2, code: 'CS-306', name: 'Database Systems', time: '11:00 - 12:30' },
-    { id: 3, code: 'CS-309', name: 'Web Development', time: '14:00 - 15:30' }
+    { id: 'CS-303', code: 'CS-303', name: 'Data Structures', time: '09:00 - 10:30' },
+    { id: 'CS-306', code: 'CS-306', name: 'Database Systems', time: '11:00 - 12:30' },
+    { id: 'CS-309', code: 'CS-309', name: 'Web Development', time: '14:00 - 15:30' }
   ];
 
   const handleSubmit = () => {
@@ -33,45 +61,18 @@ function AttendanceModal({ isOpen, onClose, onSubmit }) {
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        maxWidth: '400px',
-        width: '90%',
-        boxShadow: '0 20px 25px rgba(0,0,0,0.15)'
-      }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1f2937', marginBottom: '16px', margin: '0 0 16px 0' }}>
-          Mark Attendance
-        </h2>
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100 animate-fadeIn">
+        <h2 className="text-lg font-extrabold text-[#003A40] mb-4">Mark Class Attendance</h2>
         
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-            Select Class
-          </label>
+        <div className="mb-4">
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Course / Class</label>
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600 font-medium"
           >
-            <option value="">Choose a class...</option>
+            <option value="">Choose a course...</option>
             {classes.map(c => (
               <option key={c.id} value={c.id}>
                 {c.code} - {c.name} ({c.time})
@@ -80,61 +81,28 @@ function AttendanceModal({ isOpen, onClose, onSubmit }) {
           </select>
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-            Date
-          </label>
+        <div className="mb-6">
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">Date</label>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              outline: 'none'
-            }}
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600 font-medium"
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            style={{
-              padding: '8px 16px',
-              background: '#e5e7eb',
-              color: '#374151',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#d1d5db'}
-            onMouseLeave={(e) => e.target.style.background = '#e5e7eb'}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            style={{
-              padding: '8px 16px',
-              background: '#4c1d95',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#3b0764'}
-            onMouseLeave={(e) => e.target.style.background = '#4c1d95'}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
           >
-            Submit
+            Mark Attendance
           </button>
         </div>
       </div>
@@ -142,15 +110,15 @@ function AttendanceModal({ isOpen, onClose, onSubmit }) {
   );
 }
 
-// Mock modal component for internal marks
+// Internal Marks Publishing Modal Component
 function PublishMarksModal({ isOpen, onClose, onSubmit }) {
   const [selectedClass, setSelectedClass] = useState('');
   const [marksType, setMarksType] = useState('');
 
   const classes = [
-    { id: 1, code: 'CS-303', name: 'Data Structures' },
-    { id: 2, code: 'CS-306', name: 'Database Systems' },
-    { id: 3, code: 'CS-309', name: 'Web Development' }
+    { id: 'CS-303', code: 'CS-303', name: 'Data Structures' },
+    { id: 'CS-306', code: 'CS-306', name: 'Database Systems' },
+    { id: 'CS-309', code: 'CS-309', name: 'Web Development' }
   ];
 
   const marksTypes = [
@@ -175,45 +143,18 @@ function PublishMarksModal({ isOpen, onClose, onSubmit }) {
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        maxWidth: '400px',
-        width: '90%',
-        boxShadow: '0 20px 25px rgba(0,0,0,0.15)'
-      }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1f2937', marginBottom: '16px', margin: '0 0 16px 0' }}>
-          Publish Internal Marks
-        </h2>
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100 animate-fadeIn">
+        <h2 className="text-lg font-extrabold text-[#003A40] mb-4">Publish Internal Marks</h2>
         
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-            Select Class
-          </label>
+        <div className="mb-4">
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">Select Course / Class</label>
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600 font-medium"
           >
-            <option value="">Choose a class...</option>
+            <option value="">Choose a course...</option>
             {classes.map(c => (
               <option key={c.id} value={c.id}>
                 {c.code} - {c.name}
@@ -222,24 +163,14 @@ function PublishMarksModal({ isOpen, onClose, onSubmit }) {
           </select>
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
-            Marks Type
-          </label>
+        <div className="mb-6">
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">Assessment Type</label>
           <select
             value={marksType}
             onChange={(e) => setMarksType(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-indigo-600 font-medium"
           >
-            <option value="">Choose marks type...</option>
+            <option value="">Choose assessment type...</option>
             {marksTypes.map(mt => (
               <option key={mt.id} value={mt.id}>
                 {mt.name}
@@ -248,42 +179,18 @@ function PublishMarksModal({ isOpen, onClose, onSubmit }) {
           </select>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+        <div className="flex gap-3 justify-end">
           <button
             onClick={onClose}
-            style={{
-              padding: '8px 16px',
-              background: '#e5e7eb',
-              color: '#374151',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#d1d5db'}
-            onMouseLeave={(e) => e.target.style.background = '#e5e7eb'}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            style={{
-              padding: '8px 16px',
-              background: '#4c1d95',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#3b0764'}
-            onMouseLeave={(e) => e.target.style.background = '#4c1d95'}
+            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
           >
-            Publish
+            Publish Marks
           </button>
         </div>
       </div>
@@ -297,8 +204,8 @@ export default function FacultyDashboardPage() {
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [isMarksModalOpen, setIsMarksModalOpen] = useState(false);
   const [freshUserData, setFreshUserData] = useState(null);
-  const [upcomingExams, setUpcomingExams] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState('This Week');
 
   const session = getUserSession();
   const dynamicUser = getUserData();
@@ -307,42 +214,11 @@ export default function FacultyDashboardPage() {
   const role = sessionRole || 'faculty';
 
   const userToUse = freshUserData || dynamicUser;
+  const facultyName = userToUse?.name || userToUse?.fullName || 'Dr. Ramesh Kumar';
+  const designation = userToUse?.designation || 'Professor';
+  const department = userToUse?.departmentId || userToUse?.department_id || userToUse?.department || 'Computer Science';
 
-  // ── Derived Faculty Fields ──────────────────────────────────────
-  const facultyName   = userToUse?.name || userToUse?.fullName || 'Faculty Member';
-  const designation   = userToUse?.designation || 'Faculty';
-  const department    = userToUse?.departmentId || userToUse?.department_id || userToUse?.department || 'Engineering';
-  const email         = userToUse?.email || '—';
-  const phone         = userToUse?.phone || '—';
-  const empStatus     = userToUse?.employment_status || userToUse?.status || 'Active';
-  const attendanceRate = userToUse?.attendance_rate ?? userToUse?.leave_attendance_summary?.attendance_rate ?? null;
-  const passRate      = userToUse?.pass_rate ?? userToUse?.performance_summary?.pass_rate ?? null;
-  const expYears      = userToUse?.experience_years ?? userToUse?.yearsOfExperience ?? null;
-  const officeLocation = userToUse?.office_location || userToUse?.location || '—';
-  const joiningDate   = userToUse?.joining_date ? new Date(userToUse.joining_date).toLocaleDateString('en-IN', { year:'numeric', month:'short', day:'numeric' }) : '—';
-
-  // ── Courses (from teaching_load OR courses array OR subject string) ──
-  const rawCourses = userToUse?.teaching_load && userToUse.teaching_load.length > 0
-    ? userToUse.teaching_load
-    : Array.isArray(userToUse?.courses) && userToUse.courses.length > 0
-      ? userToUse.courses.map(c => typeof c === 'string' ? { courseName: c, courseCode: c } : c)
-      : userToUse?.subject
-        ? [{ courseCode: '—', courseName: userToUse.subject, studentCount: 0 }]
-        : [];
-
-  // ── Classes ────────────────────────────────────────────────────
-  const rawClasses = Array.isArray(userToUse?.classes) ? userToUse.classes
-    : Array.isArray(userToUse?.assignedClasses) ? userToUse.assignedClasses
-    : typeof userToUse?.classes === 'string' ? userToUse.classes.split(',').map(s=>s.trim()).filter(Boolean)
-    : [];
-
-  // ── Leave summary ──────────────────────────────────────────────
-  const leaveSummary = userToUse?.leave_attendance_summary || {};
-  const leaveRequests = Array.isArray(leaveSummary.leave_requests)
-    ? leaveSummary.leave_requests
-    : [];
-
-  const menuGroups = roleMenuGroups[role] || [];
+  const roleQuery = `?role=${encodeURIComponent(role)}`;
 
   useEffect(() => {
     if (!sessionRole || !sessionUserId) {
@@ -350,15 +226,11 @@ export default function FacultyDashboardPage() {
       return undefined;
     }
 
-    document.title = 'MIT Connect - Faculty Dashboard';
+    document.title = `MIT Connect - Faculty Dashboard`;
 
     const expectedSearch = `?role=${encodeURIComponent(sessionRole)}`;
     if (location.search !== expectedSearch) {
       navigate(`/dashboard${expectedSearch}`, { replace: true });
-    }
-
-    function enforceSessionOnPageRestore() {
-      if (!getUserSession()) navigate('/', { replace: true });
     }
 
     async function fetchFacultyData() {
@@ -370,471 +242,484 @@ export default function FacultyDashboardPage() {
           setFreshUserData(facData);
         }
       } catch (err) {
-        console.error('Failed to fetch fresh faculty data:', err);
+        console.error('Failed to fetch faculty data:', err);
       } finally {
-        setDataLoading(false);
-      }
-    }
-
-    async function fetchFacultyExams() {
-      try {
-        const res = await fetch(`${API_BASE}/exams?role=faculty&userId=${encodeURIComponent(sessionUserId)}`);
-        if (res.ok) {
-          const result = await res.json();
-          if (result.success && result.data) {
-            setUpcomingExams(result.data.filter(e => e.status === 'Upcoming'));
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch faculty exams:', err);
+        setTimeout(() => {
+          setDataLoading(false);
+        }, 800);
       }
     }
 
     fetchFacultyData();
-    fetchFacultyExams();
-    window.addEventListener('pageshow', enforceSessionOnPageRestore);
-    return () => window.removeEventListener('pageshow', enforceSessionOnPageRestore);
   }, [location.search, navigate, sessionRole, sessionUserId]);
 
-  // ── Initials avatar ────────────────────────────────────────────
-  const initials = facultyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  // Chart Data
+  const attendanceTrendData = [
+    { day: '3 Jul', rate: 88 },
+    { day: '4 Jul', rate: 94 },
+    { day: '5 Jul', rate: 91 },
+    { day: '6 Jul', rate: 85 },
+    { day: '7 Jul', rate: 96 },
+    { day: '8 Jul', rate: 92 },
+    { day: '9 Jul', rate: 95 },
+  ];
 
-  // ── Status color ───────────────────────────────────────────────
-  const statusColor = empStatus === 'Active' ? { bg: '#dcfce7', text: '#166534', dot: '#22c55e' }
-    : empStatus === 'On-Leave' ? { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' }
-    : { bg: '#fee2e2', text: '#991b1b', dot: '#ef4444' };
+  const gradeDistData = [
+    { name: 'A+ Grade', value: 48, pct: '34.2%', color: '#6366F1' },
+    { name: 'A Grade', value: 52, pct: '37.1%', color: '#10B981' },
+    { name: 'B Grade', value: 28, pct: '20.0%', color: '#F59E0B' },
+    { name: 'C Grade', value: 12, pct: '8.7%', color: '#EC4899' },
+  ];
+
+  const scheduleToday = [
+    { time: '09:00 AM', course: 'CS-303: Data Structures', room: 'Lab 302', students: 48, status: 'Ongoing', isOngoing: true },
+    { time: '11:00 AM', course: 'CS-306: Database Systems', room: 'Hall A1', students: 52, status: 'Upcoming', isOngoing: false },
+    { time: '02:00 PM', course: 'CS-309: Web Development', room: 'Lab 104', students: 40, status: 'Upcoming', isOngoing: false },
+  ];
+
+  const upcomingEvents = [
+    { day: '15', month: 'JUL', title: 'Mid-Semester CS303 Exam', subtitle: '15 Jul 2026, 10:00 AM', tag: 'Exam', color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    { day: '18', month: 'JUL', title: 'Department Faculty Meeting', subtitle: '18 Jul 2026, 02:30 PM', tag: 'Meeting', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    { day: '22', month: 'JUL', title: 'Research Grant Review', subtitle: '22 Jul 2026, 11:00 AM', tag: 'Research', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  ];
+
+  const handleAttendanceSubmit = (classId, date) => {
+    console.log('Attendance submitted:', { classId, date });
+  };
+
+  const handleMarksSubmit = (classId, type) => {
+    console.log('Marks published:', { classId, type });
+  };
 
   return (
-    <Layout title="Dashboard">
-      <div className="faculty-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '40px' }}>
-
-        {/* ── Hero Profile Card ───────────────────────────────────── */}
-        <div className="hero-profile-card" style={{
-          background: '#4c1d95',
-          borderRadius: '20px',
-          padding: '32px',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 20px 60px rgba(76, 29, 149,0.3)',
-        }}>
-          {/* Decorative circles */}
-          <div style={{ position:'absolute', top:'-30px', right:'-30px', width:'160px', height:'160px', background:'rgba(255,255,255,0.05)', borderRadius:'50%' }}/>
-          <div style={{ position:'absolute', bottom:'-50px', right:'100px', width:'120px', height:'120px', background:'rgba(255,255,255,0.04)', borderRadius:'50%' }}/>
-
-          <div className="hero-profile-container" style={{ position:'relative', zIndex:1, display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:'20px' }}>
-            {/* Left: avatar + info */}
-            <div className="hero-profile-left" style={{ display:'flex', gap:'20px', alignItems:'center' }}>
-              <div style={{
-                width:'72px', height:'72px', borderRadius:'50%',
-                background: 'rgba(255,255,255,0.2)',
-                backdropFilter: 'blur(8px)',
-                border: '2px solid rgba(255,255,255,0.35)',
-                display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:'26px', fontWeight:'800', color:'white', flexShrink:0
-              }}>
-                {dataLoading ? '…' : initials}
+    <Layout title="">
+      <div className="w-full max-w-[1600px] mx-auto min-h-0 flex flex-col space-y-4 text-[#1B1F24] pb-2">
+        
+        {dataLoading ? (
+          <DashboardSkeleton />
+        ) : (
+          <>
+            {/* Header: Greeting & Period Control */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-[#003A40] flex items-center gap-2 leading-tight">
+                  Good morning, {facultyName.split(' ')[0]} <span className="animate-wave inline-block">👋</span>
+                </h1>
+                <p className="text-xs md:text-sm text-[#5F6B7A] mt-0.5 font-medium">
+                  {designation} • {department} Department
+                </p>
               </div>
-              <div className="hero-info-container">
-                <div className="hero-name-status" style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'6px', flexWrap:'wrap' }}>
-                  <h2 style={{ fontSize:'22px', fontWeight:'800', color:'white', margin:0 }}>
-                    {dataLoading ? 'Loading…' : facultyName}
-                  </h2>
-                  {!dataLoading && (
-                    <span style={{ display:'inline-flex', alignItems:'center', gap:'5px', background: statusColor.bg, color: statusColor.text, padding:'3px 10px', borderRadius:'100px', fontSize:'11px', fontWeight:'700' }}>
-                      <span style={{ width:'6px', height:'6px', borderRadius:'50%', background: statusColor.dot, display:'inline-block' }}/>
-                      {empStatus}
-                    </span>
-                  )}
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="px-3.5 py-1.5 bg-white border border-[#E6EDF2] rounded-xl text-xs font-semibold text-[#5F6B7A] shadow-2xs flex items-center gap-2">
+                  <CalendarIcon className="w-3.5 h-3.5 text-[#0A686A]" />
+                  <span>Wednesday, 9 Jul 2026</span>
                 </div>
-                <p style={{ color:'rgba(255,255,255,0.85)', fontSize:'14px', margin:'0 0 4px', fontWeight:'500' }}>{designation} • {department}</p>
-                <p style={{ color:'rgba(255,255,255,0.6)', fontSize:'12px', margin:0 }}>ID: {sessionUserId}</p>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPeriod(selectedPeriod === 'This Week' ? 'This Month' : 'This Week')}
+                    className="px-3.5 py-1.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>{selectedPeriod}</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Right: action buttons */}
-            <div className="hero-profile-actions" style={{ display:'flex', gap:'10px', flexWrap:'wrap' }}>
-              <button
-                onClick={() => setIsAttendanceModalOpen(true)}
-                style={{
-                  padding:'10px 20px', background:'rgba(255,255,255,0.2)',
-                  backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.35)',
-                  borderRadius:'10px', color:'white', fontSize:'13px',
-                  fontWeight:'700', cursor:'pointer', transition:'all 0.2s',
-                  display:'flex', alignItems:'center', gap:'6px'
-                }}
-                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.3)'}
-                onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.2)'}
-              >
-                <span className="material-symbols-outlined" style={{fontSize:'16px'}}>fact_check</span>
-                Mark Attendance
-              </button>
-              <button
-                onClick={() => setIsMarksModalOpen(true)}
-                style={{
-                  padding:'10px 20px', background:'rgba(255,255,255,0.12)',
-                  backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.2)',
-                  borderRadius:'10px', color:'rgba(255,255,255,0.9)', fontSize:'13px',
-                  fontWeight:'700', cursor:'pointer', transition:'all 0.2s',
-                  display:'flex', alignItems:'center', gap:'6px'
-                }}
-                onMouseEnter={e=>e.currentTarget.style.background='rgba(255,255,255,0.2)'}
-                onMouseLeave={e=>e.currentTarget.style.background='rgba(255,255,255,0.12)'}
-              >
-                <span className="material-symbols-outlined" style={{fontSize:'16px'}}>grade</span>
-                Publish Marks
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ── 5 KPI Stat Cards ────────────────────────────────────── */}
-        <div className="kpi-grid-container" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(160px,1fr))', gap:'16px' }}>
-          {[
-            {
-              icon:'menu_book', label:'Assigned Courses',
-              value: dataLoading ? '…' : rawCourses.length || '0',
-              sub: dataLoading ? '' : rawCourses.map(c=>c.courseCode||c.course_code||c.courseName||c).join(', ') || 'No courses assigned',
-              bg:'linear-gradient(135deg,#f0fdf4,#dcfce7)', border:'#bbf7d0', iconBg:'#4c1d95', valColor:'#15803d'
-            },
-            {
-              icon:'group', label:'Total Students',
-              value: dataLoading ? '…' : ((userToUse?.totalStudents ?? userToUse?.student_count ?? rawCourses.reduce((s,c)=>s+(c.studentCount||c.student_count||0),0)) || '—'),
-              sub: 'Across all courses',
-              bg:'linear-gradient(135deg,#fdf4ff,#f3e8ff)', border:'#e9d5ff', iconBg:'#9333ea', valColor:'#7e22ce'
-            },
-            {
-              icon:'trending_up', label:'Attendance Rate',
-              value: dataLoading ? '…' : (attendanceRate !== null ? `${attendanceRate}%` : '—'),
-              sub: 'Monthly average',
-              bg:'linear-gradient(135deg,#eff6ff,#dbeafe)', border:'#bfdbfe', iconBg:'#2563eb', valColor:'#1d4ed8'
-            },
-            {
-              icon:'workspace_premium', label:'Pass Rate',
-              value: dataLoading ? '…' : (passRate !== null ? `${passRate}%` : '—'),
-              sub: 'Student success avg',
-              bg:'linear-gradient(135deg,#fff7ed,#ffedd5)', border:'#fed7aa', iconBg:'#ea580c', valColor:'#c2410c'
-            },
-            {
-              icon:'history_edu', label:'Experience',
-              value: dataLoading ? '…' : (expYears !== null ? `${expYears} yrs` : '—'),
-              sub: joiningDate !== '—' ? `Joined ${joiningDate}` : 'Teaching experience',
-              bg:'linear-gradient(135deg,#f0fdf4,#dcfce7)', border:'#a7f3d0', iconBg:'#059669', valColor:'#065f46'
-            },
-          ].map(s => (
-            <div key={s.label} style={{
-              background:s.bg, borderRadius:'16px', padding:'20px',
-              border:`1px solid ${s.border}`, boxShadow:'0 4px 16px rgba(0,0,0,0.05)',
-              transition:'transform 0.2s, box-shadow 0.2s'
-            }}
-              onMouseEnter={e=>{e.currentTarget.style.transform='translateY(-3px)';e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'}}
-              onMouseLeave={e=>{e.currentTarget.style.transform='translateY(0)';e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.05)'}}
-            >
-              <div style={{ width:'38px', height:'38px', background:s.iconBg, borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'12px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'white' }}>{s.icon}</span>
+            {/* 5 KPI Summary Cards Row (Copied & adapted from Admin Dashboard UI) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 flex-shrink-0">
+              {/* Card 1: Assigned Courses */}
+              <div className="p-3.5 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex items-start gap-3 hover:shadow-xs transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-extrabold text-[#003A40] leading-none">3</h3>
+                  <p className="text-xs font-medium text-[#5F6B7A] mt-1">Assigned Courses</p>
+                  <p className="text-[11px] font-semibold text-indigo-600 mt-1">CS-303, 306, 309</p>
+                </div>
               </div>
-              <div style={{ fontSize:'26px', fontWeight:'800', color:s.valColor, lineHeight:1, marginBottom:'4px' }}>{s.value}</div>
-              <div style={{ fontSize:'11px', fontWeight:'700', color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:'4px' }}>{s.label}</div>
-              <div style={{ fontSize:'11px', color:'#9ca3af', lineHeight:'1.3', wordBreak:'break-word' }}>{s.sub}</div>
+
+              {/* Card 2: Enrolled Students */}
+              <div className="p-3.5 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex items-start gap-3 hover:shadow-xs transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-extrabold text-[#003A40] leading-none">140</h3>
+                  <p className="text-xs font-medium text-[#5F6B7A] mt-1">Total Students</p>
+                  <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
+                    <span>↑ 3 Classes</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 3: Today Lectures */}
+              <div className="p-3.5 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex items-start gap-3 hover:shadow-xs transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-extrabold text-[#003A40] leading-none">3</h3>
+                  <p className="text-xs font-medium text-[#5F6B7A] mt-1">Today's Lectures</p>
+                  <p className="text-[11px] font-semibold text-blue-600 mt-1">1 Ongoing</p>
+                </div>
+              </div>
+
+              {/* Card 4: Class Attendance */}
+              <div className="p-3.5 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex items-start gap-3 hover:shadow-xs transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-extrabold text-[#003A40] leading-none">92.4%</h3>
+                  <p className="text-xs font-medium text-[#5F6B7A] mt-1">Avg Attendance</p>
+                  <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-0.5">
+                    <span>↑ 2.1%</span> <span className="text-[#8C98A5] font-normal">vs target</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 5: Pending Requests */}
+              <div className="p-3.5 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex items-start gap-3 hover:shadow-xs transition-shadow">
+                <div className="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-extrabold text-rose-600 leading-none">4</h3>
+                  <p className="text-xs font-medium text-[#5F6B7A] mt-1">Pending OD / Leaves</p>
+                  <p className="text-[11px] font-bold text-rose-500 mt-1">Action needed</p>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
 
-        {/* ── Main 2-column content ───────────────────────────────── */}
-        <div className="dashboard-main-grid" style={{ display:'grid', gridTemplateColumns:'1fr 380px', gap:'20px', alignItems:'start' }}>
+            {/* Middle Section: Attendance Rate Overview, Class Attendance Trend, Announcements */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-shrink-0">
+              {/* Class Attendance Rate Progress Card */}
+              <div className="lg:col-span-4 p-4 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-[#003A40] tracking-wide">Class Attendance Target</h3>
+                  <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                    This Week ▾
+                  </span>
+                </div>
 
-          {/* Left column */}
-          <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
-
-            {/* Assigned Courses */}
-            <div style={{ background:'white', borderRadius:'16px', padding:'24px', boxShadow:'0 4px 20px rgba(0,0,0,0.06)', border:'1px solid #f1f5f9' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                  <div style={{ width:'36px', height:'36px', background:'#4c1d95', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'white' }}>book</span>
+                <div className="my-2">
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <span className="text-xl font-extrabold text-[#003A40]">92.4%</span>
+                      <p className="text-[11px] text-[#5F6B7A]">Current Average</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-slate-600">85.0%</span>
+                      <p className="text-[11px] text-[#8C98A5]">Required Min</p>
+                    </div>
                   </div>
-                  <h4 style={{ fontSize:'15px', fontWeight:'700', color:'#1f2937', margin:0 }}>Assigned Courses</h4>
+
+                  {/* Gradient Progress Bar */}
+                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mt-3 relative">
+                    <div 
+                      className="h-full bg-gradient-to-r from-violet-600 to-indigo-600 rounded-full transition-all duration-500" 
+                      style={{ width: '92.4%' }} 
+                    />
+                  </div>
+                  <div className="flex justify-end mt-1">
+                    <span className="text-[11px] font-extrabold text-violet-700">92.4% Compliant</span>
+                  </div>
                 </div>
-                <span style={{ fontSize:'11px', fontWeight:'700', background:'#f0fdf4', color:'#4c1d95', border:'1px solid #bbf7d0', borderRadius:'100px', padding:'3px 10px' }}>
-                  {rawCourses.length} Course{rawCourses.length !== 1 ? 's' : ''}
-                </span>
               </div>
 
-              {dataLoading ? (
-                <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-                  {[1,2].map(i=><div key={i} style={{ height:'60px', background:'#f9fafb', borderRadius:'10px', animation:'pulse 1.5s ease-in-out infinite' }}/>)}
+              {/* Class Attendance Trend Area Chart */}
+              <div className="lg:col-span-5 p-4 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xs font-bold text-[#003A40] tracking-wide">Weekly Attendance Trend</h3>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-sm font-extrabold text-[#003A40]">95% Today <span className="text-[10px] font-bold text-emerald-600">↑ 3.0%</span></span>
+                      <span className="text-xs text-[#5F6B7A]">Data Structures Lab</span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                    This Week ▾
+                  </span>
                 </div>
-              ) : rawCourses.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'32px', color:'#9ca3af' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize:'40px', display:'block', marginBottom:'8px', opacity:0.3 }}>menu_book</span>
-                  <p style={{ fontSize:'13px' }}>No courses assigned yet</p>
+
+                <div className="h-28 w-full mt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={attendanceTrendData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="facultyAttendanceGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#10B981" stopOpacity={0.0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8C98A5' }} stroke="#E6EDF2" />
+                      <YAxis domain={[60, 100]} tick={{ fontSize: 10, fill: '#8C98A5' }} stroke="#E6EDF2" />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#03323A', borderRadius: '10px', color: '#fff', fontSize: '11px', border: 'none' }}
+                        labelStyle={{ fontWeight: 'bold', color: '#10B981' }}
+                      />
+                      <Area type="monotone" dataKey="rate" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill="url(#facultyAttendanceGrad)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-              ) : (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:'12px' }}>
-                  {rawCourses.map((course, idx) => {
-                    const code = course.courseCode || course.course_code || '—';
-                    const name = course.courseName || course.course_name || course.name || (typeof course === 'string' ? course : 'Course');
-                    const count = course.studentCount || course.student_count || 0;
-                    const colors = [
-                      { bg:'#f0fdf4', border:'#bbf7d0', code:'#4c1d95' },
-                      { bg:'#fdf4ff', border:'#e9d5ff', code:'#9333ea' },
-                      { bg:'#eff6ff', border:'#bfdbfe', code:'#2563eb' },
-                      { bg:'#fff7ed', border:'#fed7aa', code:'#ea580c' },
-                    ];
-                    const c = colors[idx % colors.length];
-                    return (
-                      <div key={idx} style={{ background:c.bg, border:`1px solid ${c.border}`, borderRadius:'12px', padding:'16px', display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+              </div>
+
+              {/* Department Announcements Card */}
+              <div className="lg:col-span-3 p-4 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-bold text-[#003A40] tracking-wide">Announcements</h3>
+                  <button onClick={() => navigate('/notifications')} className="text-[11px] font-bold text-indigo-600 hover:underline cursor-pointer">
+                    View All
+                  </button>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-start gap-2 p-2 rounded-xl bg-violet-50/60 border border-violet-100">
+                    <div className="w-6 h-6 rounded-lg bg-violet-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <BookOpen className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-[#003A40] text-[11px] truncate">Mid-Semester Exam Schedule</p>
+                      <p className="text-[10px] text-[#5F6B7A] line-clamp-1">Submit internal question papers by 12th July.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 p-2 rounded-xl bg-emerald-50/60 border border-emerald-100">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-[#003A40] text-[11px] truncate">Faculty Development Program</p>
+                      <p className="text-[10px] text-[#5F6B7A] line-clamp-1">AI & ML Workshop on 25th July.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Operations Row: Today Schedule Table & Grade Distribution Donut Chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-shrink-0">
+              {/* Course Schedule - Today Table */}
+              <div className="lg:col-span-7 p-4 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold text-[#003A40] tracking-wide">My Lecture Schedule - Today</h3>
+                  <button onClick={() => navigate('/timetable')} className="text-[11px] font-bold text-indigo-600 hover:underline cursor-pointer">
+                    Full Timetable
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-[#8C98A5] text-[10px] font-bold uppercase tracking-wider">
+                        <th className="pb-2 font-semibold">Time</th>
+                        <th className="pb-2 font-semibold">Course</th>
+                        <th className="pb-2 font-semibold">Room</th>
+                        <th className="pb-2 font-semibold">Students</th>
+                        <th className="pb-2 font-semibold text-right">Action / Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {scheduleToday.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-2.5 text-[11px] font-medium text-slate-500">{item.time}</td>
+                          <td className="py-2.5 font-bold text-[#003A40]">{item.course}</td>
+                          <td className="py-2.5 text-[11px] text-slate-600">{item.room}</td>
+                          <td className="py-2.5 text-[11px] font-medium text-slate-500">{item.students}</td>
+                          <td className="py-2.5 text-right">
+                            <button
+                              onClick={() => setIsAttendanceModalOpen(true)}
+                              className={`text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase cursor-pointer transition-all ${
+                                item.isOngoing 
+                                  ? 'bg-emerald-600 text-white shadow-xs hover:bg-emerald-700' 
+                                  : 'bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100'
+                              }`}
+                            >
+                              {item.isOngoing ? 'Mark Attendance' : 'Schedule'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Student Grade Distribution Donut Chart */}
+              <div className="lg:col-span-5 p-4 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs flex flex-col justify-between">
+                <h3 className="text-xs font-bold text-[#003A40] tracking-wide mb-2">Student Performance Grades</h3>
+
+                <div className="flex items-center gap-4">
+                  {/* Donut Chart */}
+                  <div className="w-36 h-36 relative flex-shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={gradeDistData}
+                          innerRadius={42}
+                          outerRadius={62}
+                          paddingAngle={3}
+                          dataKey="value"
+                        >
+                          {gradeDistData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                      <span className="text-xs font-extrabold text-[#003A40]">140</span>
+                      <span className="text-[9px] font-semibold text-[#8C98A5]">Students</span>
+                    </div>
+                  </div>
+
+                  {/* Legend List */}
+                  <div className="flex-1 space-y-1.5 text-xs">
+                    {gradeDistData.map((item) => (
+                      <div key={item.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          <span className="font-bold text-[#003A40]">{item.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-semibold text-slate-700">{item.value}</span>
+                          <span className="text-[10px] text-slate-400 ml-1">({item.pct})</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Lower Row: Upcoming Events, Quick Actions & Recent Activity Feed */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-shrink-0">
+              {/* Upcoming Academic Events */}
+              <div className="lg:col-span-4 p-4 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-[#003A40] tracking-wide">Upcoming Academic Events</h3>
+                  <button onClick={() => navigate('/timetable')} className="text-[11px] font-bold text-indigo-600 hover:underline cursor-pointer">
+                    View Calendar
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {upcomingEvents.map((evt, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 rounded-xl bg-slate-50/80 border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 flex flex-col items-center justify-center leading-none flex-shrink-0">
+                          <span className="text-[9px] font-bold uppercase">{evt.month}</span>
+                          <span className="text-xs font-extrabold mt-0.5">{evt.day}</span>
+                        </div>
                         <div>
-                          <div style={{ fontSize:'11px', fontWeight:'700', color:c.code, marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.5px' }}>{code}</div>
-                          <div style={{ fontSize:'13px', fontWeight:'600', color:'#1f2937', marginBottom:'8px', lineHeight:'1.3' }}>{name}</div>
-                          {count > 0 && (
-                            <span style={{ fontSize:'10px', fontWeight:'700', background:'white', color:c.code, border:`1px solid ${c.border}`, padding:'2px 8px', borderRadius:'100px' }}>
-                              {count} Students
-                            </span>
-                          )}
+                          <p className="text-xs font-bold text-[#003A40]">{evt.title}</p>
+                          <p className="text-[10px] text-[#5F6B7A]">{evt.subtitle}</p>
                         </div>
-                        <span className="material-symbols-outlined" style={{ fontSize:'20px', color:c.code, opacity:0.4 }}>school</span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Today's Classes */}
-            <div style={{ background:'white', borderRadius:'16px', padding:'24px', boxShadow:'0 4px 20px rgba(0,0,0,0.06)', border:'1px solid #f1f5f9' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                  <div style={{ width:'36px', height:'36px', background:'#2563eb', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'white' }}>schedule</span>
-                  </div>
-                  <h4 style={{ fontSize:'15px', fontWeight:'700', color:'#1f2937', margin:0 }}>Today's Classes</h4>
-                </div>
-              </div>
-
-              {dataLoading ? (
-                <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-                  {[1,2].map(i=><div key={i} style={{ height:'50px', background:'#f9fafb', borderRadius:'10px' }}/>)}
-                </div>
-              ) : rawClasses.length === 0 && rawCourses.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'24px', color:'#9ca3af' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize:'36px', display:'block', marginBottom:'8px', opacity:0.3 }}>event_busy</span>
-                  <p style={{ fontSize:'13px' }}>No classes scheduled today</p>
-                </div>
-              ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-                  {(rawClasses.length > 0 ? rawClasses : rawCourses.map(c => c.courseCode || c.courseName || c)).map((cls, idx) => {
-                    const label = typeof cls === 'string' ? cls : (cls.code || cls.name || cls.courseCode || JSON.stringify(cls));
-                    const times = ['09:00 AM – 10:30 AM', '11:00 AM – 12:30 PM', '02:00 PM – 03:30 PM', '04:00 PM – 05:30 PM'];
-                    return (
-                      <div key={idx} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 16px', background:'#f9fafb', borderRadius:'10px', border:'1px solid #f1f5f9' }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-                          <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:'#4c1d95', flexShrink:0 }}/>
-                          <div>
-                            <div style={{ fontSize:'13px', fontWeight:'700', color:'#1f2937' }}>{label}</div>
-                            <div style={{ fontSize:'11px', color:'#6b7280', marginTop:'2px' }}>Section {String.fromCharCode(65+idx)}</div>
-                          </div>
-                        </div>
-                        <span style={{ fontSize:'11px', fontWeight:'600', color:'#4c1d95', background:'#f0fdf4', border:'1px solid #bbf7d0', padding:'3px 10px', borderRadius:'100px', whiteSpace:'nowrap' }}>
-                          {times[idx % times.length]}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Upcoming Exams */}
-            <div style={{ background:'white', borderRadius:'16px', padding:'24px', boxShadow:'0 4px 20px rgba(0,0,0,0.06)', border:'1px solid #f1f5f9' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                  <div style={{ width:'36px', height:'36px', background:'#dc2626', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'white' }}>assignment</span>
-                  </div>
-                  <h4 style={{ fontSize:'15px', fontWeight:'700', color:'#1f2937', margin:0 }}>Upcoming Exams</h4>
-                </div>
-                <span style={{ fontSize:'11px', fontWeight:'700', background:'#fef2f2', color:'#dc2626', border:'1px solid #fee2e2', borderRadius:'100px', padding:'3px 10px' }}>
-                  {upcomingExams.length} Scheduled
-                </span>
-              </div>
-
-              {dataLoading ? (
-                <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-                  {[1,2].map(i=><div key={i} style={{ height:'50px', background:'#f9fafb', borderRadius:'10px' }}/>)}
-                </div>
-              ) : upcomingExams.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'24px', color:'#9ca3af' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize:'36px', display:'block', marginBottom:'8px', opacity:0.3 }}>event_busy</span>
-                  <p style={{ fontSize:'13px' }}>No upcoming exams scheduled</p>
-                </div>
-              ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-                  {upcomingExams.map((exam, idx) => (
-                    <div key={idx} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 16px', background:'#f9fafb', borderRadius:'10px', border:'1px solid #f1f5f9', flexWrap:'wrap', gap:'10px' }}>
-                      <div>
-                        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-                          <span style={{ fontSize:'13px', fontWeight:'700', color:'#1f2937' }}>{exam.code}: {exam.name}</span>
-                          <span style={{ fontSize:'10px', fontWeight:'700', background:'#e2e8f0', color:'#475569', padding:'2px 6px', borderRadius:'4px' }}>{exam.room}</span>
-                        </div>
-                        <div style={{ fontSize:'11px', color:'#6b7280', marginTop:'2px' }}>Type: {exam.type}</div>
-                      </div>
-                      <span style={{ fontSize:'11px', fontWeight:'600', color:'#dc2626', background:'#fef2f2', border:'1px solid #fee2e2', padding:'3px 10px', borderRadius:'100px', whiteSpace:'nowrap' }}>
-                        {exam.date} @ {exam.time}
+                      <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase border ${evt.color}`}>
+                        {evt.tag}
                       </span>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-          </div>
+              {/* Quick Actions Grid */}
+              <div className="lg:col-span-4 p-4 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs space-y-3">
+                <h3 className="text-xs font-bold text-[#003A40] tracking-wide">Faculty Quick Actions</h3>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    onClick={() => setIsAttendanceModalOpen(true)}
+                    className="p-2.5 rounded-xl border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-100/60 text-indigo-700 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+                  >
+                    <ClipboardList className="w-4 h-4 text-indigo-600" />
+                    <span>Mark Attendance</span>
+                  </button>
 
-          {/* Right column */}
-          <div style={{ display:'flex', flexDirection:'column', gap:'20px' }}>
+                  <button
+                    onClick={() => setIsMarksModalOpen(true)}
+                    className="p-2.5 rounded-xl border border-violet-100 bg-violet-50/50 hover:bg-violet-100/60 text-violet-700 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+                  >
+                    <GraduationCap className="w-4 h-4 text-violet-600" />
+                    <span>Publish Marks</span>
+                  </button>
 
-            {/* Newsletter Feed */}
-            <NewsletterWidget role={role} userId={sessionUserId} />
+                  <button
+                    onClick={() => navigate(`/faculty${roleQuery}`)}
+                    className="p-2.5 rounded-xl border border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100/60 text-emerald-700 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+                  >
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Request Leave</span>
+                  </button>
 
-            {/* Profile Details card */}
-            <div style={{ background:'white', borderRadius:'16px', padding:'24px', boxShadow:'0 4px 20px rgba(0,0,0,0.06)', border:'1px solid #f1f5f9' }}>
-              <div style={{ fontSize:'11px', fontWeight:'700', color:'#9ca3af', textTransform:'uppercase', letterSpacing:'1px', marginBottom:'18px' }}>Profile Details</div>
-              <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
-                {[
-                  { icon:'mail', label:'Email', value: email, href:`mailto:${email}` },
-                  { icon:'call', label:'Phone', value: phone, href:`tel:${phone}` },
-                  { icon:'domain', label:'Department', value: department },
-                  { icon:'badge', label:'Designation', value: designation },
-                  { icon:'location_on', label:'Office', value: officeLocation },
-                ].map(item => (
-                  <div key={item.label} style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-                    <div style={{ width:'32px', height:'32px', background:'#f0fdf4', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      <span className="material-symbols-outlined" style={{ fontSize:'16px', color:'#4c1d95' }}>{item.icon}</span>
-                    </div>
-                    <div style={{ minWidth:0 }}>
-                      <div style={{ fontSize:'10px', color:'#9ca3af', fontWeight:'600', marginBottom:'1px' }}>{item.label}</div>
-                      {item.href && item.value !== '—'
-                        ? <a href={item.href} style={{ fontSize:'13px', color:'#4c1d95', fontWeight:'500', textDecoration:'none', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.value}</a>
-                        : <div style={{ fontSize:'13px', color: item.value !== '—' ? '#1f2937' : '#d1d5db', fontWeight:'500' }}>{item.value}</div>
-                      }
+                  <button
+                    onClick={() => navigate(`/timetable${roleQuery}`)}
+                    className="p-2.5 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-blue-100/60 text-blue-700 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-blue-600" />
+                    <span>My Timetable</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Faculty Recent Activity */}
+              <div className="lg:col-span-4 p-4 bg-white rounded-2xl border border-[#E6EDF2] shadow-2xs space-y-3">
+                <h3 className="text-xs font-bold text-[#003A40] tracking-wide">Recent Activity & Logs</h3>
+                
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-100 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <div>
+                      <p className="font-bold text-[#003A40] text-[11px]">Portal Status</p>
+                      <p className="text-[10px] text-emerald-700">Active</p>
                     </div>
                   </div>
-                ))}
+
+                  <div className="p-2 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <div>
+                      <p className="font-bold text-[#003A40] text-[11px]">Teaching Load</p>
+                      <p className="text-[10px] text-blue-700">14 hrs / week</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#5F6B7A] font-medium">Marked CS303 attendance (48/50)</span>
+                    <span className="text-slate-400 text-[10px]">1h ago</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#5F6B7A] font-medium">Published Midterm CS306 marks</span>
+                    <span className="text-slate-400 text-[10px]">4h ago</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#5F6B7A] font-medium">Approved 2 student OD requests</span>
+                    <span className="text-slate-400 text-[10px]">1d ago</span>
+                  </div>
+                </div>
               </div>
             </div>
+          </>
+        )}
 
-            {/* Leave Requests */}
-            <div style={{ background:'white', borderRadius:'16px', padding:'24px', boxShadow:'0 4px 20px rgba(0,0,0,0.06)', border:'1px solid #f1f5f9' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'18px' }}>
-                <div style={{ width:'36px', height:'36px', background:'#f59e0b', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'white' }}>beach_access</span>
-                </div>
-                <h4 style={{ fontSize:'15px', fontWeight:'700', color:'#1f2937', margin:0 }}>Leave Requests</h4>
-              </div>
+        {/* Action Modals */}
+        <AttendanceModal 
+          isOpen={isAttendanceModalOpen}
+          onClose={() => setIsAttendanceModalOpen(false)}
+          onSubmit={handleAttendanceSubmit}
+        />
 
-              {dataLoading ? (
-                <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-                  {[1,2].map(i=><div key={i} style={{ height:'36px', background:'#f9fafb', borderRadius:'8px' }}/>)}
-                </div>
-              ) : leaveRequests.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'20px', color:'#9ca3af' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize:'32px', display:'block', marginBottom:'6px', opacity:0.3 }}>event_available</span>
-                  <p style={{ fontSize:'12px' }}>No leave records found</p>
-                </div>
-              ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-                  {leaveRequests.slice(0, 4).map((lr, i) => {
-                    const statusBg = lr.status === 'Approved' ? { bg:'#dcfce7', text:'#166534' }
-                      : lr.status === 'Rejected' ? { bg:'#fee2e2', text:'#991b1b' }
-                      : { bg:'#fef3c7', text:'#92400e' };
-                    return (
-                      <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 12px', background:'#f9fafb', borderRadius:'8px' }}>
-                        <div>
-                          <div style={{ fontSize:'12px', fontWeight:'600', color:'#1f2937' }}>{lr.leaveType || lr.leave_type || 'Leave'}</div>
-                          <div style={{ fontSize:'10px', color:'#6b7280' }}>{lr.dates || lr.startDate || lr.date || '—'}</div>
-                        </div>
-                        <span style={{ fontSize:'10px', fontWeight:'700', background: statusBg.bg, color: statusBg.text, padding:'2px 8px', borderRadius:'100px' }}>
-                          {(lr.status || 'Pending').toUpperCase()}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-          </div>
-        </div>
+        <PublishMarksModal
+          isOpen={isMarksModalOpen}
+          onClose={() => setIsMarksModalOpen(false)}
+          onSubmit={handleMarksSubmit}
+        />
 
       </div>
-
-      <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        @media (max-width: 1024px) {
-          .dashboard-main-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-        @media (max-width: 640px) {
-          .hero-profile-card {
-            padding: 20px !important;
-          }
-          .hero-profile-container {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 20px !important;
-          }
-          .hero-profile-left {
-            flex-direction: column !important;
-            align-items: center !important;
-            text-align: center !important;
-            gap: 16px !important;
-          }
-          .hero-profile-left h2 {
-            justify-content: center !important;
-          }
-          .hero-info-container {
-            display: flex !important;
-            flex-direction: column !important;
-            align-items: center !important;
-          }
-          .hero-name-status {
-            flex-direction: column !important;
-            align-items: center !important;
-            gap: 8px !important;
-            margin-bottom: 8px !important;
-          }
-          .hero-profile-actions {
-            width: 100% !important;
-            flex-direction: column !important;
-            gap: 8px !important;
-          }
-          .hero-profile-actions button {
-            width: 100% !important;
-            justify-content: center !important;
-            padding: 12px 20px !important;
-          }
-        }
-        @media (max-width: 480px) {
-          .faculty-dashboard {
-            gap: 16px !important;
-          }
-          .kpi-grid-container {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
-
-      {/* Modals */}
-      <AttendanceModal
-        isOpen={isAttendanceModalOpen}
-        onClose={() => setIsAttendanceModalOpen(false)}
-        onSubmit={(classId, date) => console.log('Attendance:', classId, date)}
-      />
-      <PublishMarksModal
-        isOpen={isMarksModalOpen}
-        onClose={() => setIsMarksModalOpen(false)}
-        onSubmit={(classId, marksType) => console.log('Marks:', classId, marksType)}
-      />
     </Layout>
   );
 }

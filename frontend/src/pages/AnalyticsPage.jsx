@@ -81,7 +81,6 @@ const MOCK_ANALYTICS_DATA = {
     { name: 'Medical Laboratory Technology', code: 'MLT', avgAttendance: 0, passRate: 0, students: 0, faculty: 0, cgpa: 0 },
     { name: 'Operation Theatre & Anaesthesia Technology', code: 'OTAT', avgAttendance: 0, passRate: 0, students: 0, faculty: 0, cgpa: 0 },
     { name: 'Radiography & Imaging Technology', code: 'RIT', avgAttendance: 0, passRate: 0, students: 0, faculty: 0, cgpa: 0 },
-  ]
   ],
   studentsByDept: { CS: 420, ECE: 310, Mech: 260, Phys: 150, Math: 140 },
   studentsByYear: { '1st Year': 360, '2nd Year': 340, '3rd Year': 300, '4th Year': 280 },

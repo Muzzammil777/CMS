@@ -908,6 +908,7 @@ def _build_faculty_lookup_query(faculty_admission_id: str) -> dict[str, Any]:
 
 
 @router.get("/faculty")
+@router.get("/faculty/")
 async def get_faculty_admissions():
     """Get all faculty admissions"""
     faculty_admissions_collection = _faculty_admissions_collection()

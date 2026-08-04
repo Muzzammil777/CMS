@@ -114,7 +114,7 @@ export default function App() {
               }
             />
             <Route path="/timetable" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty', 'hod']}><TimetablePage /></ProtectedRoute>} />
-            <Route path="/attendance" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty', 'finance', 'hod']}><AttendancePage /></ProtectedRoute>} />
+            <Route path="/attendance" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty', 'hod']}><AttendancePage /></ProtectedRoute>} />
             <Route path="/exams" element={<ProtectedRoute allowedRoles={['student', 'admin', 'faculty', 'hod']}><ExamsPage /></ProtectedRoute>} />
             <Route path="/placement" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'student', 'hod']}><PlacementPage /></ProtectedRoute>} />
             <Route path="/facility" element={<ProtectedRoute allowedRoles={['admin', 'faculty', 'hod']}><FacilityPage /></ProtectedRoute>} />

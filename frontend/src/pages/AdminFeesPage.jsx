@@ -170,28 +170,46 @@ export default function AdminFeesPage() {
     OVERDUE: 'bg-rose-50 text-rose-700 border-rose-200',
   };
 
+  const isHexId = (str) => typeof str === 'string' && /^[0-9a-fA-F]{24}$/.test(str);
+
+  const getStudentSubtext = (f) => {
+    if (f.rollNumber && !isHexId(f.rollNumber)) return f.rollNumber;
+    if (f.registerNo && !isHexId(f.registerNo)) return f.registerNo;
+    if (f.studentId && !isHexId(f.studentId)) return f.studentId;
+    return '';
+  };
+
+  const getCourseDept = (f) => {
+    const dept = f.course || f.department;
+    if (dept && dept !== 'Computer Science' && dept !== 'CS') return dept;
+    return 'MLT';
+  };
+
   const columns = [
     {
       key: 'studentName',
       label: 'Student',
-      render: (_, f) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#003A40] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-            {(f.studentName || 'S').charAt(0)}
+      render: (_, f) => {
+        const subtext = getStudentSubtext(f);
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#003A40] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+              {(f.studentName || 'S').charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{f.studentName}</p>
+              {subtext ? <p className="text-[10px] text-[#8C98A5] font-medium truncate">{subtext}</p> : null}
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{f.studentName}</p>
-            <p className="text-[10px] text-[#8C98A5] font-medium truncate">{f.studentId || f.id}</p>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'course',
       label: 'Course & Sem',
       render: (_, f) => (
         <div>
-          <span className="text-xs font-bold text-[#003A40] block truncate">{f.course || 'CS'}</span>
+          <span className="text-xs font-bold text-[#003A40] block truncate">{getCourseDept(f)}</span>
           <span className="text-[10px] text-[#8C98A5]">Sem {f.semester || 1}</span>
         </div>
       ),

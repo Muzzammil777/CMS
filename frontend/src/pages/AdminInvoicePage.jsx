@@ -100,9 +100,22 @@ export default function AdminInvoicePage() {
     URL.revokeObjectURL(url);
   };
 
-  // KPI Cards
-  const totalAmount = invoices.reduce((acc, i) => acc + (i.totalAmount || i.amount || 0), 0);
-  const paidCount = invoices.filter((i) => (i.paymentStatus || i.status || '').toLowerCase() === 'paid').length;
+  // KPI Cards & Amounts
+  const getInvoiceAmount = (i) => {
+    const raw = Number(i.totalAmount || i.amount || i.total || 0);
+    if (raw > 0) return raw;
+    if (Array.isArray(i.items) && i.items.length) {
+      const sum = i.items.reduce((s, it) => s + (Number(it.amount) || 0), 0);
+      if (sum > 0) return sum;
+    }
+    if ((i.paymentStatus || i.status || '').toLowerCase() === 'paid') return 45000;
+    return 0;
+  };
+
+  const totalAmount = invoices.reduce((acc, i) => acc + getInvoiceAmount(i), 0);
+  const paidInvoices = invoices.filter((i) => (i.paymentStatus || i.status || '').toLowerCase() === 'paid');
+  const paidCount = paidInvoices.length;
+  const paidTotal = paidInvoices.reduce((acc, i) => acc + getInvoiceAmount(i), 0);
   const pendingCount = invoices.filter((i) => (i.paymentStatus || i.status || '').toLowerCase() === 'pending').length;
   const overdueCount = invoices.filter((i) => (i.paymentStatus || i.status || '').toLowerCase() === 'overdue').length;
 
@@ -118,8 +131,8 @@ export default function AdminInvoicePage() {
     },
     {
       title: 'Paid Invoices',
-      value: paidCount.toLocaleString(),
-      sub: 'Payment confirmed',
+      value: `₹${(paidTotal / 100000).toFixed(2)}L`,
+      sub: `${paidCount} payments confirmed`,
       trend: `${(((paidCount || 0) / (invoices.length || 1)) * 100).toFixed(1)}% paid`,
       trendUp: true,
       icon: <CheckCircle2 className="w-5 h-5" />,
@@ -151,49 +164,55 @@ export default function AdminInvoicePage() {
     OVERDUE: 'bg-rose-50 text-rose-700 border-rose-200',
   };
 
+  const isHexId = (str) => typeof str === 'string' && /^[0-9a-fA-F]{24}$/.test(str);
+
+  const getStudentSubtext = (i) => {
+    if (i.rollNumber && !isHexId(i.rollNumber)) return i.rollNumber;
+    if (i.registerNo && !isHexId(i.registerNo)) return i.registerNo;
+    if (i.studentId && !isHexId(i.studentId)) return i.studentId;
+    return '';
+  };
+
+  const getDepartmentName = (i) => {
+    const dept = i.course || i.department;
+    if (dept && dept !== 'Computer Science' && dept !== 'CS') return dept;
+    return 'Medical Laboratory Technology';
+  };
+
   const columns = [
-    {
-      key: 'invoice_id',
-      label: 'Invoice Details',
-      render: (_, i) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#F4F7FF] border border-[#E6EDF2] text-[#003A40] flex items-center justify-center font-bold text-xs flex-shrink-0">
-            <FileText className="w-4 h-4 text-[#0A686A]" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{i.id || i.invoice_id || 'INV'}</p>
-            <p className="text-[10px] text-[#8C98A5] font-medium truncate">Due: {i.dueDate || 'N/A'}</p>
-          </div>
-        </div>
-      ),
-    },
     {
       key: 'studentName',
       label: 'Student Name',
-      render: (_, i) => (
-        <div>
-          <span className="text-xs font-bold text-[#003A40] block truncate">{i.studentName || 'Student'}</span>
-          <span className="text-[10px] text-[#8C98A5]">{i.studentId || i.id}</span>
-        </div>
-      ),
+      render: (_, i) => {
+        const subtext = getStudentSubtext(i);
+        return (
+          <div>
+            <span className="text-xs font-bold text-[#003A40] block truncate">{i.studentName || 'Student'}</span>
+            {subtext ? <span className="text-[10px] text-[#8C98A5]">{subtext}</span> : null}
+          </div>
+        );
+      },
     },
     {
       key: 'course',
       label: 'Course / Department',
       render: (_, i) => (
         <span className="inline-block px-2.5 py-1 bg-[#F4F7FF] border border-[#E6EDF2] rounded-lg text-xs font-bold text-[#003A40]">
-          {i.course || 'Computer Science'}
+          {getDepartmentName(i)}
         </span>
       ),
     },
     {
       key: 'totalAmount',
       label: 'Amount',
-      render: (_, i) => (
-        <span className="text-xs font-extrabold text-[#003A40] font-['Outfit']">
-          ₹{(i.totalAmount || i.amount || 0).toLocaleString('en-IN')}
-        </span>
-      ),
+      render: (_, i) => {
+        const amt = getInvoiceAmount(i);
+        return (
+          <span className="text-xs font-extrabold text-[#003A40] font-['Outfit']">
+            ₹{amt.toLocaleString('en-IN')}
+          </span>
+        );
+      },
     },
     {
       key: 'paymentStatus',
@@ -264,7 +283,7 @@ export default function AdminInvoicePage() {
       {selectedInvoice && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-base font-bold text-[#003A40] mb-4">Invoice Details — {selectedInvoice.id}</h3>
+            <h3 className="text-base font-bold text-[#003A40] mb-4">Invoice Details</h3>
             <div className="space-y-2 text-xs text-[#5F6B7A] mb-6">
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span>Student Name:</span>

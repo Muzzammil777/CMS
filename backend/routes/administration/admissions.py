@@ -385,7 +385,6 @@ async def get_approved_students_for_fees():
     admissions_collection = _admissions_collection()
     data: list[dict[str, Any]] = []
 
-    # Query: only approved students
     query = {
         "$and": [
             {"$or": [{"role": "student"}, {"type": "student"}]},
@@ -393,20 +392,13 @@ async def get_approved_students_for_fees():
         ]
     }
     
+    seen_ids = set()
     async for item in admissions_collection.find(query).sort("created_at", -1):
         serialized = _serialize_admission(item)
         student_id = serialized.get("id")
-        
-        # STRICT VALIDATION: Verify using EXACT field match (not $or queries)
-        # This prevents false positives from corrupted records
-        if student_id:
-            # Try exact match on 'id' field first (most reliable)
-            exact_match = await admissions_collection.find_one({"id": student_id})
-            
-            if exact_match:
-                # Double-check this is the same student (compare MongoDB IDs)
-                if str(exact_match.get("_id")) == str(item.get("_id")):
-                    data.append(serialized)
+        if student_id and student_id not in seen_ids:
+            seen_ids.add(student_id)
+            data.append(serialized)
 
     return {"approved_students": data, "count": len(data)}
 

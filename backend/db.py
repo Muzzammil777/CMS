@@ -61,6 +61,7 @@ async def lifespan(app):
 
 
         print(f"Connected to MongoDB successfully (Database: {db.name})")
+        await ensure_indexes(db)
     except Exception as error:
         print(f"FAILED to connect to MongoDB: {error}")
         db = None
@@ -70,6 +71,40 @@ async def lifespan(app):
     if client:
         client.close()
         print("Disconnected from MongoDB.")
+
+
+async def ensure_indexes(database):
+    if database is None:
+        return
+    try:
+        await database["students"].create_index([("id", 1)])
+        await database["students"].create_index([("rollNumber", 1)])
+        await database["students"].create_index([("department", 1)])
+
+        await database["faculty"].create_index([("employeeId", 1)])
+        await database["faculty"].create_index([("departmentId", 1)])
+        await database["faculty"].create_index([("department_id", 1)])
+
+        await database["academic_attendance_markings"].create_index([("entries.studentId", 1)])
+        await database["academic_attendance_markings"].create_index([("date", 1)])
+
+        await database["academic_od_requests"].create_index([("studentId", 1), ("status", 1)])
+
+        await database["faculty_performance"].create_index([("facultyId", 1)])
+        await database["faculty_leave"].create_index([("facultyId", 1)])
+        await database["career_pathways"].create_index([("faculty_id", 1)])
+
+        await database["admissions"].create_index([("id", 1)])
+        await database["admissions"].create_index([("status", 1)])
+        await database["admissions"].create_index([("role", 1)])
+        await database["admissions"].create_index([("type", 1)])
+
+        await database["fees_structure"].create_index([("student_id", 1)])
+        await database["payroll"].create_index([("staffId", 1)])
+
+        print("Database indexes created/verified successfully.")
+    except Exception as e:
+        print(f"Warning: Failed to create database indexes: {e}")
 
 
 def get_db():

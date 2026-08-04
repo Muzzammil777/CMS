@@ -704,8 +704,6 @@ async def list_faculty(
                 {"email": {"$regex": search, "$options": "i"}},
             ]
 
-        # Projection: only the fields needed for the list/table view.
-        # Skips heavy embedded arrays; per-faculty stats are fetched on detail page.
         projection = {
             "_id": 1,
             "id": 1,
@@ -734,8 +732,110 @@ async def list_faculty(
         cursor = collection.find(query, projection)
         faculty_list = []
         async for doc in cursor:
-            faculty_doc = serialize_doc(doc)
-            faculty_list.append(faculty_doc)
+            faculty_list.append(serialize_doc(doc))
+
+        emp_ids = [f.get("employeeId") for f in faculty_list if f.get("employeeId")]
+
+        perf_map = {}
+        leave_map = {}
+        career_map = {}
+
+        if emp_ids:
+            perf_docs = await perf_col.find({"facultyId": {"$in": emp_ids}}).to_list(None)
+            for p in perf_docs:
+                fid = p.get("facultyId")
+                if fid:
+                    perf_map.setdefault(fid, []).append(p)
+
+            leave_docs = await leave_col.find({"facultyId": {"$in": emp_ids}}).to_list(None)
+            for l in leave_docs:
+                fid = l.get("facultyId")
+                if fid:
+                    leave_map.setdefault(fid, []).append(l)
+
+            career_docs = await career_col.find({"faculty_id": {"$in": emp_ids}}).to_list(None)
+            for c in career_docs:
+                fid = c.get("faculty_id")
+                if fid:
+                    if fid not in career_map or c.get("status") == "Active":
+                        career_map[fid] = c
+
+        for faculty_doc in faculty_list:
+            emp_id = faculty_doc.get("employeeId")
+            if emp_id:
+                performance_records = perf_map.get(emp_id, [])
+                leave_records = leave_map.get(emp_id, [])
+                career_path = career_map.get(emp_id)
+
+                avg_feedback = 0
+                if performance_records:
+                    scored = [
+                        float(record.get("student_feedback_score", 0) or 0)
+                        for record in performance_records
+                    ]
+                    avg_feedback = round(sum(scored) / len(scored), 2)
+
+                approved_leaves = [
+                    record
+                    for record in leave_records
+                    if str(record.get("status", "")).lower() == "approved"
+                ]
+                pending_leaves = [
+                    record
+                    for record in leave_records
+                    if str(record.get("status", "")).lower() == "pending"
+                ]
+
+                total_leave_days = 0
+                for leave in approved_leaves:
+                    try:
+                        start_date = leave.get("start_date")
+                        end_date = leave.get("end_date")
+                        if isinstance(start_date, datetime) and isinstance(end_date, datetime):
+                            total_leave_days += max((end_date - start_date).days + 1, 0)
+                        else:
+                            total_leave_days += int(leave.get("number_of_days", 0) or 0)
+                    except Exception:
+                        continue
+
+                next_role = None
+                designation_str = str(faculty_doc.get("designation", "")).lower()
+                if designation_str:
+                    if "assistant" in designation_str:
+                        next_role = "Associate Professor"
+                    elif "associate" in designation_str:
+                        next_role = "Professor"
+                    elif "professor" in designation_str:
+                        next_role = "HOD / Dean Track"
+                    else:
+                        next_role = "Senior Faculty"
+
+                faculty_doc["performance_summary"] = {
+                    "overall_status": faculty_doc.get("status", "Good"),
+                    "pass_rate": faculty_doc.get("pass_rate", 0),
+                    "attendance_rate": faculty_doc.get("attendance_rate", 0),
+                    "avg_feedback_score": avg_feedback,
+                    "records_count": len(performance_records),
+                }
+
+                faculty_doc["career_path_summary"] = {
+                    "current_designation": faculty_doc.get("designation"),
+                    "next_role": (career_path or {}).get("target_designation") or next_role,
+                    "status": (career_path or {}).get("status") or "Not Started",
+                    "target_years": (career_path or {}).get("target_years"),
+                }
+
+                faculty_doc["leave_attendance_summary"] = {
+                    "employment_status": faculty_doc.get("employment_status", "Active"),
+                    "attendance_rate": faculty_doc.get("attendance_rate", 0),
+                    "leave_requests_count": len(leave_records),
+                    "approved_leaves": len(approved_leaves),
+                    "pending_leaves": len(pending_leaves),
+                    "total_leave_days": total_leave_days,
+                }
+
+        if faculty_list:
+            return faculty_list
 
         if faculty_list:
             return faculty_list
@@ -814,7 +914,6 @@ async def list_faculty_dropdown(department: Optional[str] = None):
         {"id": "FAC018", "employeeId": "FAC018", "name": "Dr. Geetha V", "designation": "Professor", "department": "Information Technology", "email": "geetha.v@mit.edu", "phone": "+91 98765 43230"},
         {"id": "FAC026", "employeeId": "FAC026", "name": "Dr. K. Rahini", "designation": "Professor", "department": "Medical Laboratory Technology", "email": "rahini.k@mit.edu", "phone": "+91 98765 43240"},
     ]
-
 
 
 @router.post("")

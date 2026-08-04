@@ -10,7 +10,7 @@ from backend.db import get_db
 from backend.dev_store import DEV_STORE
 from backend.schemas.common import StudentRecord
 from backend.utils.mongo import serialize_doc
-from backend.utils.attendance_utils import compute_student_attendance_stats
+from backend.utils.attendance_utils import compute_student_attendance_stats, compute_bulk_student_attendance_stats
 
 router = APIRouter(prefix="/api/students", tags=["students"])
 
@@ -312,7 +312,12 @@ def _seed_dev_students() -> None:
 
 
 @router.get("")
-async def list_students():
+async def list_students(
+    department: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: Optional[int] = None,
+    skip: Optional[int] = 0,
+):
     try:
         db = get_db()
         use_db = True
@@ -325,18 +330,37 @@ async def list_students():
 
     if not use_db:
         students = deepcopy(DEV_STORE["students"])
-        # Return only lightweight fields for list view
-        return [
-            {k: s.get(k) for k in (
-                "id", "student_id", "rollNumber", "name", "email", "phone",
-                "department", "departmentId", "year", "semester", "section",
-                "status", "feeStatus", "cgpa", "attendancePct", "avatar", "enrollDate"
-            )}
-            for s in students
+        if department:
+            students = [s for s in students if department.lower() in (s.get("department") or "").lower()]
+        if search:
+            students = [
+                s for s in students if
+                search.lower() in (s.get("name") or "").lower() or
+                search.lower() in (s.get("rollNumber") or s.get("id") or "").lower() or
+                search.lower() in (s.get("email") or "").lower()
+            ]
+        if limit:
+            students = students[skip : skip + limit]
+        bulk_stats = await compute_bulk_student_attendance_stats(students, db=None)
+        for s in students:
+            key = s.get("id") or s.get("rollNumber") or s.get("student_id")
+            present, total, pct = bulk_stats.get(key, (0, 0, 0))
+            s["attendancePct"] = pct
+            s["attendance_present"] = present
+            s["attendance_total"] = total
+        return students
+
+    query = {}
+    if department:
+        query["department"] = {"$regex": department, "$options": "i"}
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"rollNumber": {"$regex": search, "$options": "i"}},
+            {"id": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
         ]
 
-    # Projection: only fetch the fields needed for the table view.
-    # This avoids transferring large arrays (subjects, fees, documents, etc.)
     projection = {
         "_id": 1,
         "id": 1,
@@ -359,24 +383,30 @@ async def list_students():
         "enrollDate": 1,
     }
 
+    cursor = db["students"].find(query, projection).sort("_id", -1)
+    if skip:
+        cursor = cursor.skip(skip)
+    if limit:
+        cursor = cursor.limit(limit)
+
     rows = []
-    async for row in db["students"].find({}, projection).sort("_id", -1):
+    async for row in cursor:
         serialized = serialize_doc(row)
-
-        # Ensure student_id is always present
         if not serialized.get("student_id"):
-            serialized["student_id"] = serialized.get("id") or serialized.get("rollNumber") or str(row.get("_id", ""))
-
-        # Ensure id field is present
+            serialized["student_id"] = serialized.get("id") or serialized.get("rollNumber") or str(serialized.get("_id", ""))
         if not serialized.get("id"):
             serialized["id"] = serialized.get("student_id") or serialized.get("rollNumber")
-
-        # Ensure rollNumber is present
         if not serialized.get("rollNumber"):
             serialized["rollNumber"] = serialized.get("student_id") or serialized.get("id")
-
         rows.append(serialized)
 
+    bulk_stats = await compute_bulk_student_attendance_stats(rows, db=db)
+    for row in rows:
+        key = row.get("id") or row.get("rollNumber") or row.get("student_id")
+        present, total, pct = bulk_stats.get(key, (0, 0, 0))
+        row["attendancePct"] = pct
+        row["attendance_present"] = present
+        row["attendance_total"] = total
     return rows
 
 

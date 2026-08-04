@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, Fragment } from 'react'
 import Layout from '../components/Layout'
 import KpiCard from '../components/KpiCard'
 import KpiGrid from '../components/KpiGrid'
-import { TableSkeleton } from '../components/common'
 import EnterprisePageTemplate from '../components/EnterprisePageTemplate'
+import { CheckCircle2, AlertTriangle, XCircle, Users, Download } from 'lucide-react'
+import { StatsSection, Pagination, TableSkeleton } from '../components/common'
 import { getUserSession } from '../auth/sessionController'
 import { buildApiUrl } from '../api/apiBase'
 import { settingsApi } from '../api/settingsApi'
@@ -1668,6 +1669,244 @@ export default function AttendancePage({ noLayout = false }) {
                   </table>
                 </div>
               </div>
+            )}
+
+            {facultyTab === 'leaves' && (
+              <div className="space-y-6">
+                {/* Leave Balance Grid */}
+                {leaveBalance && (
+                  <StatsSection stats={[
+                    { value: `${(leaveBalance.casual_leave || 15) - (leaveBalance.used_casual || leaveBalance.casual_used || 0)} Remaining`, label: 'Casual Leave', icon: 'date_range' },
+                    { value: `${(leaveBalance.sick_leave || 10) - (leaveBalance.used_sick || leaveBalance.sick_used || 0)} Remaining`, label: 'Sick Leave', icon: 'medical_services' },
+                    { value: `${(leaveBalance.academic_leave || 5) - (leaveBalance.used_academic || leaveBalance.academic_used || 0)} Remaining`, label: 'Academic Leave', icon: 'school' },
+                    { value: `${(leaveBalance.maternity_leave || 90) - (leaveBalance.used_maternity || leaveBalance.maternity_used || 0)} Remaining`, label: 'Maternity Leave', icon: 'work_off' },
+                  ]} />
+                )}
+
+                {/* Leave Apply Form */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                    <span className="material-symbols-outlined text-slate-500 text-lg font-bold">add_circle</span>
+                    <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Apply for Leave</h3>
+                  </div>
+
+                  <form onSubmit={handleSubmitLeave} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Leave Type</label>
+                        <select
+                          className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                          value={leaveForm.leave_type}
+                          onChange={(e) => setLeaveForm({ ...leaveForm, leave_type: e.target.value })}
+                          required
+                        >
+                          <option value="Casual">Casual Leave</option>
+                          <option value="Sick">Sick Leave</option>
+                          <option value="Academic">Academic Leave</option>
+                          <option value="Maternity">Maternity Leave</option>
+                          <option value="Sabbatical">Sabbatical</option>
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">Start Date</label>
+                          <input
+                            type="date"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                            value={leaveForm.start_date}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, start_date: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">End Date</label>
+                          <input
+                            type="date"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
+                            value={leaveForm.end_date}
+                            onChange={(e) => setLeaveForm({ ...leaveForm, end_date: e.target.value })}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col justify-between space-y-4">
+                      <div className="flex-1 flex flex-col">
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Reason</label>
+                        <textarea
+                          placeholder="Please describe the reason for your leave request..."
+                          rows="3"
+                          className="flex-1 w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600 resize-none text-slate-700"
+                          value={leaveForm.reason}
+                          onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="flex justify-end pt-2">
+                        <button
+                          type="submit"
+                          className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-600/10 active:scale-95 cursor-pointer"
+                        >
+                          Submit Leave Request
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Leave History Table */}
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                  <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+                    <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Leave Applications History</h4>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                          <th className="px-6 py-4">Applied On</th>
+                          <th className="px-6 py-4">Leave Type</th>
+                          <th className="px-6 py-4">Duration</th>
+                          <th className="px-6 py-4 text-center">Days</th>
+                          <th className="px-6 py-4">Reason</th>
+                          <th className="px-6 py-4 text-right">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {leaveHistory.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-10 text-center text-slate-400 text-sm">No leave requests found.</td>
+                          </tr>
+                        ) : (
+                          leaveHistory.map((l) => (
+                            <tr key={l.id || l._id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-6 py-4 text-sm text-slate-600">
+                                {l.appliedOn ? new Date(l.appliedOn).toLocaleDateString() : '—'}
+                              </td>
+                              <td className="px-6 py-4 text-sm font-semibold text-slate-900">{l.leaveType || l.leave_type}</td>
+                              <td className="px-6 py-4 text-sm text-slate-700">
+                                {l.startDate || l.start_date} to {l.endDate || l.end_date}
+                              </td>
+                              <td className="px-6 py-4 text-center text-sm font-bold text-slate-800">{l.noOfDays || l.no_of_days}</td>
+                              <td className="px-6 py-4 text-sm text-slate-600 max-w-xs truncate" title={l.reason}>
+                                {l.reason}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
+                                  l.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                                  l.status === 'Rejected' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                                  'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                                  {l.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* ======================= STUDENT ATTENDANCE LAYOUT ======================= */}
+        {/* ========================================================================= */}
+        {isStudent && (
+          <div className="space-y-6">
+            {/* Alerts Block */}
+            {studentSummary.overallAttendancePct < 75.0 && (
+              <div className={`p-4 rounded-2xl border flex items-start gap-3 shadow-sm animate-pulse ${
+                studentSummary.overallAttendancePct < 60.0 
+                  ? 'bg-rose-50 border-rose-200 text-rose-800' 
+                  : 'bg-amber-50 border-amber-200 text-amber-800'
+              }`}>
+                <span className="material-symbols-outlined text-xl">
+                  {studentSummary.overallAttendancePct < 60.0 ? 'dangerous' : 'warning'}
+                </span>
+                <div>
+                  <h4 className="font-bold text-sm">
+                    {studentSummary.overallAttendancePct < 60.0 ? 'Critical Attendance Warning!' : 'Low Attendance Alert'}
+                  </h4>
+                  <p className="text-xs mt-1">
+                    Your attendance is currently <b>{studentSummary.overallAttendancePct}%</b>. 
+                    {studentSummary.overallAttendancePct < 60.0 
+                      ? ' You are in danger of being barred from examinations. Please meet with your coordinator immediately.'
+                      : ` Attendance below 75% requires an official explanation. Attend the next few classes to reach safety.`}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Attendance Summary KPIs */}
+            <StatsSection stats={[
+                { value: `${studentSummary.overallAttendancePct}%`, label: 'Overall Attendance %', icon: 'analytics' },
+                { value: studentSummary.totalClassesAttended, label: 'Total Classes Attended', icon: 'check_circle' },
+                { value: studentSummary.totalClassesMissed, label: 'Total Classes Missed', icon: 'cancel' }
+            ]} />
+
+            {/* Subject wise table */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div className="px-5 py-4 border-b border-slate-200 bg-slate-50">
+                <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Subject-wise Percentage Breakdown</h4>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                      <th className="px-6 py-4">Subject</th>
+                      <th className="px-6 py-4 text-center">Present</th>
+                      <th className="px-6 py-4 text-center">Absent</th>
+                      <th className="px-6 py-4 text-center">Leave</th>
+                      <th className="px-6 py-4 text-center">OD</th>
+                      <th className="px-6 py-4 text-center">Total Classes</th>
+                      <th className="px-6 py-4 text-center">Attendance %</th>
+                      <th className="px-6 py-4 text-right">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {studentSummary.subjectWise.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-6 py-10 text-center text-slate-400 text-sm">No subject-wise attendance logs recorded yet.</td>
+                      </tr>
+                    ) : (
+                      studentSummary.subjectWise.map(s => (
+                        <tr key={s.code} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-semibold text-slate-900">{s.subject}</div>
+                            <div className="text-xs text-slate-500 uppercase">{s.code}</div>
+                          </td>
+                          <td className="px-6 py-4 text-center text-sm font-medium text-emerald-600">{s.present}</td>
+                          <td className="px-6 py-4 text-center text-sm font-medium text-rose-500">{s.absent}</td>
+                          <td className="px-6 py-4 text-center text-sm font-medium text-amber-500">{s.leave}</td>
+                          <td className="px-6 py-4 text-center text-sm font-medium text-sky-500">{s.od}</td>
+                          <td className="px-6 py-4 text-center text-sm text-slate-600">{s.total}</td>
+                          <td className="px-6 py-4 text-center">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              s.attendancePct >= 75.0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'
+                            }`}>
+                              {s.attendancePct}%
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => setStudentSelectedSubjectCode(s.code)}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 cursor-pointer"
+                            >
+                              Logs
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -1829,139 +2068,132 @@ export default function AttendancePage({ noLayout = false }) {
 
       {/* ========================================================================= */}
       {/* ======================= FINANCE ATTENDANCE LAYOUT ======================== */}
-      {/* ========================================================================= */}
-      {isFinance && (
-        <div className="space-y-6">
-          {/* Finance Filter Panel */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <span className="material-symbols-outlined text-slate-500 text-lg">filter_list</span>
-              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Eligibility Filters</h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Department</label>
-                <select
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                  value={financeFilters.department}
-                  onChange={(e) => setFinanceFilters({ ...financeFilters, department: e.target.value })}
-                >
-                  <option value="">All Departments</option>
-                  {departments.map(d => (
-                    <option key={d.code} value={d.name}>{d.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Semester</label>
-                <select
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                  value={financeFilters.semester}
-                  onChange={(e) => setFinanceFilters({ ...financeFilters, semester: e.target.value })}
-                >
-                  <option value="">All Semesters</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                    <option key={s} value={String(s)}>{`Semester ${s}`}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Section</label>
-                <select
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                  value={financeFilters.section}
-                  onChange={(e) => setFinanceFilters({ ...financeFilters, section: e.target.value })}
-                >
-                  <option value="">All Sections</option>
-                  <option value="A">Section A</option>
-                  <option value="B">Section B</option>
-                  <option value="C">Section C</option>
-                </select>
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={() => {
-                    setFinanceFilters({ department: '', semester: '', section: '' })
-                    setFinanceSearch('')
-                  }}
-                  className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-all"
-                >
-                  Clear Filters
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* ========================================================================= */}
+        {isFinance && (() => {
+            const kpiCards = [
+                {
+                    title: 'Total Students',
+                    value: filteredFinanceEligibility.length,
+                    icon: <Users className="w-5 h-5" />,
+                    gradient: 'indigo',
+                },
+                {
+                    title: 'Eligible',
+                    value: filteredFinanceEligibility.filter(e => e.eligibilityStatus === 'Eligible').length,
+                    icon: <CheckCircle2 className="w-5 h-5" />,
+                    gradient: 'emerald',
+                },
+                {
+                    title: 'Warning',
+                    value: filteredFinanceEligibility.filter(e => e.eligibilityStatus === 'Warning').length,
+                    icon: <AlertTriangle className="w-5 h-5" />,
+                    gradient: 'amber',
+                },
+                {
+                    title: 'Not Eligible',
+                    value: filteredFinanceEligibility.filter(e => e.eligibilityStatus === 'Not Eligible' || e.eligibilityStatus === 'Critical').length,
+                    icon: <XCircle className="w-5 h-5" />,
+                    gradient: 'rose',
+                }
+            ];
 
-          {/* Eligibility Table Panel */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50">
-              <div className="relative w-full sm:max-w-xs">
-                <input
-                  type="text"
-                  placeholder="Search student name/roll number..."
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl outline-none text-sm focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-600"
-                  value={financeSearch}
-                  onChange={(e) => setFinanceSearch(e.target.value)}
-                />
-                <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleExportCSV(financeEligibility, ['rollNumber', 'studentName', 'department', 'semester', 'attendancePct', 'eligibilityStatus'], 'Attendance-Eligibility-Report.csv')}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
-                >
-                  <span className="material-symbols-outlined text-base">download</span>
-                  Export Eligibility Report
-                </button>
-              </div>
-            </div>
+            const columns = [
+                {
+                    key: 'student',
+                    label: 'Student Details',
+                    render: (_, r) => (
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-[#003A40] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                {r.studentName.charAt(0)}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-xs font-bold text-[#003A40] truncate leading-tight">{r.studentName}</p>
+                                <p className="text-[10px] text-[#8C98A5] font-medium truncate">{r.rollNumber}</p>
+                            </div>
+                        </div>
+                    )
+                },
+                {
+                    key: 'department',
+                    label: 'Department & Class',
+                    render: (_, r) => (
+                        <span className="text-xs font-bold text-[#003A40] block truncate">{r.department} — {r.semester}</span>
+                    )
+                },
+                {
+                    key: 'attendancePct',
+                    label: 'Attendance %',
+                    render: (_, r) => (
+                        <span className="text-xs font-extrabold text-[#0A686A] font-['Outfit']">
+                            {r.attendancePct}%
+                        </span>
+                    )
+                },
+                {
+                    key: 'eligibilityStatus',
+                    label: 'Eligibility Status',
+                    render: (_, r) => {
+                        const st = r.eligibilityStatus;
+                        const cls = st === 'Eligible' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                  : st === 'Warning' ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                  : 'bg-rose-50 text-rose-700 border-rose-200';
+                        return (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${cls}`}>
+                                {st}
+                            </span>
+                        );
+                    }
+                }
+            ];
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
-                    <th className="px-6 py-4">Register Number</th>
-                    <th className="px-6 py-4">Student Name</th>
-                    <th className="px-6 py-4">Department & Class</th>
-                    <th className="px-6 py-4 text-center">Attendance %</th>
-                    <th className="px-6 py-4 text-right">Eligibility Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredFinanceEligibility.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-slate-400 text-sm">No student records found.</td>
-                    </tr>
-                  ) : (
-                    filteredFinanceEligibility.map(e => (
-                      <tr key={e.rollNumber} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 text-sm font-mono text-slate-600 font-medium">{e.rollNumber}</td>
-                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">{e.studentName}</td>
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          {e.department} — {e.semester}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="font-semibold text-sm">{e.attendancePct}%</span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${e.eligibilityStatus === 'Eligible' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                              e.eligibilityStatus === 'Warning' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                                'bg-rose-50 text-rose-700 border border-rose-200'
-                            }`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                            {e.eligibilityStatus}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            const filterOptions = [
+                {
+                    key: 'department',
+                    label: 'Department',
+                    options: departments.map(d => ({ value: d.name, label: d.name }))
+                },
+                {
+                    key: 'semester',
+                    label: 'Semester',
+                    options: [1, 2, 3, 4, 5, 6, 7, 8].map(s => ({ value: String(s), label: `Semester ${s}` }))
+                },
+                {
+                    key: 'section',
+                    label: 'Section',
+                    options: [
+                        { value: 'A', label: 'Section A' },
+                        { value: 'B', label: 'Section B' },
+                        { value: 'C', label: 'Section C' }
+                    ]
+                }
+            ];
+
+            return (
+                <div style={{ height: 'calc(100vh - 80px)' }}>
+                    {loading ? (
+                        <TableSkeleton />
+                    ) : (
+                        <EnterprisePageTemplate
+                            kpiCards={kpiCards}
+                            columns={columns}
+                            rows={filteredFinanceEligibility}
+                            actions={[]}
+                            rowKey="rollNumber"
+                            searchQuery={financeSearch}
+                            onSearchChange={setFinanceSearch}
+                            searchPlaceholder="Search student..."
+                            filterOptions={filterOptions}
+                            activeFilters={financeFilters}
+                            onFilterChange={(key, val) => setFinanceFilters(prev => ({ ...prev, [key]: val }))}
+                            onExportCSV={() => handleExportCSV(financeEligibility, ['rollNumber', 'studentName', 'department', 'semester', 'attendancePct', 'eligibilityStatus'], 'Attendance-Eligibility-Report.csv')}
+                            loading={false}
+                            emptyMessage="No student records found."
+                        />
+                    )}
+                </div>
+            );
+        })()}
+      </div>
   )
 
   return noLayout ? inner : <Layout title="Attendance Dashboard" noPadding>{inner}</Layout>

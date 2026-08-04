@@ -8,7 +8,7 @@ function resolveRoleAndUserId(roleOrUserId, maybeUserId) {
       ? roleOrUserId.toLowerCase()
       : '';
 
-  const validRoles = ['student', 'faculty', 'admin', 'finance'];
+  const validRoles = ['student', 'faculty', 'admin', 'finance', 'hod'];
   if (validRoles.includes(normalizedRole) && typeof maybeUserId === 'string') {
     return {
       role: roleOrUserId,

@@ -315,9 +315,9 @@ async def _find_hod(db, user_id: str, password: str) -> dict | None:
                 "email": "ramesh.kumar@mit.edu",
                 "phone": "+91-9876543210",
                 "designation": "HOD & Professor",
-                "department": "Computer Science",
-                "departmentId": "Computer Science",
-                "department_id": "CS",
+                "department": "Medical Laboratory Technology",
+                "departmentId": "Medical Laboratory Technology",
+                "department_id": "Medical Laboratory Technology",
                 "password": "hod123",
                 "role": "hod",
             }
@@ -325,6 +325,15 @@ async def _find_hod(db, user_id: str, password: str) -> dict | None:
             user = default_hod
         else:
             return None
+    else:
+        # Enforce Medical Laboratory Technology for demo HOD HOD-CS-001
+        if user_id in ("HOD-CS-001", "HOD-001") or user.get("id") == "HOD-CS-001" or user.get("employeeId") == "HOD-CS-001":
+            await faculty.update_one(
+                {"$or": [{"id": "HOD-CS-001"}, {"employeeId": "HOD-CS-001"}]},
+                {"$set": {"department": "Medical Laboratory Technology", "departmentId": "Medical Laboratory Technology", "department_id": "Medical Laboratory Technology"}}
+            )
+            user["department"] = "Medical Laboratory Technology"
+            user["departmentId"] = "Medical Laboratory Technology"
 
     stored_password = user.get("password") or user.get("employeeId") or user.get("id") or "hod123"
     if str(password) != str(stored_password):
@@ -335,7 +344,7 @@ async def _find_hod(db, user_id: str, password: str) -> dict | None:
         "userId": user.get("employeeId") or user.get("id"),
         "name": user.get("name", "Dr. Ramesh Kumar"),
         "email": user.get("email", ""),
-        "department": user.get("department") or user.get("departmentId") or "Computer Science",
+        "department": user.get("department") or user.get("departmentId") or "Medical Laboratory Technology",
         "role": "hod",
     }
 

@@ -5,7 +5,14 @@ import DashboardSkeleton from '../components/DashboardSkeleton';
 import { listInvoices, deleteInvoice } from '../api/invoicesApi';
 import { Eye, Trash2, FileText, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 
+import { getUserSession, getUserData } from '../auth/sessionController';
+
 export default function AdminInvoicePage() {
+  const session = getUserSession();
+  const user = session?.user || getUserData();
+  const role = session?.role || 'admin';
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || '';
+
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +51,13 @@ export default function AdminInvoicePage() {
   // Filter logic
   const filteredInvoices = useMemo(() => {
     return invoices.filter((inv) => {
+      if (role === 'hod' && hodDepartment) {
+        const dept = (inv.department || inv.departmentId || inv.course || '').toLowerCase();
+        const target = hodDepartment.toLowerCase();
+        if (!dept.includes(target) && !target.includes(dept)) {
+          return false;
+        }
+      }
       const q = searchQuery.toLowerCase();
       const matchSearch =
         !q ||
@@ -59,7 +73,7 @@ export default function AdminInvoicePage() {
 
       return matchSearch && matchStatus && matchCourse;
     });
-  }, [invoices, searchQuery, activeFilters]);
+  }, [invoices, searchQuery, activeFilters, role, hodDepartment]);
 
   // Export CSV
   const handleExportCSV = () => {

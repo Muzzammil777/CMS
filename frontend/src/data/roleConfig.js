@@ -28,7 +28,7 @@ export const cmsRoles = {
   hod: {
     label: 'HOD',
     name: 'Head of Department',
-    team: 'Computer Science Department',
+    team: 'Medical Laboratory Technology',
     focus: 'Department Management',
     primaryAction: 'Manage Department',
     secondaryAction: 'View Analytics',

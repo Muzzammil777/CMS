@@ -682,6 +682,7 @@ async def seed_faculty_data():
 
 @router.get("")
 async def list_faculty(
+    department: Optional[str] = None,
     department_id: Optional[str] = Query(None, alias="departmentId"),
     designation: Optional[str] = None,
     employment_status: Optional[str] = Query(None, alias="employmentStatus"),
@@ -694,8 +695,13 @@ async def list_faculty(
         career_col = await get_faculty_activity_collection("career_pathways")
 
         query = {}
-        if department_id:
-            query["departmentId"] = department_id
+        dept_val = department or department_id
+        if dept_val:
+            query["$or"] = [
+                {"departmentId": {"$regex": dept_val, "$options": "i"}},
+                {"department": {"$regex": dept_val, "$options": "i"}},
+                {"department_id": {"$regex": dept_val, "$options": "i"}},
+            ]
         if designation:
             query["designation"] = designation
         if employment_status:

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/Layout';
-import { PageContainer, StatsSection, TableSkeleton } from '../components/common';
+import { StatsSection, TableSkeleton } from '../components/common';
 import { API_BASE } from '../api/apiBase';
 
 export default function FinanceInvoicePage() {
@@ -85,7 +85,7 @@ export default function FinanceInvoicePage() {
 
     return (
         <Layout title="Payroll Invoices">
-            <PageContainer>
+            <div className="space-y-8">
                 {/* Stats Section */}
                 <StatsSection stats={[
                     { value: stats.total, label: 'Total Invoices', icon: 'description' },
@@ -94,125 +94,129 @@ export default function FinanceInvoicePage() {
                     { value: filteredInvoices.length, label: 'Filtered Results', icon: 'filter_alt' },
                 ]} />
 
-                {/* Filters & Search */}
-                <div className="bg-white p-6 rounded-lg shadow border border-slate-100">
-                    <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                        <div className="relative w-full md:w-96">
-                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                {/* Combined Table Card matching FeesPage.jsx */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                    {/* Header & Controls */}
+                    <div className="p-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+                        <div className="flex gap-4 flex-wrap">
                             <input
                                 type="text"
                                 placeholder="Search staff name or invoice ID..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 transition-all text-sm"
+                                className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm min-w-[200px]"
                             />
-                        </div>
-                        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1">
-                            {['all', 'Draft', 'Processing', 'Paid'].map((status) => (
-                                <button
-                                    key={status}
-                                    onClick={() => setStatusFilter(status)}
-                                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${statusFilter === status
-                                        ? 'bg-green-700 text-white shadow-md'
-                                        : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
-                                        }`}
-                                >
-                                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </button>
-                            ))}
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                            >
+                                <option value="all">All Statuses</option>
+                                <option value="Draft">Draft</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Paid">Paid</option>
+                            </select>
                         </div>
                     </div>
-                </div>
 
-                {/* Invoices Table */}
-                {loading ? (
-                    <TableSkeleton cols={6} rows={8} />
-                ) : (
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Invoice ID</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Staff Details</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pay Period</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left min-w-[800px]">
+                            <thead>
+                                <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                                    <th className="px-6 py-4">Invoice ID</th>
+                                    <th className="px-6 py-4">Staff Details</th>
+                                    <th className="px-6 py-4">Pay Period</th>
+                                    <th className="px-6 py-4">Amount</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="6" className="p-0">
+                                            <TableSkeleton cols={6} rows={5} />
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {filteredInvoices.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="6" className="px-6 py-12 text-center text-slate-400">No invoices found.</td>
-                                        </tr>
-                                    ) : (
-                                    filteredInvoices.map((invoice) => (
-                                        <tr key={invoice.id} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm font-mono font-bold text-slate-800">{invoice.invoice_id}</span>
-                                                <p className="text-[10px] text-slate-400 mt-1">Ref: {invoice.payroll_id.substring(0, 8)}...</p>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-800">{invoice.staff_name}</span>
-                                                    <span className="text-[10px] text-slate-400 font-medium">ID: {invoice.staff_id}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-slate-600">
-                                                    <span className="material-symbols-outlined text-sm">calendar_month</span>
-                                                    <span className="text-sm font-medium">{invoice.pay_period}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm font-bold text-slate-900">₹{invoice.total_amount.toLocaleString()}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-widest ${invoice.payment_status === 'Paid'
-                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                    : invoice.payment_status === 'Processing'
-                                                        ? 'bg-green-50 text-green-600 border-green-100'
-                                                        : 'bg-slate-100 text-slate-500 border-slate-200'
-                                                    }`}>
-                                                    {invoice.payment_status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex gap-2 justify-end">
-                                                    {invoice.payment_status === 'Draft' && (
-                                                        <button
-                                                            onClick={() => handleStatusUpdate(invoice.id, 'Processing')}
-                                                            className="px-3 py-1.5 bg-green-700 text-white rounded-lg text-xs font-bold hover:bg-green-800 transition shadow-sm"
-                                                        >
-                                                            Process Payment
-                                                        </button>
-                                                    )}
-                                                    {invoice.payment_status === 'Processing' && (
-                                                        <button
-                                                            onClick={() => handleStatusUpdate(invoice.id, 'Paid')}
-                                                            className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm"
-                                                        >
-                                                            Mark as Paid
-                                                        </button>
-                                                    )}
-                                                    {invoice.payment_status === 'Paid' && (
-                                                        <div className="flex items-center gap-1 text-emerald-600 text-xs font-bold">
-                                                            <span className="material-symbols-outlined text-sm">verified_user</span>
-                                                            Completed
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                ) : filteredInvoices.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="6" className="px-10 py-24 text-center text-slate-400 bg-slate-50/30">
+                                            <div className="flex flex-col items-center">
+                                                <span className="material-symbols-outlined text-6xl mb-4 opacity-10 text-slate-900">receipt_long</span>
+                                                <p className="text-base font-bold text-slate-500">No invoices found.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredInvoices.map((invoice) => {
+                                        let statusBadge = "bg-slate-100 text-slate-800";
+                                        if (invoice.payment_status === 'Paid') statusBadge = "bg-emerald-100 text-emerald-800";
+                                        else if (invoice.payment_status === 'Processing') statusBadge = "bg-green-100 text-green-800";
+                                        else if (invoice.payment_status === 'Draft') statusBadge = "bg-slate-100 text-slate-600";
+
+                                        return (
+                                            <tr key={invoice.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div>
+                                                        <span className="font-semibold text-slate-900 text-sm">{invoice.invoice_id}</span>
+                                                        <p className="text-xs text-slate-500 mt-1">Ref: {invoice.payroll_id.substring(0, 8)}...</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div>
+                                                        <p className="font-semibold text-slate-900 text-sm">{invoice.staff_name}</p>
+                                                        <p className="text-xs text-slate-500">ID: {invoice.staff_id}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm font-medium text-slate-600 flex items-center gap-2">
+                                                        <span className="material-symbols-outlined text-sm">calendar_month</span>
+                                                        {invoice.pay_period}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="text-sm font-bold text-slate-700">₹{invoice.total_amount.toLocaleString()}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider inline-block ${statusBadge}`}>
+                                                        {invoice.payment_status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        {invoice.payment_status === 'Draft' && (
+                                                            <button
+                                                                onClick={() => handleStatusUpdate(invoice.id, 'Processing')}
+                                                                className="px-2 py-1 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 rounded-lg transition text-[10px] font-extrabold uppercase shadow-sm"
+                                                            >
+                                                                Process Payment
+                                                            </button>
+                                                        )}
+                                                        {invoice.payment_status === 'Processing' && (
+                                                            <button
+                                                                onClick={() => handleStatusUpdate(invoice.id, 'Paid')}
+                                                                className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-lg transition text-[10px] font-extrabold uppercase shadow-sm"
+                                                            >
+                                                                Mark as Paid
+                                                            </button>
+                                                        )}
+                                                        {invoice.payment_status === 'Paid' && (
+                                                            <div className="flex items-center justify-center gap-1 text-emerald-600 text-[11px] font-bold uppercase tracking-wider">
+                                                                <span className="material-symbols-outlined text-sm">verified_user</span>
+                                                                Completed
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
                     </div>
                 </div>
-                )}
-            </PageContainer>
+            </div>
         </Layout>
     );
 }

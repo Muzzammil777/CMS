@@ -41,9 +41,9 @@ if exist "%BACKEND_DIR%\requirements.txt" (
     )
   )
   if defined PY_CMD (
-    echo [3/5] Installing backend Python dependencies using %PY_CMD%...
+    echo [3/5] Installing backend Python dependencies using !PY_CMD!...
     cd /d "%BACKEND_DIR%"
-    %PY_CMD% -m pip install -r requirements.txt
+    !PY_CMD! -m pip install -r requirements.txt
   ) else (
     echo [3/5] Python launcher not found. Skipping Python dependency install.
   )
@@ -55,7 +55,7 @@ echo [4/5] Starting backend server...
 
 if exist "%BACKEND_DIR%\main.py" (
   if defined PY_CMD (
-    start "MIT Connect Backend (FastAPI)" cmd /k "cd /d ""%ROOT_DIR%"" && %PY_CMD% -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 5000"
+    start "MIT Connect Backend (FastAPI)" cmd /k "cd /d ""%ROOT_DIR%"" && !PY_CMD! -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 5000"
   ) else (
     start "MIT Connect Backend (FastAPI)" cmd /k "cd /d ""%ROOT_DIR%"" && python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 5000"
   )

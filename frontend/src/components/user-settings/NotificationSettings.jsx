@@ -56,16 +56,49 @@ const KEY_META = {
   // Admin
   // feePayments is shared with finance (same key)
   // placementAlerts is shared with faculty (same key)
+
+  // HOD
+  departmentAdmission: {
+    label: 'New Admission Applications',
+    desc:  'Get notified when a new student or faculty application is submitted to your department.',
+    group: 'Administration',
+    icon:  'person_add',
+  },
+  attendanceThreshold: {
+    label: 'Low Attendance Alerts',
+    desc:  'Get notified when any student in your department falls below the 75% attendance threshold.',
+    group: 'Academic',
+    icon:  'warning',
+  },
+  departmentPlacement: {
+    label: 'Department Placement Updates',
+    desc:  'Get notified when a student in your department receives a job offer or placement record.',
+    group: 'Academic',
+    icon:  'work',
+  },
+  feeCollection: {
+    label: 'Fee Collection Summary',
+    desc:  'Receive a daily summary of fee payments collected from students in your department.',
+    group: 'Financial',
+    icon:  'receipt_long',
+  },
+  examSchedule: {
+    label: 'Exam Schedule Changes',
+    desc:  'Get notified when an exam or timetable entry for your department is added or modified.',
+    group: 'Academic',
+    icon:  'event_note',
+  },
 };
 
 const ROLE_KEYS = {
   student: ['odStatusUpdate', 'feeReminder', 'internalMarks'],
   faculty: ['salaryCredit', 'odRequests', 'placementAlerts'],
   finance: ['feePayments'],
-  admin: ['feePayments', 'placementAlerts'],
+  admin:   ['feePayments', 'placementAlerts'],
+  hod:     ['departmentAdmission', 'attendanceThreshold', 'departmentPlacement', 'feeCollection', 'examSchedule'],
 };
 
-const GROUP_ORDER = ['Academic', 'Financial'];
+const GROUP_ORDER = ['Administration', 'Academic', 'Financial'];
 
 // ─── Toggle Switch ─────────────────────────────────────────────────────────────
 function ToggleSwitch({ checked, onChange }) {

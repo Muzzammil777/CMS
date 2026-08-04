@@ -27,5 +27,13 @@ export function getSettingsMenu(role) {
     ];
   }
 
+  if (role === 'hod') {
+    return [
+      { id: 'profile',       label: 'My Profile',         icon: 'person' },
+      { id: 'notifications', label: 'Notification Alerts', icon: 'notifications' },
+      { id: 'security',      label: 'Password & Security', icon: 'lock' },
+    ];
+  }
+
   return [];
 }

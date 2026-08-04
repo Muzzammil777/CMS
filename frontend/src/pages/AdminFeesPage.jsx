@@ -3,7 +3,7 @@ import Layout from '../components/Layout';
 import EnterprisePageTemplate from '../components/EnterprisePageTemplate';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import { useAdmission } from '../context/AdmissionContext';
-import { getUserSession } from '../auth/sessionController';
+import { getUserSession, getUserData } from '../auth/sessionController';
 import { listFees, assignFee, deleteFeeAssignment, updateFeePayment } from '../api/feesApi';
 import { createInvoice } from '../api/invoicesApi';
 import { fetchStudents } from '../api/studentsApi';
@@ -65,9 +65,19 @@ export default function AdminFeesPage() {
     fetchFees();
   }, [fetchFees]);
 
+  const user = session?.user || getUserData();
+  const role = session?.role || 'admin';
+  const hodDepartment = user?.department || user?.departmentId || user?.department_id || '';
   // Filtered fee records
   const filteredFees = useMemo(() => {
     return feeAssignments.filter((f) => {
+      if (role === 'hod' && hodDepartment) {
+        const dept = (f.department || f.departmentId || f.course || '').toLowerCase();
+        const target = hodDepartment.toLowerCase();
+        if (!dept.includes(target) && !target.includes(dept)) {
+          return false;
+        }
+      }
       const q = searchQuery.toLowerCase();
       const matchSearch =
         !q ||
@@ -83,7 +93,7 @@ export default function AdminFeesPage() {
 
       return matchSearch && matchStatus && matchSem;
     });
-  }, [feeAssignments, searchQuery, activeFilters]);
+  }, [feeAssignments, searchQuery, activeFilters, role, hodDepartment]);
 
   // Export CSV
   const handleExportCSV = () => {

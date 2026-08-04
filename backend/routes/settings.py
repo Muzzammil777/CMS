@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/settings", tags=["settings"])
 def _require_role(role: str) -> str:
     normalized = normalize_role(role)
     if not normalized:
-        raise HTTPException(status_code=400, detail="Invalid role. Allowed values: student, faculty, finance, admin.")
+        raise HTTPException(status_code=400, detail="Invalid role. Allowed values: student, faculty, finance, admin, hod.")
     return normalized
 
 
@@ -207,11 +207,13 @@ async def get_notifications_by_role(role: str, user_id: str):
     resolved_role = _require_role(role)
     notifications = get_section(resolved_role, user_id, "notifications")
     if notifications is None:
-        from backend.stores.settings_store import _student_seed, _faculty_seed, _finance_seed, _admin_seed
+        from backend.stores.settings_store import _student_seed, _faculty_seed, _finance_seed, _admin_seed, _hod_seed
         if resolved_role == "student":
             return _student_seed()["notifications"]
         elif resolved_role == "faculty":
             return _faculty_seed()["notifications"]
+        elif resolved_role == "hod":
+            return _hod_seed()["notifications"]
         elif resolved_role == "finance":
             return _finance_seed()["notifications"]
         elif resolved_role == "admin":

@@ -112,8 +112,8 @@ export default function SettingsPage() {
     return <AdminSettingsView role={role} userId={userId} />;
   }
 
-  // Student, faculty, finance all use the user settings view (profile + notifications)
-  if (role === 'student' || role === 'faculty' || role === 'finance') {
+  // Student, faculty, finance, hod all use the user settings view (profile + notifications)
+  if (role === 'student' || role === 'faculty' || role === 'finance' || role === 'hod') {
     return <UserSettingsView role={role} userId={userId} />;
   }
 

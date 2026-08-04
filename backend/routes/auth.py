@@ -294,6 +294,52 @@ async def _seed_default_finance(db):
     print("[SEED] Created default finance users")
 
 
+async def _find_hod(db, user_id: str, password: str) -> dict | None:
+    """Look up an HOD user."""
+    faculty = db["faculty"]
+    user = await faculty.find_one({
+        "$or": [
+            {"employeeId": user_id},
+            {"employee_id": user_id},
+            {"id": user_id},
+            {"email": user_id},
+        ]
+    })
+
+    if not user:
+        if user_id in ("HOD-CS-001", "HOD-001"):
+            default_hod = {
+                "id": "HOD-CS-001",
+                "employeeId": "HOD-CS-001",
+                "name": "Dr. Ramesh Kumar",
+                "email": "ramesh.kumar@mit.edu",
+                "phone": "+91-9876543210",
+                "designation": "HOD & Professor",
+                "department": "Computer Science",
+                "departmentId": "Computer Science",
+                "department_id": "CS",
+                "password": "hod123",
+                "role": "hod",
+            }
+            await faculty.insert_one(default_hod)
+            user = default_hod
+        else:
+            return None
+
+    stored_password = user.get("password") or user.get("employeeId") or user.get("id") or "hod123"
+    if str(password) != str(stored_password):
+        return None
+
+    user["_id"] = str(user.get("_id", ""))
+    return {
+        "userId": user.get("employeeId") or user.get("id"),
+        "name": user.get("name", "Dr. Ramesh Kumar"),
+        "email": user.get("email", ""),
+        "department": user.get("department") or user.get("departmentId") or "Computer Science",
+        "role": "hod",
+    }
+
+
 @router.post("/login")
 async def unified_login(body: LoginRequest):
     """
@@ -304,8 +350,8 @@ async def unified_login(body: LoginRequest):
     user_id = body.userId.strip()
     password = body.password
 
-    if role not in ("student", "admin", "faculty", "finance"):
-        raise HTTPException(status_code=400, detail="Invalid role. Must be one of: student, admin, faculty, finance")
+    if role not in ("student", "admin", "faculty", "finance", "hod"):
+        raise HTTPException(status_code=400, detail="Invalid role. Must be one of: student, admin, faculty, finance, hod")
 
     try:
         db = get_db()
@@ -317,6 +363,7 @@ async def unified_login(body: LoginRequest):
         "faculty": _find_faculty,
         "admin": _find_admin,
         "finance": _find_finance,
+        "hod": _find_hod,
     }
 
     user_data = await lookup_fn[role](db, user_id, password)

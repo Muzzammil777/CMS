@@ -227,7 +227,7 @@ export default function LoginPage() {
                 onClick={() =>setRole(roleKey)}
               >{roleKey.charAt(0).toUpperCase() + roleKey.slice(1)}
               </button>))}
-          </div><form onSubmit={handleSubmit} noValidate autoComplete="off"><div className="form-group role-select-hidden"><label htmlFor="role">Role</label><div className="input-wrap"><UserIcon /><select id="role" name="role" value={role} onChange={(event) =>setRole(event.target.value)} required><option value="student">Student</option><option value="admin">Admin</option><option value="faculty">Faculty</option><option value="finance">Finance</option></select></div></div><div className="form-group"><label htmlFor="userId">User ID</label><div className="input-wrap"><UserIcon /><input
+          </div><form onSubmit={handleSubmit} noValidate autoComplete="off"><div className="form-group role-select-hidden"><label htmlFor="role">Role</label><div className="input-wrap"><UserIcon /><select id="role" name="role" value={role} onChange={(event) =>setRole(event.target.value)} required><option value="student">Student</option><option value="admin">Admin</option><option value="hod">HOD</option><option value="faculty">Faculty</option><option value="finance">Finance</option></select></div></div><div className="form-group"><label htmlFor="userId">User ID</label><div className="input-wrap"><UserIcon /><input
                   type="text"
                   id="userId"
                   name="userId"

@@ -119,10 +119,10 @@ export default function AcademicSidebar({
 
   function getRoute(item) {
     if (item === 'Fees') {
-      return (role === 'admin' || role === 'finance') ? '/admin-fees' : '/fees';
+      return (role === 'admin' || role === 'finance' || role === 'hod') ? '/admin-fees' : '/fees';
     }
     if (item === 'Invoices') {
-      if (role === 'admin') return '/admin-invoices';
+      if (role === 'admin' || role === 'hod') return '/admin-invoices';
       if (role === 'finance') return '/finance-invoices';
       return '/invoices';
     }

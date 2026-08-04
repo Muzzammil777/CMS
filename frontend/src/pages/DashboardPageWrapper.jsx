@@ -1,6 +1,7 @@
 import { getUserSession } from '../auth/sessionController';
 import DashboardPage from './DashboardPage';
 import FacultyDashboardPage from './FacultyDashboardPage';
+import HodDashboardPage from './HodDashboardPage';
 
 export default function DashboardPageWrapper() {
   const session = getUserSession();
@@ -8,6 +9,10 @@ export default function DashboardPageWrapper() {
 
   if (role === 'faculty') {
     return <FacultyDashboardPage />;
+  }
+
+  if (role === 'hod') {
+    return <HodDashboardPage />;
   }
 
   return <DashboardPage />;

@@ -313,6 +313,21 @@ export default function AdminFeesPage() {
     );
   }
 
+  if (expandedFee) {
+    return (
+      <Layout title="Fee Structure Breakdown">
+        <FeeBreakdownFullView
+          fee={expandedFee}
+          onCancel={() => setExpandedFee(null)}
+          onMakePayment={(f) => {
+            setExpandedFee(null);
+            setPaymentModal(f);
+          }}
+        />
+      </Layout>
+    );
+  }
+
   return (
     <Layout title="Fee Management">
       {loading ? (
@@ -337,79 +352,6 @@ export default function AdminFeesPage() {
           emptyMessage="No fee structures match your search."
         />
       )}
-
-      {/* Expanded Breakdown Modal */}
-      {expandedFee && (() => {
-        const comp = expandedFee.components || {};
-        const calculatedAnnual = (comp.grossAcademicFee || 0) + (comp.quotaSurcharge || 0) + (comp.transportFee || 0) + (comp.hostelFee || 0) + (comp.amenitiesFee || 0) - (comp.scholarshipDiscount || 0);
-        const annualTotal = calculatedAnnual > expandedFee.totalFee ? calculatedAnnual : (expandedFee.totalFee || 0) * 2;
-        const isSplit = annualTotal > (expandedFee.totalFee || 0);
-
-        return (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 max-w-md w-full shadow-xl">
-              <h3 className="text-base font-bold text-[#003A40] mb-4">Fee Structure Breakdown — {expandedFee.studentName}</h3>
-              <div className="space-y-2 text-xs text-[#5F6B7A] mb-6">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span>Tuition / Base Academic Fee:</span>
-                  <span className="font-bold text-[#003A40]">₹{(comp.tuitionFee || comp.semesterFee || 0).toLocaleString('en-IN')}</span>
-                </div>
-                {comp.developmentFee > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Infrastructure & Lab Dev:</span>
-                    <span className="font-bold text-[#003A40]">₹{comp.developmentFee.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span>Books & Digital Library:</span>
-                  <span className="font-bold text-[#003A40]">₹{(comp.libraryFee || comp.bookFee || 0).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span>Exam Fee:</span>
-                  <span className="font-bold text-[#003A40]">₹{(comp.examFee || 0).toLocaleString('en-IN')}</span>
-                </div>
-                {comp.hostelFee > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Hostel & Mess:</span>
-                    <span className="font-bold text-[#003A40]">₹{comp.hostelFee.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-                {comp.transportFee > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span>Transport Service:</span>
-                    <span className="font-bold text-[#003A40]">₹{comp.transportFee.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-                {comp.scholarshipDiscount > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100 text-emerald-600 font-bold">
-                    <span>Scholarship Waiver:</span>
-                    <span>-₹{comp.scholarshipDiscount.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-
-                <div className="pt-3 mt-3 border-t-2 border-slate-100 space-y-1.5">
-                  {isSplit && (
-                    <div className="flex justify-between font-bold text-xs text-[#5F6B7A]">
-                      <span>Total Annual Fee (Full Structure):</span>
-                      <span className="font-mono font-bold text-[#003A40]">₹{annualTotal.toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between font-extrabold text-sm text-[#003A40] pt-1">
-                    <span>{isSplit ? 'Total Semester Fee (50% Term Split):' : 'Total Structure Fee:'}</span>
-                    <span className="text-[#0A686A] font-mono text-base">₹{(expandedFee.totalFee || 0).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setExpandedFee(null)}
-                className="w-full py-2 bg-[#003A40] text-white rounded-xl font-bold text-xs cursor-pointer hover:bg-[#0A686A] transition-colors"
-              >
-                Close Breakdown
-              </button>
-            </div>
-          </div>
-        );
-      })()}
     </Layout>
   );
 }
@@ -2020,6 +1962,353 @@ function PaymentFullView({ fee, onCancel, onSuccess }) {
             Confirm & Process Payment
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FULL PAGE FEE BREAKDOWN VIEW — Enterprise Grade Rich Details
+   ══════════════════════════════════════════════════════════════════════════ */
+function FeeBreakdownFullView({ fee, onCancel, onMakePayment }) {
+  const comp = fee.components || {};
+
+  const calculatedAnnual = (comp.grossAcademicFee || 0) + (comp.quotaSurcharge || 0) + (comp.transportFee || 0) + (comp.hostelFee || 0) + (comp.amenitiesFee || 0) - (comp.scholarshipDiscount || 0);
+  const annualTotal = calculatedAnnual > (fee.totalFee || 0) ? calculatedAnnual : (fee.totalFee || 0) * 2;
+  const isSplit = annualTotal > (fee.totalFee || 0);
+  const termPayable = fee.totalFee || 0;
+  const paidAmount = fee.paidAmount || 0;
+  const balanceDue = Math.max(0, termPayable - paidAmount);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header / Nav Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E6EDF2] shadow-2xs">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#003A40] rounded-xl text-xs font-bold transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            Back to Fee Management
+          </button>
+          <div>
+            <h2 className="text-base font-extrabold text-[#003A40]">Detailed Fee Structure</h2>
+            <p className="text-xs text-[#5F6B7A] font-medium">Complete itemized breakdown and student allocation records</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 px-4 py-2 border border-[#E6EDF2] hover:bg-slate-50 text-[#003A40] rounded-xl text-xs font-bold transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">print</span>
+            Print / Export Breakdown
+          </button>
+          {onMakePayment && balanceDue > 0 && (
+            <button
+              type="button"
+              onClick={() => onMakePayment(fee)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#003A40] hover:bg-[#0A686A] text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">credit_card</span>
+              Process Payment
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Student Profile Header Card */}
+      <div className="bg-[#003A40] text-white rounded-2xl p-6 shadow-md relative overflow-hidden flex flex-wrap items-center justify-between gap-6">
+        <div className="flex items-center gap-4 z-10">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-black text-2xl shadow-inner">
+            {(fee.studentName || 'S').charAt(0)}
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h3 className="text-xl font-black tracking-tight">{fee.studentName}</h3>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
+                fee.status === 'Paid' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+              }`}>
+                {fee.status || 'Pending'}
+              </span>
+            </div>
+            <p className="text-xs text-emerald-100/90 font-semibold mt-1">
+              ID: <span className="font-mono">{fee.studentId || fee.rollNumber || 'N/A'}</span> • {fee.course || 'Department'} • Sem {fee.semester || 1}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 z-10 bg-white/10 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-white/15">
+          <div>
+            <span className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider block">Assigned Date</span>
+            <span className="text-xs font-bold text-white font-mono">{fee.assignedDate ? new Date(fee.assignedDate).toLocaleDateString('en-IN') : 'Recent'}</span>
+          </div>
+          <div className="w-px h-8 bg-white/15"></div>
+          <div>
+            <span className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider block">Seat Quota</span>
+            <span className="text-xs font-bold text-white">{fee.options?.quota || 'Government Quota'}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Top 4 KPI Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Annual Fee</span>
+            <span className="material-symbols-outlined text-[#003A40]">account_balance_wallet</span>
+          </div>
+          <p className="text-2xl font-black text-[#003A40] font-mono">₹{annualTotal.toLocaleString('en-IN')}</p>
+          <span className="text-[11px] font-medium text-slate-400">Full 1-Year Structure</span>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Term Payable Fee</span>
+            <span className="material-symbols-outlined text-[#0A686A]">payments</span>
+          </div>
+          <p className="text-2xl font-black text-[#0A686A] font-mono">₹{termPayable.toLocaleString('en-IN')}</p>
+          <span className="text-[11px] font-medium text-slate-400">{isSplit ? '50% Semester Split' : 'Full Term Total'}</span>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Paid Amount</span>
+            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+          </div>
+          <p className="text-2xl font-black text-emerald-600 font-mono">₹{paidAmount.toLocaleString('en-IN')}</p>
+          <span className="text-[11px] font-medium text-emerald-600">Cleared & Verified</span>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Outstanding Balance</span>
+            <span className="material-symbols-outlined text-amber-600">pending_actions</span>
+          </div>
+          <p className="text-2xl font-black text-amber-600 font-mono">₹{balanceDue.toLocaleString('en-IN')}</p>
+          <span className="text-[11px] font-medium text-amber-600">Action Required</span>
+        </div>
+      </div>
+
+      {/* Main 2-Column Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* LEFT COLUMN: Itemized Breakdown Table (8 COLS) */}
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E6EDF2]">
+            <h3 className="text-sm font-extrabold text-[#003A40] flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">receipt_long</span>
+              Itemized Fee Component Schedule
+            </h3>
+            <span className="text-xs font-bold text-slate-400">Currency: INR (₹)</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
+                  <th className="px-4 py-3">Fee Component / Head</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3 text-right">Annual Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {/* Tuition Fee */}
+                <tr>
+                  <td className="px-4 py-3 font-semibold text-[#003A40]">Base Tuition Fee</td>
+                  <td className="px-4 py-3 text-slate-500">Academic</td>
+                  <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{(comp.tuitionFee || comp.semesterFee || 0).toLocaleString('en-IN')}</td>
+                </tr>
+
+                {/* Development Fee */}
+                {(comp.developmentFee > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Infrastructure & Lab Development</td>
+                    <td className="px-4 py-3 text-slate-500">Academic</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{comp.developmentFee.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {/* Library Fee */}
+                {((comp.libraryFee || comp.bookFee) > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Books & Digital Library E-Journals</td>
+                    <td className="px-4 py-3 text-slate-500">Academic</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{(comp.libraryFee || comp.bookFee).toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {/* Exam Fee */}
+                {(comp.examFee > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">University Examination Fee</td>
+                    <td className="px-4 py-3 text-slate-500">Examination</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{comp.examFee.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {/* Activity Fee */}
+                {(comp.activityFee > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Student Activity & Sports</td>
+                    <td className="px-4 py-3 text-slate-500">Co-Curricular</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{comp.activityFee.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {/* Hostel & Mess */}
+                {(comp.hostelFee > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Hostel Room & Mess Food Package</td>
+                    <td className="px-4 py-3 text-slate-500">Auxiliary Service</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{comp.hostelFee.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {/* Transport Fee */}
+                {(comp.transportFee > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">College Transport Bus Service</td>
+                    <td className="px-4 py-3 text-slate-500">Auxiliary Service</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{comp.transportFee.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {/* Amenities Fee */}
+                {(comp.amenitiesFee > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Campus Amenities (Wi-Fi & Laundry)</td>
+                    <td className="px-4 py-3 text-slate-500">Facility Pass</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{comp.amenitiesFee.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {/* Quota Surcharge */}
+                {(comp.quotaSurcharge > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-amber-700">Seat Quota Category Surcharge</td>
+                    <td className="px-4 py-3 text-amber-600 font-semibold">{fee.options?.quota || 'Quota'}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-amber-700">+₹{comp.quotaSurcharge.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {/* Custom Charge Items */}
+                {(comp.chargeItems || []).map((ch, idx) => (
+                  <tr key={idx}>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">{ch.label}</td>
+                    <td className="px-4 py-3 text-slate-500">Misc Package</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{Number(ch.amount || 0).toLocaleString('en-IN')}</td>
+                  </tr>
+                ))}
+
+                {/* Scholarship Waiver */}
+                {(comp.scholarshipDiscount > 0) && (
+                  <tr className="bg-emerald-50/50">
+                    <td className="px-4 py-3 font-bold text-emerald-800">
+                      Scholarship Waiver ({fee.options?.scholarshipType || 'Institutional Scheme'})
+                    </td>
+                    <td className="px-4 py-3 text-emerald-600 font-semibold">Discount Concession</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">-₹{comp.scholarshipDiscount.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Grand Totals Summary Box */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-3">
+            <div className="flex justify-between items-center text-xs font-semibold text-slate-600">
+              <span>Total Full Structure Fee (Annual):</span>
+              <span className="font-mono font-bold text-base text-[#003A40]">₹{annualTotal.toLocaleString('en-IN')}</span>
+            </div>
+
+            {isSplit && (
+              <div className="flex justify-between items-center text-xs font-semibold text-slate-600 pt-2 border-t border-slate-200">
+                <span>Semester Division (50% Term Split):</span>
+                <span className="font-mono font-bold text-slate-700">₹{Math.round(annualTotal / 2).toLocaleString('en-IN')} per semester</span>
+              </div>
+            )}
+
+            <div className="flex justify-between items-center text-sm font-extrabold text-[#003A40] pt-2 border-t border-slate-300">
+              <span className="uppercase tracking-wider">Net Current Semester Payable:</span>
+              <span className="font-mono font-black text-xl text-[#0A686A]">₹{termPayable.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Allocation & Options Summary (4 COLS) */}
+        <div className="lg:col-span-4 space-y-5">
+          {/* Allocation Options Summary Card */}
+          <div className="bg-white rounded-2xl border border-[#E6EDF2] p-5 shadow-2xs space-y-4">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#003A40] pb-2 border-b border-[#E6EDF2]">
+              Assigned Configuration
+            </h4>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Department & Course</span>
+                <span className="font-bold text-[#003A40]">{fee.course || 'Department'}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Academic Semester</span>
+                <span className="font-semibold text-slate-700">Sem {fee.semester || 1}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Payment Schedule</span>
+                <span className="font-semibold text-slate-700">{fee.options?.paymentPlan || 'Bi-Semester Installments'}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scholarship Scheme</span>
+                <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-0.5">
+                  {fee.options?.scholarshipType || 'None'}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Hostel Allocation</span>
+                <span className="font-semibold text-slate-700">{fee.options?.hostelType || 'Day Scholar'}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Transport Zone</span>
+                <span className="font-semibold text-slate-700">{fee.options?.transportZone || 'None'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Audit & System Information Card */}
+          <div className="bg-slate-50 rounded-2xl border border-[#E6EDF2] p-5 space-y-3 text-xs">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#003A40]">System Record Log</h4>
+            <div className="space-y-2 text-slate-600">
+              <div className="flex justify-between">
+                <span>Fee Record ID:</span>
+                <span className="font-mono font-bold text-slate-800">{fee.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Payment Status:</span>
+                <span className="font-bold text-[#003A40]">{fee.status || 'Pending'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Database Sync:</span>
+                <span className="font-bold text-emerald-600 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">cloud_done</span> MongoDB Synced
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );

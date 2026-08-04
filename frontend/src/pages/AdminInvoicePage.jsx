@@ -256,6 +256,17 @@ export default function AdminInvoicePage() {
     },
   ];
 
+  if (selectedInvoice) {
+    return (
+      <Layout title="Invoice Details">
+        <InvoiceDetailsFullView
+          invoice={selectedInvoice}
+          onCancel={() => setSelectedInvoice(null)}
+        />
+      </Layout>
+    );
+  }
+
   return (
     <Layout title="Invoices">
       {loading ? (
@@ -278,43 +289,307 @@ export default function AdminInvoicePage() {
           emptyMessage="No invoices match your search."
         />
       )}
+    </Layout>
+  );
+}
 
-      {/* Invoice Detail Modal */}
-      {selectedInvoice && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-[#E6EDF2] p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-base font-bold text-[#003A40] mb-4">Invoice Details</h3>
-            <div className="space-y-2 text-xs text-[#5F6B7A] mb-6">
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span>Student Name:</span>
-                <span className="font-bold text-[#003A40]">{selectedInvoice.studentName}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span>Course:</span>
-                <span className="font-bold text-[#003A40]">{selectedInvoice.course}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span>Total Amount:</span>
-                <span className="font-bold text-[#003A40]">₹{(selectedInvoice.totalAmount || selectedInvoice.amount || 0).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span>Due Date:</span>
-                <span className="font-bold text-[#003A40]">{selectedInvoice.dueDate || 'N/A'}</span>
-              </div>
-              <div className="flex justify-between py-1 font-bold text-sm text-[#003A40] pt-2">
-                <span>Status:</span>
-                <span className="text-emerald-600">{selectedInvoice.paymentStatus || selectedInvoice.status}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => setSelectedInvoice(null)}
-              className="w-full py-2 bg-[#003A40] text-white rounded-xl font-bold text-xs cursor-pointer hover:bg-[#0A686A] transition-colors"
-            >
-              Close Invoice
-            </button>
+/* ══════════════════════════════════════════════════════════════════════════
+   FULL PAGE INVOICE DETAILS VIEW — Rich Enterprise Format
+   ══════════════════════════════════════════════════════════════════════════ */
+function InvoiceDetailsFullView({ invoice, onCancel }) {
+  const isHexId = (str) => typeof str === 'string' && /^[0-9a-fA-F]{24}$/.test(str);
+
+  const getStudentSubtext = (i) => {
+    if (i.rollNumber && !isHexId(i.rollNumber)) return i.rollNumber;
+    if (i.registerNo && !isHexId(i.registerNo)) return i.registerNo;
+    if (i.studentId && !isHexId(i.studentId)) return i.studentId;
+    return 'STU-RECORD';
+  };
+
+  const getDepartmentName = (i) => {
+    const dept = i.course || i.department;
+    if (dept && dept !== 'Computer Science' && dept !== 'CS') return dept;
+    return 'Medical Laboratory Technology';
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return String(dateStr);
+      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return String(dateStr);
+    }
+  };
+
+  const totalAmount = (() => {
+    if (invoice.totalAmount !== undefined && invoice.totalAmount !== null) return Number(invoice.totalAmount);
+    if (invoice.amount !== undefined && invoice.amount !== null) return Number(invoice.amount);
+    if (invoice.total !== undefined && invoice.total !== null) return Number(invoice.total);
+    return 0;
+  })();
+
+  const status = (invoice.paymentStatus || invoice.status || 'Draft');
+  const isPaid = status.toLowerCase() === 'paid';
+  const paidAmount = isPaid ? totalAmount : Number(invoice.paidAmount || 0);
+  const balanceDue = Math.max(0, totalAmount - paidAmount);
+
+  const studentName = invoice.studentName || invoice.name || invoice.fullName || 'Student Record';
+  const studentSub = getStudentSubtext(invoice);
+  const deptName = getDepartmentName(invoice);
+  const invoiceId = invoice.invoice_id || invoice.id || `INV-${Date.now().toString().slice(-6)}`;
+  const dueDateFormatted = formatDate(invoice.dueDate || invoice.generatedDate || invoice.created_at);
+  const comp = invoice.components || {};
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header Navigation Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E6EDF2] shadow-2xs">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#003A40] rounded-xl text-xs font-bold transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            Back to Invoice List
+          </button>
+          <div>
+            <h2 className="text-base font-extrabold text-[#003A40]">Invoice Details Statement</h2>
+            <p className="text-xs text-[#5F6B7A] font-medium font-mono">Invoice Ref: {invoiceId}</p>
           </div>
         </div>
-      )}
-    </Layout>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#003A40] hover:bg-[#0A686A] text-white rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">print</span>
+            Print / Export Invoice
+          </button>
+        </div>
+      </div>
+
+      {/* Student & Invoice Header Banner Card */}
+      <div className="bg-[#003A40] text-white rounded-2xl p-6 shadow-md relative overflow-hidden flex flex-wrap items-center justify-between gap-6">
+        <div className="flex items-center gap-4 z-10">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center font-black text-2xl shadow-inner shrink-0">
+            {studentName.charAt(0)}
+          </div>
+          <div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="text-xl font-black tracking-tight text-white">{studentName}</h3>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
+                isPaid ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+              }`}>
+                {status}
+              </span>
+            </div>
+            <p className="text-xs text-emerald-100/90 font-semibold mt-1">
+              ID: <span className="font-mono">{studentSub}</span> • {deptName}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 z-10 bg-white/10 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-white/15">
+          <div>
+            <span className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider block">Due Date</span>
+            <span className="text-xs font-bold text-white font-mono">{dueDateFormatted}</span>
+          </div>
+          <div className="w-px h-8 bg-white/15"></div>
+          <div>
+            <span className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider block">Institution</span>
+            <span className="text-xs font-bold text-white">DSCHS College</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Top 4 KPI Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Total Invoice Amount</span>
+            <span className="material-symbols-outlined text-[#003A40]">receipt</span>
+          </div>
+          <p className="text-2xl font-black text-[#003A40] font-mono">₹{totalAmount.toLocaleString('en-IN')}</p>
+          <span className="text-[11px] font-medium text-slate-400">Total Billing Statement</span>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Cleared Amount</span>
+            <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+          </div>
+          <p className="text-2xl font-black text-emerald-600 font-mono">₹{paidAmount.toLocaleString('en-IN')}</p>
+          <span className="text-[11px] font-medium text-emerald-600">{isPaid ? '100% Paid' : 'Pending Payment'}</span>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Balance Outstanding</span>
+            <span className="material-symbols-outlined text-amber-600">pending_actions</span>
+          </div>
+          <p className="text-2xl font-black text-amber-600 font-mono">₹{balanceDue.toLocaleString('en-IN')}</p>
+          <span className="text-[11px] font-medium text-amber-600">{balanceDue === 0 ? 'Zero Balance' : 'Action Required'}</span>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E6EDF2] p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Payment Status</span>
+            <span className="material-symbols-outlined text-[#0A686A]">verified_user</span>
+          </div>
+          <p className="text-2xl font-black text-[#0A686A]">{status}</p>
+          <span className="text-[11px] font-medium text-slate-400">Verified System Record</span>
+        </div>
+      </div>
+
+      {/* Main 2-Column Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* LEFT COLUMN: Itemized Schedule Table (8 COLS) */}
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E6EDF2] p-6 shadow-2xs space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-[#E6EDF2]">
+            <h3 className="text-sm font-extrabold text-[#003A40] flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">receipt_long</span>
+              Itemized Invoice Schedule
+            </h3>
+            <span className="text-xs font-bold text-slate-400">Currency: INR (₹)</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200">
+                  <th className="px-4 py-3">Billing Description</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {comp.tuitionFee ? (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Semester Tuition & Educational Services</td>
+                    <td className="px-4 py-3 text-slate-500">Academic</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{Number(comp.tuitionFee).toLocaleString('en-IN')}</td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Academic Tuition & Laboratory Services</td>
+                    <td className="px-4 py-3 text-slate-500">Academic</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{totalAmount.toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {comp.developmentFee > 0 && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Infrastructure & Lab Development</td>
+                    <td className="px-4 py-3 text-slate-500">Academic</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{Number(comp.developmentFee).toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {(comp.libraryFee > 0 || comp.bookFee > 0) && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Books & Digital E-Library Access</td>
+                    <td className="px-4 py-3 text-slate-500">Academic</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{Number(comp.libraryFee || comp.bookFee).toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {comp.examFee > 0 && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">University Examination Charges</td>
+                    <td className="px-4 py-3 text-slate-500">Examination</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{Number(comp.examFee).toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {comp.hostelFee > 0 && (
+                  <tr>
+                    <td className="px-4 py-3 font-semibold text-[#003A40]">Hostel Room & Mess Food Package</td>
+                    <td className="px-4 py-3 text-slate-500">Auxiliary Service</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-[#003A40]">₹{Number(comp.hostelFee).toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+
+                {comp.scholarshipDiscount > 0 && (
+                  <tr className="bg-emerald-50/50">
+                    <td className="px-4 py-3 font-bold text-emerald-800">Scholarship Waiver / Concession</td>
+                    <td className="px-4 py-3 text-emerald-600 font-semibold">Scholarship</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">-₹{Number(comp.scholarshipDiscount).toLocaleString('en-IN')}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-3">
+            <div className="flex justify-between items-center text-sm font-extrabold text-[#003A40]">
+              <span className="uppercase tracking-wider">Total Net Invoice Payable:</span>
+              <span className="font-mono font-black text-xl text-[#0A686A]">₹{totalAmount.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Payer Info & Log (4 COLS) */}
+        <div className="lg:col-span-4 space-y-5">
+          <div className="bg-white rounded-2xl border border-[#E6EDF2] p-5 shadow-2xs space-y-4">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#003A40] pb-2 border-b border-[#E6EDF2]">
+              Payer Information
+            </h4>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Student Name</span>
+                <span className="font-bold text-[#003A40]">{studentName}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Register / ID No</span>
+                <span className="font-mono font-semibold text-slate-700">{studentSub}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Course & Department</span>
+                <span className="font-semibold text-slate-700">{deptName}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Due Date</span>
+                <span className="font-mono font-bold text-[#003A40]">{dueDateFormatted}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 rounded-2xl border border-[#E6EDF2] p-5 space-y-3 text-xs">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#003A40]">System Record Log</h4>
+            <div className="space-y-2 text-slate-600">
+              <div className="flex justify-between">
+                <span>Invoice Ref ID:</span>
+                <span className="font-mono font-bold text-slate-800">{invoiceId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Payment Status:</span>
+                <span className="font-bold text-[#003A40]">{status}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Database Sync:</span>
+                <span className="font-bold text-emerald-600 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">cloud_done</span> MongoDB Synced
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }
